@@ -1,0 +1,35 @@
+{
+  "name": "crudfs",
+  "version": "0.1.0",
+  "description": "REST file storage with CRUD based permissions on directory-level, written in Typescript.",
+  "contributors": [
+    {
+      "name": "johanna-herrmann",
+      "email": "johanna.herrmann@mailbox.org"
+    }
+  ],
+  "private": true,
+  "main": "build/lib/index.js",
+  "types": "build/lib/index.d.ts",
+  "author": "Johanna Herrmann",
+  "dependencies": {},
+  "devDependencies": {
+    "assertthat": "6.5.2",
+    "roboter": "13.2.1",
+    "typescript": "4.8.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johanna-herrmann/crudfs.git"
+  },
+  "keywords": [
+    "rest",
+    "crud",
+    "file",
+    "storage"
+  ],
+  "license": "MIT"
+}
