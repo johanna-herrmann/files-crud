@@ -4,53 +4,78 @@ REST file storage with CRUD based permissions on directory-level. \
 Written in Typescript
 
 ## Description
-* stores files and directories, using CRUD
-* can be stored on:
+* Stores files and directories, using REST calls
+* Supported storages:
   * local file-system
   * S3 Bucket
-* can be authenticated:
-  * built-in, username-password-auth using scrypt
-  * via cognito
-* can be run:
+* Supported authentication/authorization:
+  * built-in, username-password-auth, using scrypt
+  * cognito
+* Application can be run:
   * via nodejs on-prem
   * in-cloud via AWS (must use S3 and cognito)
+* Uses CRUD-based permissions on directory level
 
 ## Features
 * create, move, copy, delete, rename directories
 * create, change, copy, move, delete, rename files
-* admins can set permissions (crud-based) on directories (on creation or later)
+* crud-based permissions can be set via configuration
 * users can be mapped to directories, setting owner-specific permissions
-* configurations, if and how users can be registered
+* registration for new users can be open, restricted or disabled
 
 ## Permissions
-* permissions will be determined by files called ".directory"
-* there are 5 levels of permissions, separated by comma, in one single-line, each level specified by using the set letters of crud
-  * internal: permissions of the backend it-self (no api usage)
-  * admins: permissions for admins via api calls
-  * owner: permissions for the owner of the directory via api calls (on this level the dash is used, if the directory has no owner)
-  * users: permissions for users via api calls
-  * all: all via api-calls (public access)
-* The .directory file determines the owner and the permissions for each level
-  ('-' if no owner is specified, meaning, every user is the owner, hence owner-level equals users-level)
-* examples:
-  * peter:crud,crud,cr,r, (peter is owner, internal and admins full access, owner create and read access, other users read-only, no public access)
-  * -:crud,crd,r,r, (internal full access, admins worm-access, directory has no owner (read-only), users read-only, no public access)
+There are four rights in four levels.
+
+### The four levels
+* admins: permissions for admins
+* owner: permissions for the owner of the directory or file that is been accessed
+* users: permissions for users (if not the owner)
+* public: permissions for unauthorized access
+
+The permissions are specified by providing the letter for each enabled right, for each level, separating the levels with commata. \
+Example: `crud,crd,r,` (the public level is empty, so public access is disabled completely) \
+See also: [Config](#config)
+
+### The four rights
+The rights are representing the four parts of `CRUD` (`C`reate, `R`ead, `U`pdate, `D`elete).
+The follwing list explains the meaning of each right
+* `C`: Create &minus; Allowed to create files and directories
+* `R`: Read &minus; Allowed to list files and directories and to read file content
+* `U`: Update &minus; Allowed to rename files and directories and to change file content
+* `D`: Delete &minus; Allowed to delete files and directories
 
 ## Config
-Configuration is done via `config.json` file (no api access). Following configurations are supported:
+Configuration is done via
+* on-prem: A `config.json` file in the application directory (outside of the storage-root), read-in while application startup
+* cloud: A `config.json` file in deployment directory, stored as cloud-environment-variables while deployment
 
-* permissions: directory-level-permissions (will be set, when the directory will be created)
-* create_user_dir: boolean determining if user directory should be created when user is created
-* default_user_dir_permissions: determines the default permissions for the user dir, set on creation
+Following configurations are supported:
+* dir_permissions: per-directory definition of permissions
+  * Example:
+    ```json
+    {
+      "/peter/restricted": "crud,crd,r,",
+      "/example2/sub": "crud,cr,,"
+    }
+    ```
+* create_user_dir: boolean determining if user should be mapped to a directory (will be created automatically)
+* user_dir_name_base: defines the base value for the user directory name (`username` (`sub` is used for OAuth) or `user_id`)
+* user_dir_permissions: determines the permissions for the user dir
+* inherit_permissions: boolean determining if permissions are inherited when not set via `user_dir_permissions` or `dir_permissions`
+* fallback_permissions: defines the permissions for directories where no permissions are set otherwise
 * register: determines if and how users can be added/created
   possible:
   * any: each person can register themself
-  * token: token is required to register
-    tokens must be saved manually or by admins using the tokens directory, each token is a file while the filename is the scrypt-hash of the token
-  * personal_token: token is required to register
-    - tokens must be saved manually or by admins using the tokens directory, each token is a file while the filename is the scrypt-hash of the token
-	- the file content is the username (sub for Oauth) which will be used
+  * token: token is required to register, specified via `tokens` configuration property (value is just the scrypt-hash of the token)
   * none: only admins can add users
+* tokens: list of register tokens (scrypt hash (`salt`:`hash`) of the token itself)
+  * example:
+    ```json
+    [
+      "0d61f8370cad1d412f80b84d143e1257:8c2574892063f995fdf756bce07f46c1a5193e54cd52837ed91e32008ccf41ac",
+      "4c614360da93c0a041b22e537de151eb:3f39d5c348e5b79d06e842c114e6cc571583bbf44e4b0ebfda1a01ec05745d43"
+    ]
+    ```
 
 ## Hosting
 First decide, if you want to run a nodejs application or if you want to run an AWS Stack. \
