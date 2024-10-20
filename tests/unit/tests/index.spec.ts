@@ -1,4 +1,3 @@
-import { assert } from 'assertthat';
 import { giveText } from '../../../lib';
 
 describe('index tests for example', (): void => {
@@ -8,6 +7,6 @@ describe('index tests for example', (): void => {
 
     const actual = giveText(example);
 
-    assert.that(actual).is.equalTo(expected);
+    expect(actual).toBe(expected);
   });
 });
