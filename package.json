@@ -9,8 +9,8 @@
     }
   ],
   "private": true,
-  "main": "build/lib/index.js",
-  "types": "build/lib/index.d.ts",
+  "main": "built/lib/index.js",
+  "types": "built/lib/index.d.ts",
   "author": "Johanna Herrmann",
   "scripts": {
     "inst": "npm install",
