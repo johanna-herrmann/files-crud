@@ -1,19 +1,16 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "declaration": true,
-    "esModuleInterop": true,
-    "lib": [ "esnext" ],
-    "module": "commonjs",
-    "outDir": "build",
-    "resolveJsonModule": true,
+    "module":"ES2020",
+    "target": "ES2020",
     "strict": true,
-    "target": "es2019"
+    "preserveConstEnums": true,
+    "baseUrl": ".",
+    "outDir": "built",
+    "moduleResolution":"node",
+    "esModuleInterop": true, 
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "jest"],
   },
-  "include": [
-    "./**/*.ts"
-  ],
-  "exclude": [
-    "./build"
-  ]
+  "exclude": ["node_modules"]
 }

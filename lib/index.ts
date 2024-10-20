@@ -6,7 +6,6 @@ const giveText = function (example: ExampleInterface): string {
 
 const example = { text: 'this is a test' };
 
-// eslint-disable-next-line no-console
 console.log(giveText(example));
 
 export { giveText };
