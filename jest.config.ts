@@ -8,5 +8,9 @@ export default {
     '^.+\\.ts?$': 'ts-jest'
   },
   clearMocks: true,
-  testMatch: ['**/tests/unit/tests/**/*.spec.ts']
+  testMatch: ['**/tests/unit/**/*.spec.ts'],
+  moduleNameMapper: {
+    '@/(.*)': '<rootDir>/lib/$1',
+    '#/(.*)': '<rootDir>/tests/unit/$1'
+  }
 };
