@@ -3,6 +3,8 @@ import {
   GetObjectCommand,
   GetObjectCommandInput,
   GetObjectCommandOutput,
+  GetObjectAttributesCommand,
+  GetObjectAttributesCommandInput,
   PutObjectCommandInput,
   PutObjectCommand,
   DeleteObjectCommand,
@@ -51,9 +53,21 @@ const deleteObject = async function (client: S3Client, Bucket: string, key: stri
 };
 
 const exists = async function (client: S3Client, Bucket: string, Key: string): Promise<boolean> {
-  const result = await getObject(client, Bucket, Key);
-  const dataArray = await result.Body?.transformToByteArray();
-  return !!result.Body && !!dataArray;
+  const commandInput: GetObjectAttributesCommandInput = {
+    Bucket,
+    Key,
+    ObjectAttributes: ['ObjectSize']
+  };
+  const command = new GetObjectAttributesCommand(commandInput);
+  try {
+    await client.send(command);
+    return true
+  } catch (error: any) {
+    if (error?.Code === 'NoSuchKey') {
+      return false;
+    }
+    throw error;
+  }
 };
 
 export { trim, getObjectBody, putObject, deleteObject, exists };

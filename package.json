@@ -1,7 +1,7 @@
 {
-  "name": "crudfs",
+  "name": "files-crud",
   "version": "0.1.0",
-  "description": "REST file storage with CRUD based permissions on directory-level, written in Typescript.",
+  "description": "REST file storage with CRUD based permissions on section-level, written in Typescript.",
   "contributors": [
     {
       "name": "johanna-herrmann",

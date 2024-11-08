@@ -19,7 +19,7 @@ jest.mock('@/storage/fsWrapper/S3FSWrapperHelper', () => {
       delete mocked_s3[`${Bucket}|${Key}`];
     },
     async exists(client: S3Client, Bucket: string, Key: string): Promise<boolean> {
-      return !!mocked_s3[`${Bucket}|${Key}`] || !!mocked_s3[`${Bucket}|${Key}/`];
+      return !!mocked_s3[`${Bucket}|${Key}`];
     }
   };
 });

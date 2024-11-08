@@ -1,6 +1,6 @@
 import { getObjectBody, putObject, deleteObject, exists } from '@/storage/fsWrapper/S3FSWrapperHelper';
 import { mockClient } from 'aws-sdk-client-mock';
-import { S3Client, GetObjectCommand, GetObjectCommandOutput, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, GetObjectCommandOutput, GetObjectAttributesCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 const s3Mock = mockClient(S3Client);
 const client = new S3Client();
@@ -55,7 +55,7 @@ describe('S3FSWrapperHelper', (): void => {
   });
 
   test('exists returns true if item exists.', async (): Promise<void> => {
-    s3Mock.on(GetObjectCommand, { Bucket: bucket, Key: 'item' }).resolves(mockGetObjectCommandOutput(''));
+    s3Mock.on(GetObjectAttributesCommand, { Bucket: bucket, Key: 'item', ObjectAttributes: ['ObjectSize'] }).resolves(mockGetObjectCommandOutput(''));
 
     const result = await exists(client, bucket, 'item');
 
@@ -63,8 +63,9 @@ describe('S3FSWrapperHelper', (): void => {
   });
 
   test('exists returns false if item does not exist.', async (): Promise<void> => {
-    s3Mock.on(GetObjectCommand, { Bucket: bucket, Key: 'item' }).resolves(mockGetObjectCommandOutput(''));
-    s3Mock.on(GetObjectCommand, { Bucket: bucket, Key: 'nope' }).resolves(mockEmptyGetObjectCommandOutput());
+    const error = { Code: 'NoSuchKey' };
+    s3Mock.on(GetObjectAttributesCommand, { Bucket: bucket, Key: 'item', ObjectAttributes: ['ObjectSize'] }).resolves(mockGetObjectCommandOutput(''));
+    s3Mock.on(GetObjectAttributesCommand, { Bucket: bucket, Key: 'nope', ObjectAttributes: ['ObjectSize'] }).rejects(error);
 
     const result = await exists(client, bucket, 'nope');
 

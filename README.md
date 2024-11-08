@@ -1,6 +1,6 @@
-# CRUDFS
+# files-crud
 
-REST file storage with CRUD based permissions on directory-level. \
+REST file storage with CRUD based permissions on section-level. \
 Written in Typescript
 
 ## Description
