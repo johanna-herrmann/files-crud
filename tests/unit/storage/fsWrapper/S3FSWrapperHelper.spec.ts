@@ -1,6 +1,13 @@
-import { getObjectBody, putObject, deleteObject, exists } from '@/storage/fsWrapper/S3FSWrapperHelper';
+import { getObjectBody, putObject, deleteObject, exists } from '@/storage/fsWrapper/S3FSWrapperHelper.js';
 import { mockClient } from 'aws-sdk-client-mock';
-import { S3Client, GetObjectCommand, GetObjectCommandOutput, GetObjectAttributesCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  GetObjectCommand,
+  GetObjectCommandOutput,
+  GetObjectAttributesCommand,
+  PutObjectCommand,
+  DeleteObjectCommand
+} from '@aws-sdk/client-s3';
 
 const s3Mock = mockClient(S3Client);
 const client = new S3Client();
@@ -16,10 +23,6 @@ const mockGetObjectCommandOutput = function (input: string): GetObjectCommandOut
       }
     }
   } as GetObjectCommandOutput;
-};
-
-const mockEmptyGetObjectCommandOutput = function (): GetObjectCommandOutput {
-  return {} as GetObjectCommandOutput;
 };
 
 describe('S3FSWrapperHelper', (): void => {

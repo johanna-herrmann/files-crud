@@ -61,9 +61,9 @@ const exists = async function (client: S3Client, Bucket: string, Key: string): P
   const command = new GetObjectAttributesCommand(commandInput);
   try {
     await client.send(command);
-    return true
-  } catch (error: any) {
-    if (error?.Code === 'NoSuchKey') {
+    return true;
+  } catch (error: unknown) {
+    if ((error as Error & { Code: string })?.Code === 'NoSuchKey') {
       return false;
     }
     throw error;
