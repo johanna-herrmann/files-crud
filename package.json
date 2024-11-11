@@ -54,6 +54,6 @@
     "typescript": "5.6.3"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.678.0"
+    "@aws-sdk/client-s3": "3.688.0"
   }
 }
