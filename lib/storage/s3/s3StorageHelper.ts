@@ -8,7 +8,9 @@ import {
   PutObjectCommandInput,
   PutObjectCommand,
   DeleteObjectCommand,
-  DeleteObjectCommandInput
+  DeleteObjectCommandInput,
+  ListObjectsCommand,
+  ListObjectsCommandInput
 } from '@aws-sdk/client-s3';
 
 const trim = function (path: string): string {
@@ -22,6 +24,33 @@ const getObject = async function (client: S3Client, Bucket: string, Key: string)
   };
   const command = new GetObjectCommand(commandInput);
   return await client.send(command);
+};
+
+const listObjects = async function (client: S3Client, Bucket: string, Prefix: string): Promise<string[]> {
+  const commandInput: ListObjectsCommandInput = {
+    Bucket,
+    Prefix
+  };
+  const items: string[] = [];
+  let more = true;
+  let marker: string | undefined;
+
+  while (more) {
+    commandInput.Marker = marker;
+    const command = new ListObjectsCommand(commandInput);
+    const result = await client.send(command);
+    result.Contents?.forEach((content) => {
+      if (content.Key) {
+        items.push(content.Key);
+      }
+    });
+    more = !!result.IsTruncated;
+    if (more) {
+      marker = result.NextMarker ?? items[items.length - 1];
+    }
+  }
+
+  return items;
 };
 
 const getObjectBody = async function (client: S3Client, Bucket: string, Key: string): Promise<Buffer> {
@@ -70,4 +99,4 @@ const exists = async function (client: S3Client, Bucket: string, Key: string): P
   }
 };
 
-export { trim, getObjectBody, putObject, deleteObject, exists };
+export { trim, getObjectBody, putObject, deleteObject, listObjects, exists };

@@ -50,6 +50,20 @@ describe('LocalFSWrapper', (): void => {
     expect(await exists('/base/file')).toBe(false);
   });
 
+  test('LocalFSWrapper->listObjects lists objects with prefix.', async (): Promise<void> => {
+    mockFS({
+      '/base': {
+        'test~1': '',
+        'test~2': '',
+        'test~3': ''
+      }
+    });
+
+    const items = await wrapper.list('test~');
+
+    expect(items).toEqual(['test~1', 'test~2', 'test~3']);
+  });
+
   test('LocalFSWrapper->exists returns correct boolean.', async (): Promise<void> => {
     mockFS({
       '/base': {

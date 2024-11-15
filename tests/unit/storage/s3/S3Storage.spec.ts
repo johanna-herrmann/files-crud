@@ -18,6 +18,11 @@ jest.mock('@/storage/s3/s3StorageHelper', () => {
       const Key = directory ? `${path}/` : path;
       delete mocked_s3[`${Bucket}|${Key}`];
     },
+    async listObjects(client: S3Client, Bucket: string, prefix: string): Promise<string[]> {
+      return Object.keys(mocked_s3)
+        .filter((key) => key.startsWith(`${Bucket}|${prefix}`))
+        .map((key) => key.substring(Bucket.length + 1));
+    },
     async exists(client: S3Client, Bucket: string, Key: string): Promise<boolean> {
       return !!mocked_s3[`${Bucket}|${Key}`];
     }
@@ -64,6 +69,16 @@ describe('S3FSWrapper', (): void => {
 
     expect(mocked_s3['bucket|file']).toBeUndefined();
     expect(mocked_s3['bucket|file2']).toEqual(Buffer.from(''));
+  });
+
+  test('S3FSWrapper->listObjects lists objects with prefix.', async (): Promise<void> => {
+    mocked_s3['bucket|test~1'] = Buffer.from('');
+    mocked_s3['bucket|test~2'] = Buffer.from('');
+    mocked_s3['bucket|test~3'] = Buffer.from('');
+
+    const items = await wrapper.list('test~');
+
+    expect(items).toEqual(['test~1', 'test~2', 'test~3']);
   });
 
   test('S3FSWrapper->exists returns correct value for the check.', async (): Promise<void> => {

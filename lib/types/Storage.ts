@@ -24,6 +24,13 @@ interface Storage {
   unlink: (name: string) => Promise<void>;
 
   /**
+   * List files/objects where name/key starts with the given prefix.
+   * @param prefix The prefix
+   * @returns Fulfils with string-array (list of filenames/keys) upon success
+   */
+  list: (prefix: string) => Promise<string[]>;
+
+  /**
    * Checks if a file or S3 Object exists with the specified path or key.
    * @param name The filename
    * @returns Fulfils with boolean upon success, determining if the specified item exists
