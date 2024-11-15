@@ -29,7 +29,7 @@ There are four rights: `CREATE`, `READ`, `UPDATE` and `DELETE`
 
 The follwing list explains the meaning of each right
 * `CREATE` &minus; The right to upload new files
-* `READ` &minus; The right to retrieve the content of files
+* `READ` &minus; The right to retrieve the content of files and list files in section
 * `UPDATE` &minus; The right to re-upload files, overwriting existing files
 * `DELETE` &minus; The right to remove files
 

@@ -36,12 +36,34 @@ describe('S3FSWrapper', (): void => {
     mocked_s3 = {};
   });
 
-  test('S3FSWrapper->constructor created client and set bucket correctly.', async (): Promise<void> => {
+  test('S3FSWrapper->constructor creates client and sets bucket correctly, without endpoint.', async (): Promise<void> => {
     const newWrapper = new S3Storage('de', 'accessId', 'secret', 'bucket');
 
     const [client, bucket] = newWrapper.getConf();
     const credentials = await client.config.credentials();
     expect(await client.config.region()).toBe('de');
+    expect(client.config.endpoint).toBeUndefined();
+    expect(credentials.accessKeyId).toBe('accessId');
+    expect(credentials.secretAccessKey).toBe('secret');
+    expect(bucket).toBe('bucket');
+  });
+
+  test('S3FSWrapper->constructor creates client and sets bucket correctly, with endpoint.', async (): Promise<void> => {
+    const endpoint = 'https://testEndpoint.com/buckets/';
+
+    const newWrapper = new S3Storage('de', 'accessId', 'secret', 'bucket', endpoint);
+
+    const [client, bucket] = newWrapper.getConf();
+    const credentials = await client.config.credentials();
+    expect(await client.config.region()).toBe('de');
+    expect(client.config.endpoint).toBeDefined();
+    expect(client.config.endpoint && (await client.config.endpoint())).toEqual({
+      hostname: 'testendpoint.com',
+      path: '/buckets/',
+      port: undefined,
+      protocol: 'https:',
+      query: undefined
+    });
     expect(credentials.accessKeyId).toBe('accessId');
     expect(credentials.secretAccessKey).toBe('secret');
     expect(bucket).toBe('bucket');

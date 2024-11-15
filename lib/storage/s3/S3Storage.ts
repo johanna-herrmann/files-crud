@@ -6,9 +6,10 @@ class S3Storage implements Storage {
   private readonly client: S3Client;
   private readonly bucket: string;
 
-  constructor(region: string, accessKeyId: string, secretAccessKey: string, bucket: string) {
+  constructor(region: string, accessKeyId: string, secretAccessKey: string, bucket: string, endpoint?: string) {
     const config: S3ClientConfig = {
       region,
+      endpoint,
       credentials: {
         accessKeyId,
         secretAccessKey
