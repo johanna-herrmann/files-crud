@@ -7,13 +7,10 @@ Written in Typescript
 * Stores files, using REST calls (CRUD)
 * Supported storages:
   * local file-system
-  * S3 Bucket
-* Supported authentication/authorization:
-  * built-in, username-password-auth, using scrypt
-  * cognito
-* Application can be run:
-  * via nodejs on-prem
-  * in-cloud via AWS (must use S3 and cognito)
+  * S3 Bucket (and s3-compatible storages)
+* Supported Databases (for user accounts)
+  * mongoDB
+  * !TBD!
 * Uses CRUD-based permissions, specified for different sections
 
 ## Features
@@ -34,16 +31,7 @@ The follwing list explains the meaning of each right
 * `DELETE` &minus; The right to remove files
 
 ## Config
-Configuration is done via
-* on-prem: A `config.json` file in the application directory (outside of the storage-root), read-in while application startup
-* cloud: A `config.json` file in deployment directory, stored as cloud-environment-variables while deployment
-
-Permissions are specified, building "words" of the respective letters `c`, `r`, `u` and `d` for the given rights. \
-Examples:
-* `'crud'`: for full permission
-* `'r'`: for read-only permission
-* `'crd'` or `'cr'`: useful to force `write-once, read-many` systems
-* `''` (empty): no permission
+Configuration is done via `config.json` file in the application directory (outside of the storage-root), read-in during application startup.
 
 ### Properties
 * `sections` &minus; defines sections and their permissions
@@ -56,8 +44,8 @@ Examples:
 ### Defaults
 * `sections` &minus; empty
 * `use_user_sections` &minus; `true`
-* `user_permissions` &minus; `crud`
-* `default_permissions` &minus; `crud` for admins, `r` for users, none for public-access
+* `user_permissions` &minus; All
+* `default_permissions` &minus; All for admins, read-only for users, none for public-access
 * `register` &minus; `admin`
 * `tokens` &minus; empty
 
@@ -66,22 +54,22 @@ Examples:
 {
   "sections": {
     "all_users": {
-      "admin": "crud",
-      "users": "r",
-      "public": ""
+      "admin": ["create", "read", "update", "delete"],
+      "users": ["read"],
+      "public": []
     },
     "public": {
-      "admin": "crud",
-      "users": "r",
-      "public": "r"
+      "admin": ["create", "read", "update", "delete"],
+      "users": ["read"],
+      "public": ["read"]
     }
   },
   "use_user_sections": true,
-  "user_permissions": "crud",
+  "user_permissions": ["create", "read", "update", "delete"],
   "default_permissions": {
-    "admin": "crud",
-    "users": "",
-    "public": ""
+    "admin": ["create", "read", "update", "delete"],
+    "users": [],
+    "public": []
   },
   "register": "token",
   "register_token": "8470b83a-b9bd-4054-b8ec-59cb57e855bd"
@@ -89,16 +77,10 @@ Examples:
 ```
 
 ## Hosting
-First decide, if you want to run a nodejs application or if you want to run an AWS Stack. \
-If you want to run in Cloud, just run the deployment script `aws-deploy.sh` and follow the instructions. \
-If you want to run nodejs locally (on a server; on-prem), just run the deployment script `prem-deploy.sh` and follow the instructions.
-
-On prem you will be asked:
-* Use local file system (you will be asked for the directory) or use S3 Bucket (you will be asked for Bucket and credentials)
-* Use built-in-auth (username-password-auth via scrypt) or use Cognito-OAuth
+!TBD!
 
 ## Social Authentication Providers
-Social Authentication Providers like Google, Facebook, etc. will be supported in future releases.
+Social Authentication Providers like Google, Facebook, etc. may be supported in future releases.
 
 ## License
 This product is licensed via a [MIT License](./LICENSE.md)
