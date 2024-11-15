@@ -1,9 +1,9 @@
-import { S3FSWrapper } from '@/storage/fsWrapper/S3FSWrapper';
+import { S3Storage } from '@/storage/s3/S3Storage';
 import { S3Client } from '@aws-sdk/client-s3';
 
 let mocked_s3: Record<string, Buffer | undefined> = {};
 
-jest.mock('@/storage/fsWrapper/S3FSWrapperHelper', () => {
+jest.mock('@/storage/s3/s3StorageHelper', () => {
   return {
     async getObjectBody(client: S3Client, Bucket: string, Key: string): Promise<Buffer> {
       return mocked_s3[`${Bucket}|${Key}`] ?? Buffer.from('');
@@ -24,7 +24,7 @@ jest.mock('@/storage/fsWrapper/S3FSWrapperHelper', () => {
   };
 });
 
-const wrapper = new S3FSWrapper('de', 'accessId', 'secret', 'bucket');
+const wrapper = new S3Storage('de', 'accessId', 'secret', 'bucket');
 
 describe('S3FSWrapper', (): void => {
   afterEach(async (): Promise<void> => {
@@ -32,7 +32,7 @@ describe('S3FSWrapper', (): void => {
   });
 
   test('S3FSWrapper->constructor created client and set bucket correctly.', async (): Promise<void> => {
-    const newWrapper = new S3FSWrapper('de', 'accessId', 'secret', 'bucket');
+    const newWrapper = new S3Storage('de', 'accessId', 'secret', 'bucket');
 
     const [client, bucket] = newWrapper.getConf();
     const credentials = await client.config.credentials();

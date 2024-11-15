@@ -1,4 +1,4 @@
-interface FSWrapper {
+interface Storage {
   /**
    * Writes a file or creates an S3 object
    * @param name The filename
@@ -31,4 +31,4 @@ interface FSWrapper {
   exists: (name: string) => Promise<boolean>;
 }
 
-export default FSWrapper;
+export default Storage;

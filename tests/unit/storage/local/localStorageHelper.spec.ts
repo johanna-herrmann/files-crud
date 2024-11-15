@@ -1,4 +1,4 @@
-import { exists } from '@/storage/fsWrapper/LocalFSWrapper';
+import { exists } from '@/storage/local/LocalStorage';
 import mockFS from 'mock-fs';
 
 describe('LocalFSWrapperHelper', (): void => {

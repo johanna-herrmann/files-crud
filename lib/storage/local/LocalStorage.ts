@@ -1,8 +1,8 @@
-import FSWrapper from '@/types/FSWrapper';
+import Storage from '@/types/Storage';
 import fs from 'fs/promises';
-import { exists } from './LocalFSWrapperHelper';
+import { exists } from './localStorageHelper';
 
-class LocalFSWrapper implements FSWrapper {
+class LocalStorage implements Storage {
   private readonly directory: string;
 
   public constructor(directory: string) {
@@ -34,4 +34,4 @@ class LocalFSWrapper implements FSWrapper {
   }
 }
 
-export { LocalFSWrapper, exists };
+export { LocalStorage, exists };

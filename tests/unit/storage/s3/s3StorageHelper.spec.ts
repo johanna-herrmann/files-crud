@@ -1,4 +1,4 @@
-import { getObjectBody, putObject, deleteObject, exists } from '@/storage/fsWrapper/S3FSWrapperHelper.js';
+import { getObjectBody, putObject, deleteObject, exists } from '@/storage/s3/s3StorageHelper';
 import { mockClient } from 'aws-sdk-client-mock';
 import {
   S3Client,

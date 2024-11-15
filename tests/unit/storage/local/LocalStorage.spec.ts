@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
-import { LocalFSWrapper, exists } from '@/storage/fsWrapper/LocalFSWrapper';
+import { LocalStorage, exists } from '@/storage/local/LocalStorage';
 import mockFS from 'mock-fs';
 
-const wrapper = new LocalFSWrapper('/base');
+const wrapper = new LocalStorage('/base');
 
 describe('LocalFSWrapper', (): void => {
   afterEach(async (): Promise<void> => {
@@ -10,7 +10,7 @@ describe('LocalFSWrapper', (): void => {
   });
 
   test('LocalFSWrapper->constructor created path correctly.', async (): Promise<void> => {
-    const newWrapper = new LocalFSWrapper('////test///');
+    const newWrapper = new LocalStorage('////test///');
 
     expect(newWrapper.getDirectory()).toBe('/test');
   });

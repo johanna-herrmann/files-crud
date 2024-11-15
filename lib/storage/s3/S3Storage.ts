@@ -1,8 +1,8 @@
-import FSWrapper from '@/types/FSWrapper';
+import Storage from '@/types/Storage';
 import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
-import { getObjectBody, putObject, deleteObject, exists } from './S3FSWrapperHelper';
+import { getObjectBody, putObject, deleteObject, exists } from './s3StorageHelper';
 
-class S3FSWrapper implements FSWrapper {
+class S3Storage implements Storage {
   private readonly client: S3Client;
   private readonly bucket: string;
 
@@ -41,4 +41,4 @@ class S3FSWrapper implements FSWrapper {
   }
 }
 
-export { S3FSWrapper, exists };
+export { S3Storage, exists };
