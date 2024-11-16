@@ -35,8 +35,12 @@ class MongoDatabase implements Database {
     return [this.url, this.User, this.JwtKey, this.FailedLoginAttempts];
   }
 
-  public async initialize(): Promise<void> {
+  public async open(): Promise<void> {
     await mongoose.connect(this.url);
+  }
+
+  public async close(): Promise<void> {
+    await mongoose.connection.close();
   }
 
   public async addUser(user: User): Promise<void> {

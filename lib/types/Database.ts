@@ -1,7 +1,9 @@
 import User from './User';
 
 interface Database {
-  initialize: () => Promise<void>;
+  open: () => Promise<void>;
+
+  close: () => Promise<void>;
 
   addUser: (user: User) => Promise<void>;
 

@@ -53,7 +53,7 @@ describe('MongoDatabase', (): void => {
 
   const prepareDbForUser = async function (user?: User): Promise<[MongoDatabase, typeof UserModel]> {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     const User = db.getConf()[1];
     await db.addUser(user ?? testUser);
 
@@ -71,21 +71,30 @@ describe('MongoDatabase', (): void => {
     expectLockModelAndSchema(db);
   });
 
-  test('MongoDatabase->initialize connects to db.', async (): Promise<void> => {
+  test('MongoDatabase->open connects to db.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     const uriRegex = /^mongodb:\/\/(127\.0\.0\.1|localhost):(\d+)\/$/u;
 
-    await db.initialize();
+    await db.open();
 
-    expect(mongoose.connections.length).toBe(1);
-    expect(mongoose.connections[0].host).toBe(uri.replace(uriRegex, '$1'));
-    expect(mongoose.connections[0].port).toBe(parseInt(uri.replace(uriRegex, '$2')));
-    expect(mongoose.connections[0].db?.databaseName).toBe('db');
+    expect(mongoose.connection.readyState).toBe(1);
+    expect(mongoose.connection.host).toBe(uri.replace(uriRegex, '$1'));
+    expect(mongoose.connection.port).toBe(parseInt(uri.replace(uriRegex, '$2')));
+    expect(mongoose.connection.db?.databaseName).toBe('db');
+  });
+
+  test('MongoDatabase->close disconnects from db.', async (): Promise<void> => {
+    const db = new MongoDatabase(`${uri}db`);
+    await db.open();
+
+    await db.close();
+
+    expect(mongoose.connection.readyState).toBe(0);
   });
 
   test('MongoDatabase->addUser adds User.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     const User = db.getConf()[1];
 
     await db.addUser(testUser);
@@ -170,7 +179,7 @@ describe('MongoDatabase', (): void => {
 
   test('MongoDatabase->addJwtKeys adds jwt keys.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     const JwtKey = db.getConf()[2];
 
     await db.addJwtKeys('key1', 'key2', 'key3');
@@ -184,7 +193,7 @@ describe('MongoDatabase', (): void => {
 
   test('MongoDatabase->getJwtKeys gets jwt keys.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     await db.addJwtKeys('key1', 'key2', 'key3');
 
     const keys = await db.getJwtKeys();
@@ -197,7 +206,7 @@ describe('MongoDatabase', (): void => {
 
   test('MongoDatabase->countLoginAttempt creates new item with attempts=1.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     const FailedLoginAttempts = db.getConf()[3];
 
     await db.countLoginAttempt(testUser.username);
@@ -209,7 +218,7 @@ describe('MongoDatabase', (): void => {
 
   test('MongoDatabase->countLoginAttempt increases attempts in existing item.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     const FailedLoginAttempts = db.getConf()[3];
     await db.countLoginAttempt(testUser.username);
 
@@ -222,7 +231,7 @@ describe('MongoDatabase', (): void => {
 
   test('MongoDatabase->getLoginAttempts gets attempts for username.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     await db.countLoginAttempt(testUser.username);
     await db.countLoginAttempt(testUser.username);
 
@@ -233,7 +242,7 @@ describe('MongoDatabase', (): void => {
 
   test('MongoDatabase->removeLoginAttempts removes item.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
-    await db.initialize();
+    await db.open();
     const FailedLoginAttempts = db.getConf()[3];
     await db.countLoginAttempt(testUser.username);
     await db.countLoginAttempt('other');
