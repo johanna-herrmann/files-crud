@@ -23,12 +23,16 @@ const failedLoginAttemptsSchema = new mongoose.Schema({
 
 class MongoDatabase implements Database {
   private readonly url: string;
+  private readonly user?: string;
+  private readonly pass?: string;
   private readonly User = mongoose.model('User', userSchema);
   private readonly JwtKey = mongoose.model('JwtKey', jwtKeySchema);
   private readonly FailedLoginAttempts = mongoose.model('FailedLoginAttempts', failedLoginAttemptsSchema);
 
-  constructor(url: string) {
+  constructor(url: string, user?: string, pass?: string) {
     this.url = url;
+    this.user = user;
+    this.pass = pass;
   }
 
   public getConf(): [string, typeof this.User, typeof this.JwtKey, typeof this.FailedLoginAttempts] {
@@ -36,7 +40,7 @@ class MongoDatabase implements Database {
   }
 
   public async open(): Promise<void> {
-    await mongoose.connect(this.url);
+    await mongoose.connect(this.url, { user: this.user, pass: this.pass });
   }
 
   public async close(): Promise<void> {

@@ -252,4 +252,24 @@ describe('MongoDatabase', (): void => {
     expect(await FailedLoginAttempts.findOne({ username: testUser.username })).toBeNull();
     expect((await FailedLoginAttempts.findOne({ username: 'other' }))?.username).toBe('other');
   });
+
+  test('MongoDatabase also works with authentication.', async (): Promise<void> => {
+    await mongod?.stop();
+    const mongodWithAuth = await MongoMemoryServer.create({
+      auth: {
+        enable: true,
+        customRootName: 'user',
+        customRootPwd: 'pass'
+      }
+    });
+    const url = 'mongodb://localhost:27017/db';
+
+    const db = new MongoDatabase(url, 'user', 'pass');
+
+    expect(db.getConf()[0]).toBe(url);
+    expectUserModelAndSchema(db);
+    expectJwtKeyModelAndSchema(db);
+    expectLockModelAndSchema(db);
+    await mongodWithAuth.stop();
+  });
 });
