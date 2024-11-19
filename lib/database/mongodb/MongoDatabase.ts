@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import User from '@/types/User';
+import File from '@/types/File';
 import Database from '@/types/Database';
 
 const userSchema = new mongoose.Schema({
@@ -7,7 +8,7 @@ const userSchema = new mongoose.Schema({
   hashVersion: { type: String, default: '' },
   salt: { type: String, default: '' },
   hash: { type: String, default: '' },
-  sectionId: { type: String, default: '' },
+  ownerId: { type: String, default: '' },
   admin: { type: Boolean, default: false },
   meta: Object
 });
@@ -21,6 +22,13 @@ const failedLoginAttemptsSchema = new mongoose.Schema({
   attempts: { type: Number, default: 0 }
 });
 
+const fileSchema = new mongoose.Schema({
+  path: { type: String, default: '' },
+  owner: { type: String, default: '' },
+  realName: { type: String, default: '' },
+  meta: Object
+});
+
 class MongoDatabase implements Database {
   private readonly url: string;
   private readonly user?: string;
@@ -28,6 +36,7 @@ class MongoDatabase implements Database {
   private readonly User = mongoose.model('User', userSchema);
   private readonly JwtKey = mongoose.model('JwtKey', jwtKeySchema);
   private readonly FailedLoginAttempts = mongoose.model('FailedLoginAttempts', failedLoginAttemptsSchema);
+  private readonly File = mongoose.model('File', fileSchema);
 
   constructor(url: string, user?: string, pass?: string) {
     this.url = url;
@@ -35,8 +44,8 @@ class MongoDatabase implements Database {
     this.pass = pass;
   }
 
-  public getConf(): [string, typeof this.User, typeof this.JwtKey, typeof this.FailedLoginAttempts] {
-    return [this.url, this.User, this.JwtKey, this.FailedLoginAttempts];
+  public getConf(): [string, typeof this.User, typeof this.JwtKey, typeof this.FailedLoginAttempts, typeof this.File] {
+    return [this.url, this.User, this.JwtKey, this.FailedLoginAttempts, this.File];
   }
 
   public async open(): Promise<void> {
@@ -67,7 +76,7 @@ class MongoDatabase implements Database {
     await this.User.findOneAndUpdate({ username }, { admin: false });
   }
 
-  public async modifyMeta(username: string, meta?: Record<string, unknown>): Promise<void> {
+  public async modifyUserMeta(username: string, meta?: Record<string, unknown>): Promise<void> {
     await this.User.findOneAndUpdate({ username }, { meta });
   }
 
@@ -77,6 +86,10 @@ class MongoDatabase implements Database {
 
   public async getUser(username: string): Promise<User | null> {
     return await this.User.findOne({ username });
+  }
+
+  public async userExists(username: string): Promise<boolean> {
+    return !!(await this.User.exists({ username }));
   }
 
   public async addJwtKeys(...keys: string[]): Promise<void> {
@@ -108,6 +121,39 @@ class MongoDatabase implements Database {
 
   public async removeLoginAttempts(username: string): Promise<void> {
     await this.FailedLoginAttempts.findOneAndDelete({ username });
+  }
+
+  public async addFile(file: File): Promise<void> {
+    await new this.File(file).save();
+  }
+
+  public async moveFile(oldPath: string, newPath: string, newOwner?: string): Promise<void> {
+    const update = newOwner ? { path: newPath, owner: newOwner } : { path: newPath };
+    await this.File.findOneAndUpdate({ path: oldPath }, update);
+  }
+
+  public async modifyFileMeta(path: string, meta?: Record<string, unknown>): Promise<void> {
+    await this.File.findOneAndUpdate({ path }, { meta });
+  }
+
+  public async removeFile(path: string): Promise<void> {
+    await this.File.findOneAndDelete({ path });
+  }
+
+  public async getFile(path: string): Promise<File | null> {
+    return await this.File.findOne({ path });
+  }
+
+  public async listFilesInFolder(path: string): Promise<string[]> {
+    path = path.replace(/\/*$/gu, '');
+    const files = await this.File.where('path')
+      .regex(new RegExp(`^${path}/`, 'u'))
+      .exec();
+    return files.map((file) => file.path);
+  }
+
+  public async fileExists(path: string): Promise<boolean> {
+    return !!(await this.File.exists({ path }));
   }
 }
 

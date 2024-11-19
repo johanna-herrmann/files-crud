@@ -2,6 +2,7 @@ import Database from '@/types/Database';
 import PgDbConf from '@/types/PgDbConf';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import User from '@/types/User';
+import File from '@/types/File';
 import { Client } from 'pg';
 import { getNewClient, connect, end, definingQuery, writingQuery, readingQuery } from './pgWrapper';
 
@@ -28,7 +29,11 @@ const createJwtKeyTableIfNotExists = async function (client: Client) {
 };
 
 const createFailedLoginAttemptsTableIfNotExists = async function (client: Client) {
-  createTableIfNotExists(client, 'FailedLoginAttempts', 'username text', 'attempts int');
+  createTableIfNotExists(client, 'failedLoginAttempts', 'username text', 'attempts int');
+};
+
+const createFileTableIfNotExists = async function (client: Client) {
+  createTableIfNotExists(client, 'file', 'path text', 'owner text', 'realName text', 'meta JSON');
 };
 
 class PostgresDatabase implements Database {
@@ -49,15 +54,16 @@ class PostgresDatabase implements Database {
     await createUserTableIfNotExists(this.client);
     await createJwtKeyTableIfNotExists(this.client);
     await createFailedLoginAttemptsTableIfNotExists(this.client);
+    await createFileTableIfNotExists(this.client);
   }
 
   public async close(): Promise<void> {
     await end(this.client);
   }
 
-  public async addUser({ username, hashVersion, salt, hash, admin, sectionId, meta }: User): Promise<void> {
-    const query = 'INSERT INTO user_(username, hashVersion, salt, hash, admin, sectionId, meta) VALUES($1, $2, $3, $4, $5, $6, $7)';
-    const values = [username, hashVersion, salt, hash, admin, sectionId, JSON.stringify(meta)];
+  public async addUser({ username, hashVersion, salt, hash, admin, ownerId, meta }: User): Promise<void> {
+    const query = 'INSERT INTO user_(username, hashVersion, salt, hash, admin, ownerId, meta) VALUES($1, $2, $3, $4, $5, $6, $7)';
+    const values = [username, hashVersion, salt, hash, admin, ownerId, JSON.stringify(meta)];
     await writingQuery(this.client, query, values);
   }
 
@@ -85,7 +91,7 @@ class PostgresDatabase implements Database {
     await writingQuery(this.client, query, values);
   }
 
-  public async modifyMeta(username: string, meta?: Record<string, unknown>): Promise<void> {
+  public async modifyUserMeta(username: string, meta?: Record<string, unknown>): Promise<void> {
     const query = 'UPDATE user_ SET meta=$1 WHERE username=$2';
     const values = [meta ? JSON.stringify(meta) : '{}', username];
     await writingQuery(this.client, query, values);
@@ -105,6 +111,10 @@ class PostgresDatabase implements Database {
       return null;
     }
     return result.rows[0];
+  }
+
+  public async userExists(username: string): Promise<boolean> {
+    return !!(await this.getUser(username));
   }
 
   public async addJwtKeys(...keys: string[]): Promise<void> {
@@ -142,6 +152,55 @@ class PostgresDatabase implements Database {
     const query = 'DELETE FROM failedLoginAttempts WHERE username=$1';
     const values = [username];
     await writingQuery(this.client, query, values);
+  }
+
+  public async addFile({ path, owner, realName, meta }: File): Promise<void> {
+    const query = 'INSERT INTO file(path, owner, realName, meta) VALUES($1, $2, $3, $4)';
+    const values = [path, owner, realName, JSON.stringify(meta)];
+    await writingQuery(this.client, query, values);
+  }
+
+  public async moveFile(oldPath: string, newPath: string, newOwner?: string): Promise<void> {
+    const query = newOwner ? 'UPDATE file set path=$1, owner=$2 WHERE path=$3' : 'UPDATE file set path=$1 WHERE path=$2';
+    const values = newOwner ? [newPath, newOwner, oldPath] : [newPath, oldPath];
+    await writingQuery(this.client, query, values);
+  }
+
+  public async modifyFileMeta(path: string, meta?: Record<string, unknown>): Promise<void> {
+    const query = 'UPDATE file SET meta=$1 WHERE path=$2';
+    const values = [meta ? JSON.stringify(meta) : '{}', path];
+    await writingQuery(this.client, query, values);
+  }
+
+  public async removeFile(path: string): Promise<void> {
+    const query = 'DELETE FROM file WHERE path=$1';
+    const values = [path];
+    await writingQuery(this.client, query, values);
+  }
+
+  public async getFile(path: string): Promise<File | null> {
+    const query = 'SELECT * FROM file WHERE path=$1';
+    const values = [path];
+    const result = await readingQuery<File>(this.client, query, values);
+    if (!result || result.rowCount !== 1) {
+      return null;
+    }
+    return result.rows[0];
+  }
+
+  public async listFilesInFolder(path: string): Promise<string[]> {
+    path = path.replace(/\/*$/gu, '');
+    const query = 'SELECT * FROM file WHERE path LIKE $1';
+    const values = [`${path}/%`];
+    const result = await readingQuery<File>(this.client, query, values);
+    if (!result || result.rowCount === 0) {
+      return [];
+    }
+    return result.rows.map((file) => file.path);
+  }
+
+  public async fileExists(path: string): Promise<boolean> {
+    return !!(await this.getFile(path));
   }
 }
 

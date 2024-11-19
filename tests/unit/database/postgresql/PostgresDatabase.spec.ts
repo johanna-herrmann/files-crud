@@ -14,7 +14,8 @@ interface MockedData {
   conf?: PgDbConf;
   client?: Client;
   connected?: boolean;
-  queries?: string[];
+  definingQueries?: string[];
+  writingQueries?: string[];
   values?: (string | number | boolean)[][];
 }
 
@@ -37,7 +38,8 @@ jest.mock('@/database/postgresql/pgWrapper', () => {
       const newClient = new Mocked_Client(conf);
       mocked_data.client = newClient;
       mocked_data.conf = conf;
-      mocked_data.queries = [];
+      mocked_data.definingQueries = [];
+      mocked_data.writingQueries = [];
       mocked_data.values = [];
       return newClient;
     },
@@ -50,19 +52,17 @@ jest.mock('@/database/postgresql/pgWrapper', () => {
       mocked_data.connected = false;
     },
     async definingQuery(_: Client, query: string) {
-      mocked_data.queries?.push(query);
+      mocked_data.definingQueries?.push(query);
     },
     async writingQuery(_: Client, query: string, values?: (string | number | boolean)[]) {
-      mocked_data.queries?.push(query);
+      mocked_data.writingQueries?.push(query);
       mocked_data.values?.push(values ?? []);
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async readingQuery<T extends QueryResultRow>(_: Client, query: string, values?: (string | number | boolean)[]) {
       if (mocked_when_then.queryRegex.test(query) && JSON.stringify(mocked_when_then.values) === JSON.stringify(values)) {
-        console.log({ result: mocked_when_then.result });
         return mocked_when_then.result;
       }
-      console.log({ result: 'never' });
       return null;
     }
   };
@@ -82,7 +82,14 @@ describe('PostgresDatabase', (): void => {
     salt: 'testSalt',
     hash: 'testHash',
     admin: false,
-    sectionId: 'testSectionId',
+    ownerId: 'testSectionId',
+    meta: { testProp: 'testValue' }
+  };
+
+  const testFile = {
+    path: 'test/path',
+    owner: 'testOwner',
+    realName: 'testRealName',
     meta: { testProp: 'testValue' }
   };
 
@@ -94,9 +101,9 @@ describe('PostgresDatabase', (): void => {
     queryRegex: RegExp,
     values: (string | number | boolean)[]
   ): void {
-    expect(mocked_data.queries?.length).toBe(queries);
+    expect(mocked_data.writingQueries?.length).toBe(queries);
     expect(mocked_data.values?.length).toBe(queriesWithValues);
-    expect(mocked_data.queries?.at(queryIndex)).toMatch(queryRegex);
+    expect(mocked_data.writingQueries?.at(queryIndex)).toMatch(queryRegex);
     expect(mocked_data.values?.at(valuesIndex)).toEqual(values);
   };
 
@@ -105,7 +112,15 @@ describe('PostgresDatabase', (): void => {
     mocked_when_then.values = values;
     return {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      then(rows: any) {
+      then(rows?: any) {
+        if (!rows) {
+          return {
+            command: '',
+            fields: [],
+            oid: 0,
+            rowCount: 0
+          };
+        }
         mocked_when_then.result = {
           command: '',
           fields: [],
@@ -131,12 +146,13 @@ describe('PostgresDatabase', (): void => {
     expect(mocked_data.client).toBeDefined();
     expect(mocked_data.conf).toEqual(conf);
     expect(mocked_data.connected).toBe(true);
-    expect(mocked_data.queries?.length).toBe(3);
-    expect(mocked_data.queries?.at(0)).toMatch(
+    expect(mocked_data.definingQueries?.length).toBe(4);
+    expect(mocked_data.definingQueries?.at(0)).toMatch(
       /^create table if not exists user_\s*\(username text, hashVersion text, salt text, hash text, admin Boolean, sectionId text, meta JSON\)$/iu
     );
-    expect(mocked_data.queries?.at(1)).toMatch(/^create table if not exists jwtKey\s*\(key text\)$/iu);
-    expect(mocked_data.queries?.at(2)).toMatch(/^create table if not exists failedLoginAttempts\s*\(username text, attempts int\)$/iu);
+    expect(mocked_data.definingQueries?.at(1)).toMatch(/^create table if not exists jwtKey\s*\(key text\)$/iu);
+    expect(mocked_data.definingQueries?.at(2)).toMatch(/^create table if not exists failedLoginAttempts\s*\(username text, attempts int\)$/iu);
+    expect(mocked_data.definingQueries?.at(3)).toMatch(/^create table if not exists file\s*\(path text, owner text, realName text, meta JSON\)$/iu);
   });
 
   test('PostgresDatabase->close disconnects from db.', async (): Promise<void> => {
@@ -155,12 +171,12 @@ describe('PostgresDatabase', (): void => {
     await db.addUser(testUser);
 
     expectQueryAndValues(
-      4,
       1,
-      3,
+      1,
       0,
-      /^insert into user_\s*\(username, hashVersion, salt, hash, admin, sectionId, meta\) values\s*\(\$1, \$2, \$3, \$4, \$5, \$6, \$7\)$/iu,
-      [testUser.username, testUser.hashVersion, testUser.salt, testUser.hash, testUser.admin, testUser.sectionId, JSON.stringify(testUser.meta)]
+      0,
+      /^insert into user_\s*\(username, hashVersion, salt, hash, admin, ownerId, meta\) values\s*\(\$1, \$2, \$3, \$4, \$5, \$6, \$7\)$/iu,
+      [testUser.username, testUser.hashVersion, testUser.salt, testUser.hash, testUser.admin, testUser.ownerId, JSON.stringify(testUser.meta)]
     );
   });
 
@@ -170,7 +186,7 @@ describe('PostgresDatabase', (): void => {
 
     await db.changeUsername(testUser.username, 'newUsername');
 
-    expectQueryAndValues(4, 1, 3, 0, /^update user_ set username=\$1 where username=\$2$/iu, ['newUsername', testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^update user_ set username=\$1 where username=\$2$/iu, ['newUsername', testUser.username]);
   });
 
   test('PostgresDatabase->updateHash updates hash.', async (): Promise<void> => {
@@ -179,7 +195,7 @@ describe('PostgresDatabase', (): void => {
 
     await db.updateHash(testUser.username, 'v2', 'newSalt', 'newHash');
 
-    expectQueryAndValues(4, 1, 3, 0, /^update user_ set hashVersion=\$1, salt=\$2, hash=\$3 where username=\$4$/iu, [
+    expectQueryAndValues(1, 1, 0, 0, /^update user_ set hashVersion=\$1, salt=\$2, hash=\$3 where username=\$4$/iu, [
       'v2',
       'newSalt',
       'newHash',
@@ -193,7 +209,7 @@ describe('PostgresDatabase', (): void => {
 
     await db.makeUserAdmin(testUser.username);
 
-    expectQueryAndValues(4, 1, 3, 0, /^update user_ set admin=\$1 where username=\$2$/iu, [true, testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^update user_ set admin=\$1 where username=\$2$/iu, [true, testUser.username]);
   });
 
   test('PostgresDatabase->makeUserNormalUser makes user to normal user.', async (): Promise<void> => {
@@ -202,16 +218,16 @@ describe('PostgresDatabase', (): void => {
 
     await db.makeUserNormalUser(testUser.username);
 
-    expectQueryAndValues(4, 1, 3, 0, /^update user_ set admin=\$1 where username=\$2$/iu, [false, testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^update user_ set admin=\$1 where username=\$2$/iu, [false, testUser.username]);
   });
 
-  test('PostgresDatabase->modifyMeta modifies meta.', async (): Promise<void> => {
+  test('PostgresDatabase->modifyUserMeta modifies meta.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
 
-    await db.modifyMeta(testUser.username, { k: 'v' });
+    await db.modifyUserMeta(testUser.username, { k: 'v' });
 
-    expectQueryAndValues(4, 1, 3, 0, /^update user_ set meta=\$1 where username=\$2$/iu, ['{"k":"v"}', testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^update user_ set meta=\$1 where username=\$2$/iu, ['{"k":"v"}', testUser.username]);
   });
 
   test('PostgresDatabase->removeUser removes User.', async (): Promise<void> => {
@@ -220,7 +236,7 @@ describe('PostgresDatabase', (): void => {
 
     await db.removeUser(testUser.username);
 
-    expectQueryAndValues(4, 1, 3, 0, /^delete from user_ where username=\$1$/iu, [testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^delete from user_ where username=\$1$/iu, [testUser.username]);
   });
 
   test('PostgresDatabase->getUser gets User.', async (): Promise<void> => {
@@ -233,14 +249,34 @@ describe('PostgresDatabase', (): void => {
     expect(user).toEqual(testUser);
   });
 
+  test('PostgresDatabase->userExists returns true if user exists.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from user_ where username=\$1$/iu, [testUser.username]).then([testUser]);
+
+    const exists = await db.userExists(testUser.username);
+
+    expect(exists).toBe(true);
+  });
+
+  test('PostgresDatabase->userExists returns false if user does not exist.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from user_ where username=\$1$/iu, [testUser.username]).then();
+
+    const exists = await db.userExists(testUser.username);
+
+    expect(exists).toBe(false);
+  });
+
   test('PostgresDatabase->addJwtKeys adds keys.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
 
     await db.addJwtKeys('key1', 'key2');
 
-    expectQueryAndValues(5, 2, 3, 0, /^insert into jwtKey\s*\(key\) values\s*\(\$1\)$/iu, ['key1']);
-    expectQueryAndValues(5, 2, 4, 1, /^insert into jwtKey\s*\(key\) values\s*\(\$1\)$/iu, ['key2']);
+    expectQueryAndValues(2, 2, 0, 0, /^insert into jwtKey\s*\(key\) values\s*\(\$1\)$/iu, ['key1']);
+    expectQueryAndValues(2, 2, 1, 1, /^insert into jwtKey\s*\(key\) values\s*\(\$1\)$/iu, ['key2']);
   });
 
   test('PostgresDatabase->getJwtKeys gets keys.', async (): Promise<void> => {
@@ -260,7 +296,7 @@ describe('PostgresDatabase', (): void => {
 
     await db.countLoginAttempt(testUser.username);
 
-    expectQueryAndValues(4, 1, 3, 0, /^insert into failedLoginAttempts\s*\(username, attempts\) values\s*\(\$1, \$2\)$/iu, [testUser.username, 1]);
+    expectQueryAndValues(1, 1, 0, 0, /^insert into failedLoginAttempts\s*\(username, attempts\) values\s*\(\$1, \$2\)$/iu, [testUser.username, 1]);
   });
 
   test('PostgresDatabase->countFailedLoginAttempts increasing attempts in existing entity.', async (): Promise<void> => {
@@ -270,7 +306,7 @@ describe('PostgresDatabase', (): void => {
 
     await db.countLoginAttempt(testUser.username);
 
-    expectQueryAndValues(4, 1, 3, 0, /^update failedLoginAttempts set attempts=\$1 where username=\$2$/iu, [2, testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^update failedLoginAttempts set attempts=\$1 where username=\$2$/iu, [2, testUser.username]);
   });
 
   test('PostgresDatabase->getLoginAttempts gets attempts.', async (): Promise<void> => {
@@ -289,6 +325,98 @@ describe('PostgresDatabase', (): void => {
 
     await db.removeLoginAttempts(testUser.username);
 
-    expectQueryAndValues(4, 1, 3, 0, /^delete from failedLoginAttempts where username=\$1$/iu, [testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^delete from failedLoginAttempts where username=\$1$/iu, [testUser.username]);
+  });
+
+  test('PostgresDatabase->addFile adds File.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+
+    await db.addFile(testFile);
+
+    expectQueryAndValues(1, 1, 0, 0, /^insert into file\s*\(path, owner, realName, meta\) values\s*\(\$1, \$2, \$3, \$4\)$/iu, [
+      testFile.path,
+      testFile.owner,
+      testFile.realName,
+      JSON.stringify(testUser.meta)
+    ]);
+  });
+
+  test('PostgresDatabase->moveFile changes path, keeping owner.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+
+    await db.moveFile(testFile.path, 'newPath');
+
+    expectQueryAndValues(1, 1, 0, 0, /^update file set path=\$1 where path=\$2$/iu, ['newPath', testFile.path]);
+  });
+
+  test('PostgresDatabase->moveFile changes path, also changing owner.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+
+    await db.moveFile(testFile.path, 'newPath', 'newOwner');
+
+    expectQueryAndValues(1, 1, 0, 0, /^update file set path=\$1, owner=\$2 where path=\$3$/iu, ['newPath', 'newOwner', testFile.path]);
+  });
+
+  test('PostgresDatabase->modifyFileMeta modifies meta.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+
+    await db.modifyFileMeta(testFile.path, { testProp: 'value2' });
+
+    expectQueryAndValues(1, 1, 0, 0, /^update file set meta=\$1 where path=\$2$/iu, [JSON.stringify({ testProp: 'value2' }), testFile.path]);
+  });
+
+  test('PostgresDatabase->removeFile removes file.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+
+    await db.removeFile(testFile.path);
+
+    expectQueryAndValues(1, 1, 0, 0, /^delete from file where path=\$1$/iu, [testFile.path]);
+  });
+
+  test('PostgresDatabase->getFile gets File.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from file where path=\$1$/iu, [testFile.path]).then([testFile]);
+
+    const file = await db.getFile(testFile.path);
+
+    expect(file).toEqual(testFile);
+  });
+
+  test('PostgresDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from file where path like \$1$/iu, ['test/%']).then([testFile, { ...testFile, path: 'test/path2' }]);
+
+    const files = await db.listFilesInFolder('test');
+
+    expect(files.length).toBe(2);
+    expect(files?.at(0)).toBe('test/path');
+    expect(files?.at(1)).toBe('test/path2');
+  });
+
+  test('PostgresDatabase->fileExists returns true if file exists.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from file where path=\$1$/iu, [testFile.path]).then([testFile]);
+
+    const exists = await db.fileExists(testFile.path);
+
+    expect(exists).toBe(true);
+  });
+
+  test('PostgresDatabase->fileExists returns false if file does not exist.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from file where path=\$1$/iu, [testFile.path]).then();
+
+    const exists = await db.fileExists(testFile.path);
+
+    expect(exists).toBe(false);
   });
 });

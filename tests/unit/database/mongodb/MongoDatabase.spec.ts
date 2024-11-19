@@ -1,5 +1,6 @@
 import { MongoDatabase } from '@/database/mongodb/MongoDatabase';
 import User from '@/types/User';
+import File from '@/types/File';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
@@ -8,6 +9,9 @@ let uri = '';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const UserModel = new MongoDatabase('').getConf()[1];
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const FileModel = new MongoDatabase('').getConf()[4];
 
 describe('MongoDatabase', (): void => {
   beforeEach(async (): Promise<void> => {
@@ -25,7 +29,14 @@ describe('MongoDatabase', (): void => {
     salt: 'testSalt',
     hash: 'testHash',
     admin: false,
-    sectionId: 'testSectionId',
+    ownerId: 'testOwnerId',
+    meta: { testProp: 'testValue' }
+  };
+
+  const testFile = {
+    path: 'test/path',
+    owner: 'testOwner',
+    realName: 'testRealName',
     meta: { testProp: 'testValue' }
   };
 
@@ -35,7 +46,7 @@ describe('MongoDatabase', (): void => {
     expect(db.getConf()[1].schema.obj.hashVersion).toEqual({ type: String, default: '' });
     expect(db.getConf()[1].schema.obj.salt).toEqual({ type: String, default: '' });
     expect(db.getConf()[1].schema.obj.hash).toEqual({ type: String, default: '' });
-    expect(db.getConf()[1].schema.obj.sectionId).toEqual({ type: String, default: '' });
+    expect(db.getConf()[1].schema.obj.ownerId).toEqual({ type: String, default: '' });
     expect(db.getConf()[1].schema.obj.admin).toEqual({ type: Boolean, default: false });
     expect(db.getConf()[1].schema.obj.meta).toEqual(Object);
   };
@@ -45,10 +56,18 @@ describe('MongoDatabase', (): void => {
     expect(db.getConf()[2].schema.obj.key).toEqual({ type: String, default: '' });
   };
 
-  const expectLockModelAndSchema = function (db: MongoDatabase): void {
+  const expectFailedLoginAttemptsModelAndSchema = function (db: MongoDatabase): void {
     expect(db.getConf()[3].modelName).toBe('FailedLoginAttempts');
     expect(db.getConf()[3].schema.obj.username).toEqual({ type: String, default: '' });
     expect(db.getConf()[3].schema.obj.attempts).toEqual({ type: Number, default: 0 });
+  };
+
+  const expectFileModelAndSchema = function (db: MongoDatabase): void {
+    expect(db.getConf()[4].modelName).toBe('File');
+    expect(db.getConf()[4].schema.obj.path).toEqual({ type: String, default: '' });
+    expect(db.getConf()[4].schema.obj.owner).toEqual({ type: String, default: '' });
+    expect(db.getConf()[4].schema.obj.realName).toEqual({ type: String, default: '' });
+    expect(db.getConf()[4].schema.obj.meta).toEqual(Object);
   };
 
   const prepareDbForUser = async function (user?: User): Promise<[MongoDatabase, typeof UserModel]> {
@@ -60,6 +79,15 @@ describe('MongoDatabase', (): void => {
     return [db, User];
   };
 
+  const prepareDbForFile = async function (file?: File): Promise<[MongoDatabase, typeof FileModel]> {
+    const db = new MongoDatabase(`${uri}db`);
+    await db.open();
+    const File = db.getConf()[4];
+    await db.addFile(file ?? testFile);
+
+    return [db, File];
+  };
+
   test('MongoDatabase->constructor works correctly.', async (): Promise<void> => {
     const url = 'mongodb://localhost:27017/db';
 
@@ -68,7 +96,8 @@ describe('MongoDatabase', (): void => {
     expect(db.getConf()[0]).toBe(url);
     expectUserModelAndSchema(db);
     expectJwtKeyModelAndSchema(db);
-    expectLockModelAndSchema(db);
+    expectFailedLoginAttemptsModelAndSchema(db);
+    expectFileModelAndSchema(db);
   });
 
   test('MongoDatabase->open connects to db.', async (): Promise<void> => {
@@ -105,7 +134,7 @@ describe('MongoDatabase', (): void => {
     expect(user?.salt).toBe(testUser.salt);
     expect(user?.hash).toBe(testUser.hash);
     expect(user?.admin).toBe(testUser.admin);
-    expect(user?.sectionId).toBe(testUser.sectionId);
+    expect(user?.ownerId).toBe(testUser.ownerId);
     expect(user?.meta).toEqual(testUser.meta);
   });
 
@@ -148,10 +177,10 @@ describe('MongoDatabase', (): void => {
     expect(user?.admin).toBe(false);
   });
 
-  test('MongoDatabase->modifyUser modifies meta.', async (): Promise<void> => {
+  test('MongoDatabase->modifyUserMeta modifies meta.', async (): Promise<void> => {
     const [db, User] = await prepareDbForUser();
 
-    await db.modifyMeta(testUser.username, { testProp2: 'testValue2', testProp: undefined });
+    await db.modifyUserMeta(testUser.username, { testProp2: 'testValue2', testProp: undefined });
 
     const user = await User.findOne({ username: testUser.username });
     expect(user?.meta?.testProp).toBeNull();
@@ -175,6 +204,24 @@ describe('MongoDatabase', (): void => {
     const user = await db.getUser(testUser.username);
 
     expect(user?.username).toBe(testUser.username);
+  });
+
+  test('MongoDatabase->userExists returns true if user exists.', async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [db, _] = await prepareDbForUser();
+
+    const exists = await db.userExists(testUser.username);
+
+    expect(exists).toBe(true);
+  });
+
+  test('MongoDatabase->userExists returns false if user does not exist.', async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [db, _] = await prepareDbForUser();
+
+    const exists = await db.userExists('other');
+
+    expect(exists).toBe(false);
   });
 
   test('MongoDatabase->addJwtKeys adds jwt keys.', async (): Promise<void> => {
@@ -253,6 +300,105 @@ describe('MongoDatabase', (): void => {
     expect((await FailedLoginAttempts.findOne({ username: 'other' }))?.username).toBe('other');
   });
 
+  test('MongoDatabase->addFile adds File.', async (): Promise<void> => {
+    const db = new MongoDatabase(`${uri}db`);
+    await db.open();
+    const File = db.getConf()[4];
+
+    await db.addFile(testFile);
+
+    const file = await File.findOne({ path: testFile.path });
+    expect(file?.path).toBe(testFile.path);
+    expect(file?.owner).toBe(testFile.owner);
+    expect(file?.realName).toBe(testFile.realName);
+    expect(file?.meta).toEqual(testFile.meta);
+  });
+
+  test('MongoDatabase->moveFile changes path, keeping the owner.', async (): Promise<void> => {
+    const [db, File] = await prepareDbForFile();
+
+    await db.moveFile(testFile.path, 'newPath');
+
+    const file = await File.findOne({ path: 'newPath' });
+    expect(file?.path).toBe('newPath');
+    expect(file?.owner).toBe(testFile.owner);
+    expect(await File.findOne({ path: testFile.path })).toBeNull();
+  });
+
+  test('MongoDatabase->moveFile changes path, also changing the owner.', async (): Promise<void> => {
+    const [db, File] = await prepareDbForFile();
+
+    await db.moveFile(testFile.path, 'newPath', 'newOwner');
+
+    const file = await File.findOne({ path: 'newPath' });
+    expect(file?.path).toBe('newPath');
+    expect(file?.owner).toBe('newOwner');
+    expect(await File.findOne({ path: testFile.path })).toBeNull();
+  });
+
+  test('MongoDatabase->modifyFileMeta modifies meta.', async (): Promise<void> => {
+    const [db, File] = await prepareDbForFile();
+
+    await db.modifyFileMeta(testFile.path, { testProp2: 'testValue2', testProp: undefined });
+
+    const file = await File.findOne({ path: testFile.path });
+    expect(file?.meta?.testProp).toBeNull();
+    expect(file?.meta?.testProp2).toBe('testValue2');
+  });
+
+  test('MongoDatabase->removeFile removes file.', async (): Promise<void> => {
+    const [db, File] = await prepareDbForFile();
+    await db.addFile({ ...testFile, path: 'other' });
+
+    await db.removeFile(testFile.path);
+
+    expect(await File.findOne({ path: testFile.path })).toBeNull();
+    expect((await File.findOne({ path: 'other' }))?.path).toBe('other');
+  });
+
+  test('MongoDatabase->getFile gets file.', async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [db, _] = await prepareDbForFile();
+
+    const file = await db.getFile(testFile.path);
+
+    expect(file?.path).toBe(testFile.path);
+    expect(file?.owner).toBe(testFile.owner);
+    expect(file?.realName).toBe(testFile.realName);
+    expect(file?.meta).toEqual(testFile.meta);
+  });
+
+  test('MongoDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [db, _] = await prepareDbForFile();
+    await db.addFile({ ...testFile, path: 'test/path2' });
+    await db.addFile({ ...testFile, path: 'other/path' });
+
+    const files = await db.listFilesInFolder('test/');
+
+    expect(files.length).toBe(2);
+    expect(files?.at(0)).toBe('test/path');
+    expect(files?.at(1)).toBe('test/path2');
+  });
+
+  test('MongoDatabase->fileExists returns true if file exists.', async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [db, _] = await prepareDbForFile();
+
+    const exists = await db.fileExists(testFile.path);
+
+    expect(exists).toBe(true);
+  });
+
+  test('MongoDatabase->fileExists returns false if file does not exist.', async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [db, _] = await prepareDbForFile();
+
+    const exists = await db.fileExists('other');
+
+    expect(exists).toBe(false);
+  });
+
   test('MongoDatabase also works with authentication.', async (): Promise<void> => {
     await mongod?.stop();
     const mongodWithAuth = await MongoMemoryServer.create({
@@ -269,7 +415,7 @@ describe('MongoDatabase', (): void => {
     expect(db.getConf()[0]).toBe(url);
     expectUserModelAndSchema(db);
     expectJwtKeyModelAndSchema(db);
-    expectLockModelAndSchema(db);
+    expectFailedLoginAttemptsModelAndSchema(db);
     await mongodWithAuth.stop();
   });
 });
