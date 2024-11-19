@@ -1,6 +1,6 @@
 import Storage from '@/types/Storage';
 import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
-import { getObjectBody, putObject, deleteObject, listObjects, exists } from './s3StorageHelper';
+import { getObjectBody, putObject, deleteObject, copyObject } from './s3StorageHelper';
 
 class S3Storage implements Storage {
   private readonly client: S3Client;
@@ -37,13 +37,9 @@ class S3Storage implements Storage {
     await deleteObject(this.client, this.bucket, name, false);
   }
 
-  public async list(prefix: string): Promise<string[]> {
-    return await listObjects(this.client, this.bucket, prefix);
-  }
-
-  public async exists(name: string): Promise<boolean> {
-    return await exists(this.client, this.bucket, name);
+  public async copyFile(name: string, copyName: string): Promise<void> {
+    await copyObject(this.client, this.bucket, name, copyName);
   }
 }
 
-export { S3Storage, exists };
+export { S3Storage };

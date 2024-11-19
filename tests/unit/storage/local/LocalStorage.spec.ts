@@ -1,21 +1,31 @@
 import fs from 'fs/promises';
-import { LocalStorage, exists } from '@/storage/local/LocalStorage';
+import { LocalStorage } from '@/storage/local/LocalStorage';
 import mockFS from 'mock-fs';
 
 const wrapper = new LocalStorage('/base');
 
-describe('LocalFSWrapper', (): void => {
+const exists = async function (path: string): Promise<boolean> {
+  try {
+    await fs.stat(path);
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+describe('LocalStorage', (): void => {
   afterEach(async (): Promise<void> => {
     mockFS.restore();
   });
 
-  test('LocalFSWrapper->constructor created path correctly.', async (): Promise<void> => {
+  test('LocalStorage->constructor created path correctly.', async (): Promise<void> => {
     const newWrapper = new LocalStorage('////test///');
 
     expect(newWrapper.getDirectory()).toBe('/test');
   });
 
-  test('LocalFSWrapper->writeFile writes file.', async (): Promise<void> => {
+  test('LocalStorage->writeFile writes file.', async (): Promise<void> => {
     mockFS({ '/base': {} });
 
     await wrapper.writeFile('file', 'content', 'utf8');
@@ -24,7 +34,7 @@ describe('LocalFSWrapper', (): void => {
     expect(await fs.readFile('/base/file', 'utf8')).toBe('content');
   });
 
-  test('LocalFSWrapper->readFile reads file.', async (): Promise<void> => {
+  test('LocalStorage->readFile reads file.', async (): Promise<void> => {
     mockFS({
       '/base': {
         file: 'content'
@@ -36,7 +46,7 @@ describe('LocalFSWrapper', (): void => {
     expect(content).toBe('content');
   });
 
-  test('LocalFSWrapper->unlink deletes file.', async (): Promise<void> => {
+  test('LocalStorage->unlink deletes file.', async (): Promise<void> => {
     mockFS({
       '/base': {
         file: '',
@@ -50,31 +60,19 @@ describe('LocalFSWrapper', (): void => {
     expect(await exists('/base/file')).toBe(false);
   });
 
-  test('LocalFSWrapper->listObjects lists objects with prefix.', async (): Promise<void> => {
+  test('LocalStorage->copyFile copies file.', async (): Promise<void> => {
     mockFS({
       '/base': {
-        'test~1': '',
-        'test~2': '',
-        'test~3': ''
+        file: 'contentFile',
+        other: 'contentOther'
       }
     });
 
-    const items = await wrapper.list('test~');
+    await wrapper.copyFile('file', 'fileCopy');
 
-    expect(items).toEqual(['test~1', 'test~2', 'test~3']);
-  });
-
-  test('LocalFSWrapper->exists returns correct boolean.', async (): Promise<void> => {
-    mockFS({
-      '/base': {
-        flle: ''
-      }
-    });
-
-    const result1 = await wrapper.exists('file');
-    const result2 = await wrapper.exists('file2');
-
-    expect(result1).toBe(await exists('/base/file'));
-    expect(result2).toBe(await exists('/base/file2'));
+    expect(await exists('/base/file')).toBe(true);
+    expect(await exists('/base/fileCopy')).toBe(true);
+    expect(await fs.readFile('/base/file', 'utf8')).toBe('contentFile');
+    expect(await fs.readFile('/base/fileCopy', 'utf8')).toBe('contentFile');
   });
 });

@@ -18,25 +18,20 @@ jest.mock('@/storage/s3/s3StorageHelper', () => {
       const Key = directory ? `${path}/` : path;
       delete mocked_s3[`${Bucket}|${Key}`];
     },
-    async listObjects(client: S3Client, Bucket: string, prefix: string): Promise<string[]> {
-      return Object.keys(mocked_s3)
-        .filter((key) => key.startsWith(`${Bucket}|${prefix}`))
-        .map((key) => key.substring(Bucket.length + 1));
-    },
-    async exists(client: S3Client, Bucket: string, Key: string): Promise<boolean> {
-      return !!mocked_s3[`${Bucket}|${Key}`];
+    async copyObject(client: S3Client, Bucket: string, copySource: string, key: string): Promise<void> {
+      mocked_s3[`${Bucket}|${key}`] = mocked_s3[`${Bucket}|${copySource}`];
     }
   };
 });
 
 const wrapper = new S3Storage('de', 'accessId', 'secret', 'bucket');
 
-describe('S3FSWrapper', (): void => {
+describe('S3Storage', (): void => {
   afterEach(async (): Promise<void> => {
     mocked_s3 = {};
   });
 
-  test('S3FSWrapper->constructor creates client and sets bucket correctly, without endpoint.', async (): Promise<void> => {
+  test('S3Storage->constructor creates client and sets bucket correctly, without endpoint.', async (): Promise<void> => {
     const newWrapper = new S3Storage('de', 'accessId', 'secret', 'bucket');
 
     const [client, bucket] = newWrapper.getConf();
@@ -48,7 +43,7 @@ describe('S3FSWrapper', (): void => {
     expect(bucket).toBe('bucket');
   });
 
-  test('S3FSWrapper->constructor creates client and sets bucket correctly, with endpoint.', async (): Promise<void> => {
+  test('S3Storage->constructor creates client and sets bucket correctly, with endpoint.', async (): Promise<void> => {
     const endpoint = 'https://testEndpoint.com/buckets/';
 
     const newWrapper = new S3Storage('de', 'accessId', 'secret', 'bucket', endpoint);
@@ -69,13 +64,13 @@ describe('S3FSWrapper', (): void => {
     expect(bucket).toBe('bucket');
   });
 
-  test('S3FSWrapper->writeFile creates object.', async (): Promise<void> => {
+  test('S3Storage->writeFile creates object.', async (): Promise<void> => {
     await wrapper.writeFile('file', 'content', 'utf8');
 
     expect(mocked_s3['bucket|file']).toEqual(Buffer.from('content', 'utf8'));
   });
 
-  test('S3FSWrapper->readFile reads file.', async (): Promise<void> => {
+  test('S3Storage->readFile reads file.', async (): Promise<void> => {
     mocked_s3['bucket|file'] = Buffer.from('content', 'utf8');
 
     const content = await wrapper.readFile('file', 'utf8');
@@ -83,7 +78,7 @@ describe('S3FSWrapper', (): void => {
     expect(content).toBe('content');
   });
 
-  test('S3FSWrapper->unlink deletes object.', async (): Promise<void> => {
+  test('S3Storage->unlink deletes object.', async (): Promise<void> => {
     mocked_s3['bucket|file'] = Buffer.from('');
     mocked_s3['bucket|file2'] = Buffer.from('');
 
@@ -93,23 +88,13 @@ describe('S3FSWrapper', (): void => {
     expect(mocked_s3['bucket|file2']).toEqual(Buffer.from(''));
   });
 
-  test('S3FSWrapper->listObjects lists objects with prefix.', async (): Promise<void> => {
-    mocked_s3['bucket|test~1'] = Buffer.from('');
-    mocked_s3['bucket|test~2'] = Buffer.from('');
-    mocked_s3['bucket|test~3'] = Buffer.from('');
+  test('S3Storage->copyFile copies file.', async (): Promise<void> => {
+    mocked_s3['bucket|file'] = Buffer.from('testContent', 'utf8');
+    mocked_s3['bucket|other'] = Buffer.from('');
 
-    const items = await wrapper.list('test~');
+    await wrapper.copyFile('file', 'fileCopy');
 
-    expect(items).toEqual(['test~1', 'test~2', 'test~3']);
-  });
-
-  test('S3FSWrapper->exists returns correct value for the check.', async (): Promise<void> => {
-    mocked_s3['bucket|file'] = Buffer.from('');
-
-    const result1 = await wrapper.exists('file');
-    const result2 = await wrapper.exists('nope');
-
-    expect(result1).toBe(true);
-    expect(result2).toBe(false);
+    expect(mocked_s3['bucket|file']).toEqual(Buffer.from('testContent', 'utf8'));
+    expect(mocked_s3['bucket|fileCopy']).toEqual(Buffer.from('testContent', 'utf8'));
   });
 });

@@ -1,6 +1,5 @@
 import Storage from '@/types/Storage';
 import fs from 'fs/promises';
-import { exists } from './localStorageHelper';
 
 class LocalStorage implements Storage {
   private readonly directory: string;
@@ -29,14 +28,9 @@ class LocalStorage implements Storage {
     await fs.unlink(this.resolvePath(name));
   }
 
-  public async list(prefix: string): Promise<string[]> {
-    const items = await fs.readdir(this.directory);
-    return items.filter((item) => item.startsWith(prefix));
-  }
-
-  public async exists(name: string): Promise<boolean> {
-    return await exists(this.resolvePath(name));
+  public async copyFile(name: string, copyName: string): Promise<void> {
+    await fs.copyFile(this.resolvePath(name), this.resolvePath(copyName));
   }
 }
 
-export { LocalStorage, exists };
+export { LocalStorage };
