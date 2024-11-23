@@ -35,6 +35,8 @@ describe('MongoDatabase', (): void => {
 
   const testFile = {
     path: 'test/path',
+    folder: 'test',
+    file: 'path',
     owner: 'testOwner',
     realName: 'testRealName',
     meta: { testProp: 'testValue' }
@@ -380,15 +382,14 @@ describe('MongoDatabase', (): void => {
   test('MongoDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [db, _] = await prepareDbForFile();
-    await db.addFile({ ...testFile, path: 'test/path2' });
-    await db.addFile({ ...testFile, path: 'test/sub/sub/subSub' });
-    await db.addFile({ ...testFile, path: 'other/path' });
+    await db.addFile({ ...testFile, path: 'test/path3', file: 'path3' });
+    await db.addFile({ ...testFile, path: 'test/path2', file: 'path2' });
+    await db.addFile({ ...testFile, path: 'test/sub/subSub', folder: 'test/sub', file: 'subSub' });
+    await db.addFile({ ...testFile, path: 'other/path', folder: 'other' });
 
-    const files = await db.listFilesInFolder('test/');
+    const files = await db.listFilesInFolder('test');
 
-    expect(files.length).toBe(2);
-    expect(files?.at(0)).toBe('test/path');
-    expect(files?.at(1)).toBe('test/path2');
+    expect(files).toEqual(['path', 'path2', 'path3']);
   });
 
   test('MongoDatabase->fileExists returns true if file exists.', async (): Promise<void> => {

@@ -119,10 +119,12 @@ class MemoryDatabase implements Database {
     return tables.file[path] ?? null;
   }
 
-  public async listFilesInFolder(path: string): Promise<string[]> {
-    path = path.replace(/\/*$/gu, '');
-    const folderRegex = new RegExp(`^${path}/[^/]+$`, 'u');
-    return Object.keys(tables.file).filter((file) => folderRegex.test(file));
+  public async listFilesInFolder(folder: string): Promise<string[]> {
+    folder = folder.replace(/\/*$/gu, '');
+    return Object.values(tables.file)
+      .filter((file) => file.folder === folder)
+      .map((file) => file.file)
+      .sort();
   }
 
   public async fileExists(path: string): Promise<boolean> {

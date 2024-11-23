@@ -157,10 +157,10 @@ interface Database {
 
   /**
    * lists all files (paths) into the given folder
-   * @param path - the path of the folder to lists the files in
-   * @returns Fulfils with string array upon success, one string item per file path
+   * @param folder - the path of the folder to lists the files in
+   * @returns Fulfils with string array upon success, one string item per filename
    */
-  listFilesInFolder: (path: string) => Promise<string[]>;
+  listFilesInFolder: (folder: string) => Promise<string[]>;
 
   /**
    * Checks if a file dataset exists with the given path

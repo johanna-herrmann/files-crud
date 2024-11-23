@@ -88,6 +88,8 @@ describe('PostgresDatabase', (): void => {
 
   const testFile = {
     path: 'test/path',
+    folder: 'test',
+    file: 'path',
     owner: 'testOwner',
     realName: 'testRealName',
     meta: { testProp: 'testValue' }
@@ -401,13 +403,11 @@ describe('PostgresDatabase', (): void => {
   test('PostgresDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
-    when(/^select path from file where path ~ \$1$/iu, ['^test/[^/]+$']).then([{ path: testFile.path }, { path: 'test/path2' }]);
+    when(/^select file from file where folder=\$1 order by file$/iu, ['test']).then([{ file: testFile.file }, { file: 'path2' }]);
 
     const files = await db.listFilesInFolder('test');
 
-    expect(files.length).toBe(2);
-    expect(files?.at(0)).toBe('test/path');
-    expect(files?.at(1)).toBe('test/path2');
+    expect(files).toEqual(['path', 'path2']);
   });
 
   test('PostgresDatabase->fileExists returns true if file exists.', async (): Promise<void> => {

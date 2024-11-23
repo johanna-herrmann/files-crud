@@ -188,15 +188,15 @@ class PostgresDatabase implements Database {
     return result.rows[0];
   }
 
-  public async listFilesInFolder(path: string): Promise<string[]> {
-    path = path.replace(/\/*$/gu, '');
-    const query = 'SELECT path FROM file WHERE path ~ $1';
-    const values = [`^${path}/[^/]+$`];
-    const result = await readingQuery<{ path: string }>(this.client, query, values);
+  public async listFilesInFolder(folder: string): Promise<string[]> {
+    folder = folder.replace(/\/*$/gu, '');
+    const query = 'SELECT file FROM file WHERE folder=$1 ORDER BY file';
+    const values = [folder];
+    const result = await readingQuery<{ file: string }>(this.client, query, values);
     if (!result || result.rowCount === 0) {
       return [];
     }
-    return result.rows.map((file) => file.path);
+    return result.rows.map((file) => file.file);
   }
 
   public async fileExists(path: string): Promise<boolean> {

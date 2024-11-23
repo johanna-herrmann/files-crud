@@ -13,6 +13,8 @@ describe('MemoryDatabase', (): void => {
 
   const testFile = {
     path: 'test/path',
+    folder: 'test',
+    file: 'path',
     owner: 'testOwner',
     realName: 'testRealName',
     meta: { testProp: 'testValue' }
@@ -275,16 +277,14 @@ describe('MemoryDatabase', (): void => {
 
   test('MemoryDatabase->listFilesInFolder lists files in folder.', async (): Promise<void> => {
     const db = new MemoryDatabase();
+    await db.addFile({ ...testFile, path: 'test/path2', file: 'path2' });
     await db.addFile(testFile);
-    await db.addFile({ ...testFile, path: 'test/path2' });
-    await db.addFile({ ...testFile, path: 'test/sub/subSub' });
-    await db.addFile({ ...testFile, path: 'other' });
+    await db.addFile({ ...testFile, path: 'test/sub/subSub', folder: 'test/sub', file: 'subSub' });
+    await db.addFile({ ...testFile, path: 'other', folder: '' });
 
-    const files = await db.listFilesInFolder('test/');
+    const files = await db.listFilesInFolder('test');
 
-    expect(files.length).toBe(2);
-    expect(files[0]).toBe('test/path');
-    expect(files[1]).toBe('test/path2');
+    expect(files).toEqual(['path', 'path2']);
   });
 
   test('MemoryDatabase->fileExists returns true if file exists.', async (): Promise<void> => {
