@@ -276,7 +276,7 @@ describe('MongoDatabase', (): void => {
     expect(failedLoginAttempts?.attempts).toBe(2);
   });
 
-  test('MongoDatabase->getLoginAttempts gets attempts for username.', async (): Promise<void> => {
+  test('MongoDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     await db.countLoginAttempt(testUser.username);
@@ -285,6 +285,15 @@ describe('MongoDatabase', (): void => {
     const attempts = await db.getLoginAttempts(testUser.username);
 
     expect(attempts).toBe(2);
+  });
+
+  test('MongoDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
+    const db = new MongoDatabase(`${uri}db`);
+    await db.open();
+
+    const attempts = await db.getLoginAttempts(testUser.username);
+
+    expect(attempts).toBe(0);
   });
 
   test('MongoDatabase->removeLoginAttempts removes item.', async (): Promise<void> => {

@@ -309,7 +309,7 @@ describe('PostgresDatabase', (): void => {
     expectQueryAndValues(1, 1, 0, 0, /^update failedLoginAttempts set attempts=\$1 where username=\$2$/iu, [2, testUser.username]);
   });
 
-  test('PostgresDatabase->getLoginAttempts gets attempts.', async (): Promise<void> => {
+  test('PostgresDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
     when(/^select \* from failedLoginAttempts where username=\$1$/iu, [testUser.username]).then([{ username: testUser.username, attempts: 1 }]);
@@ -317,6 +317,16 @@ describe('PostgresDatabase', (): void => {
     const attempts = await db.getLoginAttempts(testUser.username);
 
     expect(attempts).toBe(1);
+  });
+
+  test('PostgresDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from failedLoginAttempts where username=\$1$/iu, [testUser.username]).then([]);
+
+    const attempts = await db.getLoginAttempts(testUser.username);
+
+    expect(attempts).toBe(0);
   });
 
   test('PostgresDatabase->removeLoginAttempts removes entity.', async (): Promise<void> => {

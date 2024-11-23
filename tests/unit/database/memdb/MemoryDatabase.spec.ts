@@ -177,7 +177,7 @@ describe('MemoryDatabase', (): void => {
     expect(tables.failedLoginAttempts[testUser.username]?.attempts).toBe(2);
   });
 
-  test('MemoryDatabase->getLoginAttempts returns attempts of existing item.', async (): Promise<void> => {
+  test('MemoryDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new MemoryDatabase();
     await db.countLoginAttempt(testUser.username);
 
@@ -186,7 +186,7 @@ describe('MemoryDatabase', (): void => {
     expect(attempts).toBe(1);
   });
 
-  test('MemoryDatabase->getLoginAttempts returns 0 if no item exists.', async (): Promise<void> => {
+  test('MemoryDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
     const db = new MemoryDatabase();
 
     const attempts = await db.getLoginAttempts(testUser.username);
