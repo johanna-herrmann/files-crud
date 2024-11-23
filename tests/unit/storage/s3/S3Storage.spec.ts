@@ -64,6 +64,20 @@ describe('S3Storage', (): void => {
     expect(bucket).toBe('bucket');
   });
 
+  test('S3Storage->constructor creates client and sets bucket correctly, with pathStyleForcing.', async (): Promise<void> => {
+    const endpoint = 'https://testEndpoint.com/buckets/';
+
+    const newWrapper = new S3Storage('de', 'accessId', 'secret', 'bucket', endpoint, true);
+
+    const [client, bucket] = newWrapper.getConf();
+    const credentials = await client.config.credentials();
+    expect(await client.config.region()).toBe('de');
+    expect(client.config.forcePathStyle).toBe(true);
+    expect(credentials.accessKeyId).toBe('accessId');
+    expect(credentials.secretAccessKey).toBe('secret');
+    expect(bucket).toBe('bucket');
+  });
+
   test('S3Storage->writeFile creates object.', async (): Promise<void> => {
     await wrapper.writeFile('file', 'content', 'utf8');
 

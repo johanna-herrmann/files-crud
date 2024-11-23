@@ -3,7 +3,7 @@ interface User {
   hashVersion: string;
   salt: string;
   hash: string;
-  sectionId: string;
+  ownerId: string;
   admin: boolean;
   meta?: Record<string, unknown>;
 }
