@@ -24,18 +24,12 @@ interface Storage {
   unlink: (name: string) => Promise<void>;
 
   /**
-   * List files/objects where name/key starts with the given prefix.
-   * @param prefix The prefix
-   * @returns Fulfils with string-array (list of filenames/keys) upon success
+   * Copies file or s3 objecz.
+   * @param name The name of the file or the key of the object to copy
+   * @param copyName The name or key of the copy
+   * @returns Fulfils with undefined upon success
    */
-  list: (prefix: string) => Promise<string[]>;
-
-  /**
-   * Checks if a file or S3 Object exists with the specified path or key.
-   * @param name The filename
-   * @returns Fulfils with boolean upon success, determining if the specified item exists
-   */
-  exists: (name: string) => Promise<boolean>;
+  copyFile: (name: string, copyName: string) => Promise<void>;
 }
 
 export default Storage;

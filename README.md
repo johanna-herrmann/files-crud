@@ -11,7 +11,7 @@ Written in Typescript
 * Supported Databases (for user accounts)
   * mongoDB
   * postgresql
-  * sqlite
+  * in-memory (for testing purposes)
 * Uses CRUD-based permissions, specified for different directories
 
 ## Features
