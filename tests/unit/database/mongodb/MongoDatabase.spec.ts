@@ -381,6 +381,7 @@ describe('MongoDatabase', (): void => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [db, _] = await prepareDbForFile();
     await db.addFile({ ...testFile, path: 'test/path2' });
+    await db.addFile({ ...testFile, path: 'test/sub/sub/subSub' });
     await db.addFile({ ...testFile, path: 'other/path' });
 
     const files = await db.listFilesInFolder('test/');

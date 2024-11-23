@@ -147,7 +147,7 @@ class MongoDatabase implements Database {
   public async listFilesInFolder(path: string): Promise<string[]> {
     path = path.replace(/\/*$/gu, '');
     const files = await this.File.where('path')
-      .regex(new RegExp(`^${path}/`, 'u'))
+      .regex(new RegExp(`^${path}/[^/]+$`, 'u'))
       .exec();
     return files.map((file) => file.path);
   }

@@ -277,6 +277,7 @@ describe('MemoryDatabase', (): void => {
     const db = new MemoryDatabase();
     await db.addFile(testFile);
     await db.addFile({ ...testFile, path: 'test/path2' });
+    await db.addFile({ ...testFile, path: 'test/sub/subSub' });
     await db.addFile({ ...testFile, path: 'other' });
 
     const files = await db.listFilesInFolder('test/');

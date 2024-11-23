@@ -121,7 +121,7 @@ class MemoryDatabase implements Database {
 
   public async listFilesInFolder(path: string): Promise<string[]> {
     path = path.replace(/\/*$/gu, '');
-    const folderRegex = new RegExp(`^${path}/`, 'u');
+    const folderRegex = new RegExp(`^${path}/[^/]+$`, 'u');
     return Object.keys(tables.file).filter((file) => folderRegex.test(file));
   }
 

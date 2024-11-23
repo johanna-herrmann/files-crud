@@ -401,7 +401,7 @@ describe('PostgresDatabase', (): void => {
   test('PostgresDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
-    when(/^select \* from file where path like \$1$/iu, ['test/%']).then([testFile, { ...testFile, path: 'test/path2' }]);
+    when(/^select path from file where path ~ \$1$/iu, ['^test/[^/]+$']).then([{ path: testFile.path }, { path: 'test/path2' }]);
 
     const files = await db.listFilesInFolder('test');
 

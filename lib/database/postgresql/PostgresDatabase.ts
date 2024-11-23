@@ -190,9 +190,9 @@ class PostgresDatabase implements Database {
 
   public async listFilesInFolder(path: string): Promise<string[]> {
     path = path.replace(/\/*$/gu, '');
-    const query = 'SELECT * FROM file WHERE path LIKE $1';
-    const values = [`${path}/%`];
-    const result = await readingQuery<File>(this.client, query, values);
+    const query = 'SELECT path FROM file WHERE path ~ $1';
+    const values = [`^${path}/[^/]+$`];
+    const result = await readingQuery<{ path: string }>(this.client, query, values);
     if (!result || result.rowCount === 0) {
       return [];
     }
