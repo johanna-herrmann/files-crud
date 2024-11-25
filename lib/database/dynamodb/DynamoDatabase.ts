@@ -1,0 +1,178 @@
+import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
+import { putItem, updateItem, deleteItem, loadItem, loadId, loadJwtKeys, loadFiles, itemExists } from './dynamoDbHelper';
+import Database from '@/types/Database';
+import File from '@/types/File';
+import User from '@/types/User';
+import FailedLoginAttempts from '@/types/FailedLoginAttempts';
+
+class DynamoDatabase implements Database {
+  private readonly config: DynamoDBClientConfig;
+  private readonly userTableName: string;
+  private readonly jwtKeyTableName: string;
+  private readonly failedLoginAttemptsTableName: string;
+  private readonly fileTableName: string;
+  private client: DynamoDBClient | null = null;
+
+  constructor(
+    region: string,
+    accessKeyId: string,
+    secretAccessKey: string,
+    userTableName: string,
+    jwtKeyTableName: string,
+    failedLoginAttemptsTableName: string,
+    fileTableName: string
+  ) {
+    this.config = {
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey
+      }
+    };
+    this.userTableName = userTableName;
+    this.jwtKeyTableName = jwtKeyTableName;
+    this.failedLoginAttemptsTableName = failedLoginAttemptsTableName;
+    this.fileTableName = fileTableName;
+  }
+
+  private ensureClient(): DynamoDBClient {
+    if (this.client === null) {
+      throw new Error('Client is null. Did not yet call open()? Did call close() already?');
+    }
+    return this.client;
+  }
+
+  public getConfig(): DynamoDBClientConfig {
+    return this.config;
+  }
+
+  public getTableNames(): [string, string, string, string] {
+    return [this.userTableName, this.jwtKeyTableName, this.failedLoginAttemptsTableName, this.fileTableName];
+  }
+
+  public getClient(): DynamoDBClient | null {
+    return this.client;
+  }
+
+  public async open(): Promise<void> {
+    this.client = new DynamoDBClient(this.config);
+  }
+
+  public async addUser(user: User): Promise<void> {
+    await putItem(this.ensureClient(), this.userTableName, user, true);
+  }
+
+  public async changeUsername(oldUsername: string, newUsername: string): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.userTableName, 'username', oldUsername, 'username-index');
+    await updateItem(this.ensureClient(), this.userTableName, 'id', id, { username: newUsername });
+  }
+
+  public async updateHash(username: string, hashVersion: string, salt: string, hash: string): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+    await updateItem(this.ensureClient(), this.userTableName, 'id', id, { hashVersion, salt, hash });
+  }
+
+  public async makeUserAdmin(username: string): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+    await updateItem(this.ensureClient(), this.userTableName, 'id', id, { admin: true });
+  }
+
+  public async makeUserNormalUser(username: string): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+    await updateItem(this.ensureClient(), this.userTableName, 'id', id, { admin: false });
+  }
+
+  public async modifyUserMeta(username: string, meta?: Record<string, unknown>): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+    await updateItem(this.ensureClient(), this.userTableName, 'id', id, { meta });
+  }
+
+  public async removeUser(username: string): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+    await deleteItem(this.ensureClient(), this.userTableName, 'id', id);
+  }
+
+  public async getUser(username: string): Promise<User | null> {
+    const item = await loadItem<User>(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+    return item ?? null;
+  }
+
+  public async userExists(username: string): Promise<boolean> {
+    return await itemExists(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+  }
+
+  public async addJwtKeys(...keys: string[]): Promise<void> {
+    for (const key of keys) {
+      await putItem(this.ensureClient(), this.jwtKeyTableName, { key });
+    }
+  }
+
+  public async getJwtKeys(): Promise<string[]> {
+    return await loadJwtKeys(this.ensureClient(), this.jwtKeyTableName);
+  }
+
+  public async countLoginAttempt(username: string): Promise<void> {
+    const item = await loadItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username);
+    if (!item) {
+      return await putItem(this.ensureClient(), this.failedLoginAttemptsTableName, { username, attempts: 1 });
+    }
+    const attempts = item as FailedLoginAttempts;
+    attempts.attempts++;
+    await updateItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username, { attempts: attempts.attempts });
+  }
+
+  public async getLoginAttempts(username: string): Promise<number> {
+    const item = await loadItem<FailedLoginAttempts>(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username);
+    if (!item) {
+      return 0;
+    }
+    const attempts = item;
+    return attempts.attempts;
+  }
+
+  public async removeLoginAttempts(username: string): Promise<void> {
+    await deleteItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username);
+  }
+
+  public async addFile(file: File): Promise<void> {
+    await putItem(this.ensureClient(), this.fileTableName, file, true);
+  }
+
+  public async moveFile(oldPath: string, newPath: string, owner?: string): Promise<void> {
+    const path = newPath;
+    const update = owner ? { path, owner } : { path };
+    const id = await loadId(this.ensureClient(), this.fileTableName, 'path', oldPath, 'path-index');
+    await updateItem(this.ensureClient(), this.fileTableName, 'id', id, update);
+  }
+
+  public async modifyFileMeta(path: string, meta?: Record<string, unknown>): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.fileTableName, 'path', path, 'path-index');
+    await updateItem(this.ensureClient(), this.fileTableName, 'id', id, { meta });
+  }
+
+  public async removeFile(path: string): Promise<void> {
+    const id = await loadId(this.ensureClient(), this.fileTableName, 'path', path, 'path-index');
+    await deleteItem(this.ensureClient(), this.fileTableName, 'id', id);
+  }
+
+  public async getFile(path: string): Promise<File | null> {
+    const item = await loadItem<File>(this.ensureClient(), this.fileTableName, 'path', path, 'path-index');
+    return item ?? null;
+  }
+
+  public async listFilesInFolder(folder: string): Promise<string[]> {
+    const files = await loadFiles(this.ensureClient(), this.fileTableName, folder);
+    return files.sort();
+  }
+
+  public async fileExists(path: string): Promise<boolean> {
+    return await itemExists(this.ensureClient(), this.fileTableName, 'path', path, 'path-index');
+  }
+
+  public async close(): Promise<void> {
+    this.client?.destroy();
+    this.client = null;
+  }
+}
+
+export { DynamoDatabase };

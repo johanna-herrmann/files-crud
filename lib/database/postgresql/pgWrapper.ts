@@ -1,5 +1,9 @@
-import { Client, QueryResultRow } from 'pg';
+import { Client } from 'pg';
 import PgDbConf from '@/types/PgDbConf';
+import DbItem from '@/types/DbItem';
+import FileName from '@/types/FileName';
+
+type Row = DbItem | FileName;
 
 const getNewClient = function (conf: PgDbConf) {
   return new Client(conf);
@@ -21,7 +25,7 @@ const writingQuery = async function (client: Client | null, query: string, value
   await client?.query(query, values);
 };
 
-const readingQuery = async function <T extends QueryResultRow>(client: Client | null, query: string, values?: (string | number | boolean)[]) {
+const readingQuery = async function <T extends Row>(client: Client | null, query: string, values?: (string | number | boolean)[]) {
   return await client?.query<T>(query, values);
 };
 

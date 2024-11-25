@@ -11,8 +11,11 @@ Written in Typescript
 * Supported Databases (for user accounts)
   * mongoDB
   * postgresql
+  * DynamoDB*
   * in-memory (for testing purposes)
 * Uses CRUD-based permissions, specified for different directories
+
+*Requires you to create the used tables fore-hand.
 
 ## Features
 * create, override, read, delete files
@@ -103,6 +106,69 @@ Configuration is done via `config.json` file in the application directory (outsi
   "register_token": "8470b83a-b9bd-4054-b8ec-59cb57e855bd"
 }
 ```
+
+## DynamoDB
+
+If you want to use `DynamoDB`, please take into account:
+
+### Tables
+You have to create the following tables and provide the names in `config.json`.
+
+* User Table
+  * partition-key
+    * name: `all`
+    * type: `string`
+  * sort key
+    * name: `id`
+    * type: `string`
+  * localSecondaryIndexes
+    * Index for username
+      * Name: `username-index`
+      * sort-key
+        * name: `username`
+        * type: `string`
+* Table for JWT keys
+  * partition-key
+    * name: `all`
+    * type: `string`
+* Table to count failed login Attempts
+  * partition-key
+    * name: `all`
+    * type: `string`
+  * sort-key
+    * name: `username`
+    * type: `string`
+* File data Table
+  * partition-key
+    * name: `all`
+    * type: `string`
+  * sort key
+    * name: `id`
+    * type: `string`
+  * localSecondaryIndexes
+    * Index for path (single item query)
+      * Name: `path-index`
+      * sort-key
+        * name: `path`
+        * type: `string`
+    * Inxex for folder (multiple item query)
+      * Name: `folder-index`
+      * sort-key
+        * name: `folder`
+        * type: `string`
+
+### Read loads
+To list files in a folder, a high amount of `read capacity units` is required, since the result-set needs to be filtered. \
+
+Example: \
+An user wants to list the files in `some/folder` and the contents are:
+* `some/folder/file.mp3`
+* `some/folder/file2.avi`
+* `some/folder/sub/file.txt`
+* `some/folder/sub/other.mp4`
+
+In this case 4 items must be read by DynamoDB despite only 2 items are desired. \
+The result will only contain 2 items (due to filtering) but you will be charged for
 
 ## Hosting
 !TBD!

@@ -1,10 +1,12 @@
 import Database from '@/types/Database';
 import PgDbConf from '@/types/PgDbConf';
-import FailedLoginAttempts from '@/types/FailedLoginAttempts';
-import User from '@/types/User';
-import File from '@/types/File';
 import { Client } from 'pg';
 import { getNewClient, connect, end, definingQuery, writingQuery, readingQuery } from './pgWrapper';
+import User from '@/types/User';
+import FailedLoginAttempts from '@/types/FailedLoginAttempts';
+import JwtKey from '@/types/JwtKey';
+import File from '@/types/File';
+import FileName from '@/types/FileName';
 
 const createTableIfNotExists = async function (client: Client, table: string, ...fields: string[]): Promise<void> {
   await definingQuery(client, `CREATE TABLE IF NOT EXISTS ${table}(${fields.join(', ')})`);
@@ -127,7 +129,7 @@ class PostgresDatabase implements Database {
 
   public async getJwtKeys(): Promise<string[]> {
     const query = 'SELECT * FROM jwtKey';
-    const result = await readingQuery<{ key: string }>(this.client, query);
+    const result = await readingQuery<JwtKey>(this.client, query);
     return result ? result.rows.map((row) => row.key) : [];
   }
 
@@ -192,7 +194,7 @@ class PostgresDatabase implements Database {
     folder = folder.replace(/\/*$/gu, '');
     const query = 'SELECT file FROM file WHERE folder=$1 ORDER BY file';
     const values = [folder];
-    const result = await readingQuery<{ file: string }>(this.client, query, values);
+    const result = await readingQuery<FileName>(this.client, query, values);
     if (!result || result.rowCount === 0) {
       return [];
     }
