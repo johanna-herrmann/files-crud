@@ -68,12 +68,21 @@ jest.mock('@/database/postgresql/pgWrapper', () => {
   };
 });
 
+const fakeDate = new Date('2017-01-01');
+const fakeTime = fakeDate.getTime();
+
 describe('PostgresDatabase', (): void => {
+  beforeEach(async (): Promise<void> => {
+    jest.useFakeTimers();
+    jest.setSystemTime(fakeDate);
+  });
+
   afterEach(async (): Promise<void> => {
     mocked_data = {};
     mocked_when_then.queryRegex = /./;
     mocked_when_then.values = undefined;
     mocked_when_then.result = null;
+    jest.useRealTimers();
   });
 
   const testUser = {
@@ -116,12 +125,14 @@ describe('PostgresDatabase', (): void => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       then(rows?: any) {
         if (!rows) {
-          return {
+          mocked_when_then.result = {
             command: '',
             fields: [],
             oid: 0,
-            rowCount: 0
+            rowCount: 0,
+            rows: []
           };
+          return;
         }
         mocked_when_then.result = {
           command: '',
@@ -251,6 +262,17 @@ describe('PostgresDatabase', (): void => {
     expect(user).toEqual(testUser);
   });
 
+  test('PostgresDatabase->getUsers gets Users.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from user_$/iu).then([testUser, { ...testUser, username: 'user2', admin: true }]);
+
+    const userList = await db.getUsers();
+
+    expect(userList[0]).toEqual({ username: testUser.username, admin: false });
+    expect(userList[1]).toEqual({ username: 'user2', admin: true });
+  });
+
   test('PostgresDatabase->userExists returns true if user exists.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
@@ -298,7 +320,11 @@ describe('PostgresDatabase', (): void => {
 
     await db.countLoginAttempt(testUser.username);
 
-    expectQueryAndValues(1, 1, 0, 0, /^insert into failedLoginAttempts\s*\(username, attempts\) values\s*\(\$1, \$2\)$/iu, [testUser.username, 1]);
+    expectQueryAndValues(1, 1, 0, 0, /^insert into failedLoginAttempts\s*\(username, attempts, lastAttempt\) values\s*\(\$1, \$2, \$3\)$/iu, [
+      testUser.username,
+      1,
+      fakeTime
+    ]);
   });
 
   test('PostgresDatabase->countFailedLoginAttempts increasing attempts in existing entity.', async (): Promise<void> => {
@@ -308,17 +334,24 @@ describe('PostgresDatabase', (): void => {
 
     await db.countLoginAttempt(testUser.username);
 
-    expectQueryAndValues(1, 1, 0, 0, /^update failedLoginAttempts set attempts=\$1 where username=\$2$/iu, [2, testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^update failedLoginAttempts set attempts=\$1, lastAttempt=\$2 where username=\$3$/iu, [
+      2,
+      fakeTime,
+      testUser.username
+    ]);
   });
 
   test('PostgresDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
-    when(/^select \* from failedLoginAttempts where username=\$1$/iu, [testUser.username]).then([{ username: testUser.username, attempts: 1 }]);
+    when(/^select \* from failedLoginAttempts where username=\$1$/iu, [testUser.username]).then([
+      { username: testUser.username, attempts: 1, lastAttempt: 5 }
+    ]);
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(1);
+    expect(attempts?.attempts).toBe(1);
+    expect(attempts?.lastAttempt).toBe(5);
   });
 
   test('PostgresDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
@@ -328,7 +361,7 @@ describe('PostgresDatabase', (): void => {
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(0);
+    expect(attempts).toBeNull();
   });
 
   test('PostgresDatabase->removeLoginAttempts removes entity.', async (): Promise<void> => {

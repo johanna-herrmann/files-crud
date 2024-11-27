@@ -2,6 +2,7 @@ import Database from '@/types/Database';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import User from '@/types/User';
 import File from '@/types/File';
+import UserListItem from '@/types/UserListItem';
 
 interface Tables {
   user: Record<string, User>;
@@ -66,6 +67,10 @@ class MemoryDatabase implements Database {
     return tables.user[username] ?? null;
   }
 
+  public async getUsers(): Promise<UserListItem[]> {
+    return Object.values(tables.user).map(({ username, admin }) => ({ username, admin }));
+  }
+
   public async userExists(username: string): Promise<boolean> {
     return !!tables.user[username];
   }
@@ -79,13 +84,15 @@ class MemoryDatabase implements Database {
   }
 
   public async countLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = Date.now();
     const attempts = tables.failedLoginAttempts[username] ?? { username, attempts: 0 };
     attempts.attempts++;
+    attempts.lastAttempt = lastAttempt;
     tables.failedLoginAttempts[username] = attempts;
   }
 
-  public async getLoginAttempts(username: string): Promise<number> {
-    return tables.failedLoginAttempts[username]?.attempts ?? 0;
+  public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
+    return tables.failedLoginAttempts[username] ?? null;
   }
 
   public async removeLoginAttempts(username: string): Promise<void> {

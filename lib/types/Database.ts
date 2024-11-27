@@ -1,5 +1,7 @@
 import User from './User';
 import File from './File';
+import FailedLoginAttempts from './FailedLoginAttempts';
+import UserListItem from './UserListItem';
 
 interface Database {
   /**
@@ -76,6 +78,12 @@ interface Database {
   getUser: (username: string) => Promise<User | null>;
 
   /**
+   * Gets all users (simplified to username and admin state)
+   * @returns Fulfils with array of UserListItem upon success, one item per user
+   */
+  getUsers: (username: string) => Promise<UserListItem[]>;
+
+  /**
    * Checks if an user exists with the given username
    * @param username - username of the user to check existence for
    * @returns Fulfils with boolean upon success, true if user exists
@@ -108,7 +116,7 @@ interface Database {
    * @param username - username to get the count for
    * @returns Fulfils with number upon success, amount of attempts since last reset (removeLoginAttempts)
    */
-  getLoginAttempts: (username: string) => Promise<number>;
+  getLoginAttempts: (username: string) => Promise<FailedLoginAttempts | null>;
 
   /**
    * Removes the login attempt counting dataset for the given username

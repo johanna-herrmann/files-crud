@@ -20,11 +20,20 @@ describe('MemoryDatabase', (): void => {
     meta: { testProp: 'testValue' }
   };
 
+  const fakeDate = new Date('2017-01-01');
+  const fakeTime = fakeDate.getTime();
+
+  beforeEach(async (): Promise<void> => {
+    jest.useFakeTimers();
+    jest.setSystemTime(fakeDate);
+  });
+
   afterEach((): void => {
     tables.user = {};
     tables.jwtKey = [];
     tables.failedLoginAttempts = {};
     tables.file = {};
+    jest.useRealTimers();
   });
 
   test('MemoryDatabase->addUser adds user.', async (): Promise<void> => {
@@ -121,6 +130,17 @@ describe('MemoryDatabase', (): void => {
     expect(user?.username).toBe(testUser.username);
   });
 
+  test('MemoryDatabase->getUsers gets users.', async (): Promise<void> => {
+    const db = new MemoryDatabase();
+    await db.addUser(testUser);
+    await db.addUser({ ...testUser, username: 'user2', admin: true });
+
+    const userList = await db.getUsers();
+
+    expect(userList[0]).toEqual({ username: testUser.username, admin: false });
+    expect(userList[1]).toEqual({ username: 'user2', admin: true });
+  });
+
   test('MemoryDatabase->userExists returns true if user exists.', async (): Promise<void> => {
     const db = new MemoryDatabase();
     await db.addUser(testUser);
@@ -168,15 +188,18 @@ describe('MemoryDatabase', (): void => {
     await db.countLoginAttempt(testUser.username);
 
     expect(tables.failedLoginAttempts[testUser.username]?.attempts).toBe(1);
+    expect(tables.failedLoginAttempts[testUser.username]?.lastAttempt).toBe(fakeTime);
   });
 
   test('MemoryDatabase->countLoginAttempt increases attempts in existing item.', async (): Promise<void> => {
     const db = new MemoryDatabase();
     await db.countLoginAttempt(testUser.username);
+    tables.failedLoginAttempts[testUser.username].lastAttempt = 0;
 
     await db.countLoginAttempt(testUser.username);
 
     expect(tables.failedLoginAttempts[testUser.username]?.attempts).toBe(2);
+    expect(tables.failedLoginAttempts[testUser.username]?.lastAttempt).toBe(fakeTime);
   });
 
   test('MemoryDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
@@ -185,7 +208,8 @@ describe('MemoryDatabase', (): void => {
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(1);
+    expect(attempts?.attempts).toBe(1);
+    expect(attempts?.lastAttempt).toBe(fakeTime);
   });
 
   test('MemoryDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
@@ -193,7 +217,7 @@ describe('MemoryDatabase', (): void => {
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(0);
+    expect(attempts).toBeNull();
   });
 
   test('MemoryDatabase->removeLoginAttempts removes attempts.', async (): Promise<void> => {

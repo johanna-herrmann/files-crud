@@ -1,9 +1,10 @@
 import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
-import { putItem, updateItem, deleteItem, loadItem, loadId, loadJwtKeys, loadFiles, itemExists } from './dynamoDbHelper';
+import { putItem, updateItem, deleteItem, loadItem, loadId, loadJwtKeys, loadUsers, loadFiles, itemExists } from './dynamoDbHelper';
 import Database from '@/types/Database';
 import File from '@/types/File';
 import User from '@/types/User';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
+import UserListItem from '@/types/UserListItem';
 
 class DynamoDatabase implements Database {
   private readonly config: DynamoDBClientConfig;
@@ -93,8 +94,11 @@ class DynamoDatabase implements Database {
   }
 
   public async getUser(username: string): Promise<User | null> {
-    const item = await loadItem<User>(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
-    return item ?? null;
+    return await loadItem<User>(this.ensureClient(), this.userTableName, 'username', username, 'username-index');
+  }
+
+  public async getUsers(): Promise<UserListItem[]> {
+    return await loadUsers(this.ensureClient(), this.userTableName);
   }
 
   public async userExists(username: string): Promise<boolean> {
@@ -112,22 +116,18 @@ class DynamoDatabase implements Database {
   }
 
   public async countLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = Date.now();
     const item = await loadItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username);
     if (!item) {
-      return await putItem(this.ensureClient(), this.failedLoginAttemptsTableName, { username, attempts: 1 });
+      return await putItem(this.ensureClient(), this.failedLoginAttemptsTableName, { username, attempts: 1, lastAttempt });
     }
     const attempts = item as FailedLoginAttempts;
     attempts.attempts++;
-    await updateItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username, { attempts: attempts.attempts });
+    await updateItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username, { attempts: attempts.attempts, lastAttempt });
   }
 
-  public async getLoginAttempts(username: string): Promise<number> {
-    const item = await loadItem<FailedLoginAttempts>(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username);
-    if (!item) {
-      return 0;
-    }
-    const attempts = item;
-    return attempts.attempts;
+  public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
+    return await loadItem<FailedLoginAttempts>(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username);
   }
 
   public async removeLoginAttempts(username: string): Promise<void> {
@@ -156,8 +156,7 @@ class DynamoDatabase implements Database {
   }
 
   public async getFile(path: string): Promise<File | null> {
-    const item = await loadItem<File>(this.ensureClient(), this.fileTableName, 'path', path, 'path-index');
-    return item ?? null;
+    return await loadItem<File>(this.ensureClient(), this.fileTableName, 'path', path, 'path-index');
   }
 
   public async listFilesInFolder(folder: string): Promise<string[]> {

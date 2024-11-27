@@ -68,6 +68,10 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
 
       return item.id ?? null;
     },
+    async loadUsers(client: DynamoDBClient, TableName: string) {
+      const users = mocked_db[TableName];
+      return users.map(({ username, admin }) => ({ username, admin }));
+    },
     async loadFiles(client: DynamoDBClient, TableName: string, folder: string) {
       const files = mocked_db[TableName].filter((item) => item.all === 'all' && item.folder === folder);
       return files.map((file) => file.file);
@@ -104,12 +108,21 @@ describe('DynamoDatabase', (): void => {
     meta: { testProp: 'testValue' }
   };
 
+  const fakeDate = new Date('2017-01-01');
+  const fakeTime = fakeDate.getTime();
+
+  beforeEach(async (): Promise<void> => {
+    jest.useFakeTimers();
+    jest.setSystemTime(fakeDate);
+  });
+
   afterEach(async (): Promise<void> => {
     mocked_db.user = [];
     mocked_db.jwtKey = [];
     mocked_db.failedLoginAttempts = [];
     mocked_db.file = [];
     mocked_lastIndex = undefined;
+    jest.useRealTimers();
   });
 
   const newDb = function (): DynamoDatabase {
@@ -222,6 +235,17 @@ describe('DynamoDatabase', (): void => {
     expect(mocked_lastIndex).toBe('username-index');
   });
 
+  test('DynamoDatabase->getUsers gets users.', async (): Promise<void> => {
+    const db = await prepareDbForUser();
+    //mocked_db.user.push({ ...testUser, all, id } as unknown as Item);
+    mocked_db.user.push({ ...testUser, username: 'user2', admin: true, all, id } as unknown as Item);
+
+    const userList = await db.getUsers();
+
+    expect(userList[0]).toEqual({ username: testUser.username, admin: false });
+    expect(userList[1]).toEqual({ username: 'user2', admin: true });
+  });
+
   test('DynamoDatabase->userExists returns true if user exists.', async (): Promise<void> => {
     const db = await prepareDbForUser();
 
@@ -275,7 +299,7 @@ describe('DynamoDatabase', (): void => {
 
     await db.countLoginAttempt(testUser.username);
 
-    expect(mocked_db.failedLoginAttempts[0]).toEqual({ all, username: testUser.username, attempts: 1 });
+    expect(mocked_db.failedLoginAttempts[0]).toEqual({ all, username: testUser.username, attempts: 1, lastAttempt: fakeTime });
     expect(mocked_lastIndex).toBeUndefined();
   });
 
@@ -287,17 +311,19 @@ describe('DynamoDatabase', (): void => {
     await db.countLoginAttempt(testUser.username);
 
     expect(mocked_db.failedLoginAttempts[0]?.attempts).toBe(2);
+    expect(mocked_db.failedLoginAttempts[0]?.lastAttempt).toBe(fakeTime);
     expect(mocked_lastIndex).toBeUndefined();
   });
 
   test('DynamoDatabase->getLoginAttempts returns attempts if item exists.', async (): Promise<void> => {
     const db = newDb();
     await db.open();
-    mocked_db.failedLoginAttempts[0] = { all, username: testUser.username, attempts: 2 } as unknown as Item;
+    mocked_db.failedLoginAttempts[0] = { all, username: testUser.username, attempts: 2, lastAttempt: 5 } as unknown as Item;
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(2);
+    expect(attempts?.attempts).toBe(2);
+    expect(attempts?.lastAttempt).toBe(5);
     expect(mocked_lastIndex).toBeUndefined();
   });
 
@@ -307,7 +333,7 @@ describe('DynamoDatabase', (): void => {
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(0);
+    expect(attempts).toBeNull();
     expect(mocked_lastIndex).toBeUndefined();
   });
 

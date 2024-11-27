@@ -1,4 +1,5 @@
 import DbItem from '@/types/DbItem';
+import UserListItem from '@/types/UserListItem';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   PutCommand,
@@ -139,6 +140,17 @@ const loadId = async function (client: DynamoDBClient, TableName: string, keyNam
   return item.id;
 };
 
+const loadUsers = async function (client: DynamoDBClient, TableName: string): Promise<UserListItem[]> {
+  const input: ScanCommandInput = {
+    TableName,
+    ProjectionExpression: 'username,admin'
+  };
+  const command = new ScanCommand(input);
+  const result = await client.send(command);
+  const items = result.Items ?? [];
+  return items.map(({ username, admin }) => ({ username, admin }));
+};
+
 const loadFiles = async function (client: DynamoDBClient, TableName: string, folder: string): Promise<string[]> {
   const input: QueryCommandInput = {
     TableName,
@@ -192,4 +204,4 @@ const itemExists = async function (
   return !!result.Items?.at(0);
 };
 
-export { putItem, updateItem, deleteItem, loadItem, loadId, loadFiles, loadJwtKeys, itemExists };
+export { putItem, updateItem, deleteItem, loadItem, loadId, loadUsers, loadFiles, loadJwtKeys, itemExists };

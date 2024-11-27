@@ -13,6 +13,16 @@ const UserModel = new MongoDatabase('').getConf()[1];
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FileModel = new MongoDatabase('').getConf()[4];
 
+let mocked_time = 0;
+
+jest.mock('@/database/mongodb/timeWrapper', () => {
+  return {
+    getCurrentTime() {
+      return mocked_time;
+    }
+  };
+});
+
 describe('MongoDatabase', (): void => {
   beforeEach(async (): Promise<void> => {
     mongod = await MongoMemoryServer.create();
@@ -148,6 +158,7 @@ describe('MongoDatabase', (): void => {
 
     const user = await User.findOne({ username: newUsername });
     expect(user?.username).toBe(newUsername);
+    expect(user?.ownerId).toBe(testUser.ownerId);
   });
 
   test('MongoDatabase->updateHash updates hash.', async (): Promise<void> => {
@@ -208,6 +219,17 @@ describe('MongoDatabase', (): void => {
     expect(user?.username).toBe(testUser.username);
   });
 
+  test('MongoDatabase->getUsers gets users.', async (): Promise<void> => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [db, _] = await prepareDbForUser();
+    await db.addUser({ ...testUser, username: 'user2', admin: true });
+
+    const userList = await db.getUsers();
+
+    expect(userList[0]).toEqual({ username: testUser.username, admin: false });
+    expect(userList[1]).toEqual({ username: 'user2', admin: true });
+  });
+
   test('MongoDatabase->userExists returns true if user exists.', async (): Promise<void> => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [db, _] = await prepareDbForUser();
@@ -257,18 +279,21 @@ describe('MongoDatabase', (): void => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     const FailedLoginAttempts = db.getConf()[3];
+    mocked_time = 42;
 
     await db.countLoginAttempt(testUser.username);
 
     const failedLoginAttempts = await FailedLoginAttempts.findOne({ username: testUser.username });
     expect(failedLoginAttempts?.username).toBe(testUser.username);
     expect(failedLoginAttempts?.attempts).toBe(1);
+    expect(failedLoginAttempts?.lastAttempt).toBe(mocked_time);
   });
 
   test('MongoDatabase->countLoginAttempt increases attempts in existing item.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     const FailedLoginAttempts = db.getConf()[3];
+    mocked_time = 23;
     await db.countLoginAttempt(testUser.username);
 
     await db.countLoginAttempt(testUser.username);
@@ -276,17 +301,20 @@ describe('MongoDatabase', (): void => {
     const failedLoginAttempts = await FailedLoginAttempts.findOne({ username: testUser.username });
     expect(failedLoginAttempts?.username).toBe(testUser.username);
     expect(failedLoginAttempts?.attempts).toBe(2);
+    expect(failedLoginAttempts?.lastAttempt).toBe(mocked_time);
   });
 
   test('MongoDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    mocked_time = 815;
     await db.countLoginAttempt(testUser.username);
     await db.countLoginAttempt(testUser.username);
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(2);
+    expect(attempts?.attempts).toBe(2);
+    expect(attempts?.lastAttempt).toBe(mocked_time);
   });
 
   test('MongoDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
@@ -295,7 +323,7 @@ describe('MongoDatabase', (): void => {
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts).toBe(0);
+    expect(attempts).toBeNull();
   });
 
   test('MongoDatabase->removeLoginAttempts removes item.', async (): Promise<void> => {
@@ -333,6 +361,7 @@ describe('MongoDatabase', (): void => {
     const file = await File.findOne({ path: 'newPath' });
     expect(file?.path).toBe('newPath');
     expect(file?.owner).toBe(testFile.owner);
+    expect(file?.folder).toBe(testFile.folder);
     expect(await File.findOne({ path: testFile.path })).toBeNull();
   });
 
@@ -344,6 +373,7 @@ describe('MongoDatabase', (): void => {
     const file = await File.findOne({ path: 'newPath' });
     expect(file?.path).toBe('newPath');
     expect(file?.owner).toBe('newOwner');
+    expect(file?.folder).toBe(testFile.folder);
     expect(await File.findOne({ path: testFile.path })).toBeNull();
   });
 

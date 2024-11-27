@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import User from '@/types/User';
 import File from '@/types/File';
 import Database from '@/types/Database';
+import FailedLoginAttempts from '@/types/FailedLoginAttempts';
+import { getCurrentTime } from './timeWrapper';
+import UserListItem from '@/types/UserListItem';
 
 const userSchema = new mongoose.Schema({
   username: { type: String, default: '' },
@@ -19,7 +22,8 @@ const jwtKeySchema = new mongoose.Schema({
 
 const failedLoginAttemptsSchema = new mongoose.Schema({
   username: { type: String, default: '' },
-  attempts: { type: Number, default: 0 }
+  attempts: { type: Number, default: 0 },
+  lastAttempt: { type: Number, default: 0 }
 });
 
 const fileSchema = new mongoose.Schema({
@@ -90,6 +94,10 @@ class MongoDatabase implements Database {
     return await this.User.findOne({ username });
   }
 
+  public async getUsers(): Promise<UserListItem[]> {
+    return (await this.User.find()).map(({ username, admin }) => ({ username, admin }));
+  }
+
   public async userExists(username: string): Promise<boolean> {
     return !!(await this.User.exists({ username }));
   }
@@ -105,20 +113,22 @@ class MongoDatabase implements Database {
   }
 
   public async countLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = getCurrentTime();
     const attempts = await this.FailedLoginAttempts.findOne({ username });
     if (!attempts) {
-      await new this.FailedLoginAttempts({ username, attempts: 1 }).save();
+      await new this.FailedLoginAttempts({ username, attempts: 1, lastAttempt }).save();
       return;
     }
 
     attempts.attempts++;
+    attempts.lastAttempt = lastAttempt;
 
     await attempts.save();
   }
 
-  public async getLoginAttempts(username: string): Promise<number> {
+  public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
     const attempts = await this.FailedLoginAttempts.findOne({ username });
-    return attempts ? attempts.attempts : 0;
+    return attempts ?? null;
   }
 
   public async removeLoginAttempts(username: string): Promise<void> {

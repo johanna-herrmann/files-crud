@@ -1,4 +1,4 @@
-import { putItem, updateItem, deleteItem, loadItem, loadId, loadFiles, loadJwtKeys, itemExists } from '@/database/dynamodb/dynamoDbHelper';
+import { putItem, updateItem, deleteItem, loadItem, loadId, loadUsers, loadFiles, loadJwtKeys, itemExists } from '@/database/dynamodb/dynamoDbHelper';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -176,6 +176,25 @@ describe('dynamoDbHelper', (): void => {
     const idReturned = await loadId(client, TableName, 'folder', 'somePath', 'index');
 
     expect(idReturned).toBe(id);
+  });
+
+  test('loadUsers loads users correctly.', async (): Promise<void> => {
+    const list = [
+      { username: 'user1', admin: true },
+      { username: 'user2', admin: false }
+    ];
+    dynamoMock
+      .on(ScanCommand, {
+        TableName,
+        ProjectionExpression: 'username,admin'
+      })
+      .resolves({
+        Items: list
+      });
+
+    const userList = await loadUsers(client, TableName);
+
+    expect(userList).toEqual(list);
   });
 
   test('loadFiles loads files correctly.', async (): Promise<void> => {

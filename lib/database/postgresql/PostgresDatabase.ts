@@ -7,6 +7,7 @@ import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import JwtKey from '@/types/JwtKey';
 import File from '@/types/File';
 import FileName from '@/types/FileName';
+import UserListItem from '@/types/UserListItem';
 
 const createTableIfNotExists = async function (client: Client, table: string, ...fields: string[]): Promise<void> {
   await definingQuery(client, `CREATE TABLE IF NOT EXISTS ${table}(${fields.join(', ')})`);
@@ -115,6 +116,15 @@ class PostgresDatabase implements Database {
     return result.rows[0];
   }
 
+  public async getUsers(): Promise<UserListItem[]> {
+    const query = 'SELECT * FROM user_';
+    const result = await readingQuery<User>(this.client, query);
+    if (!result || result.rowCount === 0) {
+      return [];
+    }
+    return result.rows.map(({ username, admin }) => ({ username, admin }));
+  }
+
   public async userExists(username: string): Promise<boolean> {
     return !!(await this.getUser(username));
   }
@@ -134,20 +144,29 @@ class PostgresDatabase implements Database {
   }
 
   public async countLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = Date.now();
     const attempts = await this.getLoginAttempts(username);
-    if (attempts === 0) {
-      await writingQuery(this.client, 'INSERT INTO failedLoginAttempts(username, attempts) VALUES($1, $2)', [username, 1]);
+    if (!attempts) {
+      await writingQuery(this.client, 'INSERT INTO failedLoginAttempts(username, attempts, lastAttempt) VALUES($1, $2, $3)', [
+        username,
+        1,
+        lastAttempt
+      ]);
       return;
     }
-    await writingQuery(this.client, 'UPDATE failedLoginAttempts SET attempts=$1 WHERE username=$2', [attempts + 1, username]);
+    await writingQuery(this.client, 'UPDATE failedLoginAttempts SET attempts=$1, lastAttempt=$2 WHERE username=$3', [
+      attempts.attempts + 1,
+      lastAttempt,
+      username
+    ]);
   }
 
-  public async getLoginAttempts(username: string): Promise<number> {
+  public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
     const query = 'SELECT * FROM failedLoginAttempts WHERE username=$1';
     const values = [username];
     const result = await readingQuery<FailedLoginAttempts>(this.client, query, values);
     const attempts = result?.rows[0];
-    return attempts ? attempts.attempts : 0;
+    return attempts ?? null;
   }
 
   public async removeLoginAttempts(username: string): Promise<void> {
