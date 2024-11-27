@@ -2,6 +2,7 @@ import { DynamoDatabase } from '@/database/dynamodb/DynamoDatabase';
 import DbItem from '@/types/DbItem';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { NativeAttributeValue } from '@aws-sdk/lib-dynamodb';
+import { testUser, testFile } from '#/testItems';
 
 type Item = DbItem & Record<string, string>;
 type Tables = Record<string, Item[]>;
@@ -89,25 +90,6 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
 });
 
 describe('DynamoDatabase', (): void => {
-  const testUser = {
-    username: 'testUser',
-    hashVersion: 'v1',
-    salt: 'testSalt',
-    hash: 'testHash',
-    admin: false,
-    ownerId: 'testSectionId',
-    meta: { testProp: 'testValue' }
-  };
-
-  const testFile = {
-    path: 'test/path',
-    folder: 'test',
-    file: 'path',
-    owner: 'testOwner',
-    realName: 'testRealName',
-    meta: { testProp: 'testValue' }
-  };
-
   const fakeDate = new Date('2017-01-01');
   const fakeTime = fakeDate.getTime();
 

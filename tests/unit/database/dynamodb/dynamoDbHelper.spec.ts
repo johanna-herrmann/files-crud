@@ -3,20 +3,11 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import User from '@/types/User';
+import { testUser } from '#/testItems';
 
 const dynamoMock = mockClient(DynamoDBClient);
 const client = new DynamoDBClient();
 const TableName = 'table-name';
-
-const testUser = {
-  username: 'testUser',
-  hashVersion: 'v1',
-  salt: 'testSalt',
-  hash: 'testHash',
-  admin: false,
-  ownerId: 'testSectionId',
-  meta: { testProp: 'testValue' }
-};
 
 const all = 'all';
 const id = 'test-id';

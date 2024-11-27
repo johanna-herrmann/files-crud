@@ -1,25 +1,7 @@
 import { MemoryDatabase, tables } from '@/database/memdb/MemoryDatabase';
+import { testFile, testUser } from '#/testItems';
 
 describe('MemoryDatabase', (): void => {
-  const testUser = {
-    username: 'testUser',
-    hashVersion: 'v1',
-    salt: 'testSalt',
-    hash: 'testHash',
-    admin: false,
-    ownerId: 'testSectionId',
-    meta: { testProp: 'testValue' }
-  };
-
-  const testFile = {
-    path: 'test/path',
-    folder: 'test',
-    file: 'path',
-    owner: 'testOwner',
-    realName: 'testRealName',
-    meta: { testProp: 'testValue' }
-  };
-
   const fakeDate = new Date('2017-01-01');
   const fakeTime = fakeDate.getTime();
 

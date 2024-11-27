@@ -1,6 +1,7 @@
 import { Client, QueryResult, QueryResultRow } from 'pg';
 import { PostgresDatabase } from '@/database/postgresql/PostgresDatabase';
 import PgDbConf from '@/types/PgDbConf';
+import { testUser, testFile } from '#/testItems';
 
 type Value = string | number | boolean;
 
@@ -84,25 +85,6 @@ describe('PostgresDatabase', (): void => {
     mocked_when_then.result = null;
     jest.useRealTimers();
   });
-
-  const testUser = {
-    username: 'testUser',
-    hashVersion: 'v1',
-    salt: 'testSalt',
-    hash: 'testHash',
-    admin: false,
-    ownerId: 'testSectionId',
-    meta: { testProp: 'testValue' }
-  };
-
-  const testFile = {
-    path: 'test/path',
-    folder: 'test',
-    file: 'path',
-    owner: 'testOwner',
-    realName: 'testRealName',
-    meta: { testProp: 'testValue' }
-  };
 
   const expectQueryAndValues = function (
     queries: number,
