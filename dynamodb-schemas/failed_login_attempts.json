@@ -1,0 +1,25 @@
+{
+  "TableName": "failed_login_attempts",
+  "BillingMode": "PAY_PER_REQUEST",
+  "TableClass": "STANDARD",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "all",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "username",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "all",
+      "KeyType": "HASH"
+    },
+    {
+      "AttributeName": "username",
+      "KeyType": "RANGE"
+    }
+  ]
+}

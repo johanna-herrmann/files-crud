@@ -1,0 +1,68 @@
+{
+  "TableName": "file",
+  "BillingMode": "PAY_PER_REQUEST",
+  "TableClass": "STANDARD",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "all",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "id",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "path",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "folder",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "all",
+      "KeyType": "HASH"
+    },
+    {
+      "AttributeName": "id",
+      "KeyType": "RANGE"
+    }
+  ],
+  "LocalSecondaryIndexes": [
+    {
+      "IndexName": "path-index",
+      "KeySchema": [
+        {
+          "AttributeName": "all",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "path",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      }
+    },
+    {
+      "IndexName": "folder-index",
+      "KeySchema": [
+        {
+          "AttributeName": "all",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "folder",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "INCLUDE",
+        "NonKeyAttributes": ["file"]
+      }
+    }
+  ]
+}

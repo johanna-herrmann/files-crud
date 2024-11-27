@@ -1,0 +1,47 @@
+{
+  "TableName": "user",
+  "BillingMode": "PAY_PER_REQUEST",
+  "TableClass": "STANDARD",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "all",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "id",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "username",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "all",
+      "KeyType": "HASH"
+    },
+    {
+      "AttributeName": "id",
+      "KeyType": "RANGE"
+    }
+  ],
+  "LocalSecondaryIndexes": [
+    {
+      "IndexName": "username-index",
+      "KeySchema": [
+        {
+          "AttributeName": "all",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "username",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "INCLUDE"
+      }
+    }
+  ]
+}

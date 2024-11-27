@@ -7,7 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["lib/*"],
-      "#/*": ["tests/unit/*"]
+      "#/*": ["tests/*"]
     },
     "outDir": "built",
     "moduleResolution":"NodeNext",

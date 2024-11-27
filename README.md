@@ -112,50 +112,9 @@ Configuration is done via `config.json` file in the application directory (outsi
 If you want to use `DynamoDB`, please take into account:
 
 ### Tables
-You have to create the following tables and provide the names in `config.json`.
+You have to create the tables and provide the names in `config.json`.
 
-* User Table
-  * partition-key
-    * name: `all`
-    * type: `string`
-  * sort key
-    * name: `id`
-    * type: `string`
-  * localSecondaryIndexes
-    * Index for username
-      * Name: `username-index`
-      * sort-key
-        * name: `username`
-        * type: `string`
-* Table for JWT keys
-  * partition-key
-    * name: `all`
-    * type: `string`
-* Table to count failed login Attempts
-  * partition-key
-    * name: `all`
-    * type: `string`
-  * sort-key
-    * name: `username`
-    * type: `string`
-* File data Table
-  * partition-key
-    * name: `all`
-    * type: `string`
-  * sort key
-    * name: `id`
-    * type: `string`
-  * localSecondaryIndexes
-    * Index for path (single item query)
-      * Name: `path-index`
-      * sort-key
-        * name: `path`
-        * type: `string`
-    * Inxex for folder (multiple item query)
-      * Name: `folder-index`
-      * sort-key
-        * name: `folder`
-        * type: `string`
+The tables have to be created like defined in `dynamodb-schemas/`.
 
 ### Read loads
 To list files in a folder, a high amount of `read capacity units` is required, since the result-set needs to be filtered. \

@@ -1,0 +1,17 @@
+{
+  "TableName": "jwt_key",
+  "BillingMode": "PAY_PER_REQUEST",
+  "TableClass": "STANDARD",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "all",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "all",
+      "KeyType": "HASH"
+    }
+  ]
+}
