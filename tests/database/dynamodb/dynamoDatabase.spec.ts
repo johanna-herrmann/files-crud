@@ -1,8 +1,9 @@
 import { DynamoDatabase } from '@/database/dynamodb/DynamoDatabase';
-import DbItem from '@/types/DbItem';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { NativeAttributeValue } from '@aws-sdk/lib-dynamodb';
 import { testUser, testFile } from '#/testItems';
+import DbItem from '@/types/DbItem';
+import PathParts from '@/types/PathParts';
 
 type Item = DbItem & Record<string, string>;
 type Tables = Record<string, Item[]>;
@@ -38,7 +39,7 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
   const id = 'test-id';
 
   return {
-    async putItem(client: DynamoDBClient, TableName: string, item: DbItem, withId?: boolean) {
+    async putItem(client: DynamoDBClient, TableName: string, item: DbItem & Partial<PathParts>, withId?: boolean) {
       const key = withId ? { all, id } : { all };
       const fullItem = { ...item, ...key };
       mocked_db[TableName].push(fullItem as Item);
@@ -87,7 +88,7 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
     },
     async loadFiles(client: DynamoDBClient, TableName: string, folder: string) {
       const files = mocked_db[TableName].filter((item) => item.all === 'all' && item.folder === folder);
-      return files.map((file) => file.file);
+      return files.map((file) => file.filename);
     },
     async loadJwtKeys(client: DynamoDBClient, TableName: string) {
       const keys = mocked_db[TableName];
@@ -351,17 +352,19 @@ describe('DynamoDatabase', (): void => {
 
     await db.addFile(testFile);
 
-    expect(mocked_db.file[0]).toEqual({ ...testFile, all, id });
+    expect(mocked_db.file[0]).toEqual({ ...testFile, all, id, folder: 'test', filename: 'path' });
     expect(mocked_lastIndex).toBeUndefined();
   });
 
   test('DynamoDatabase->moveFile changes path, keeping owner.', async (): Promise<void> => {
     const db = await prepareDbForFile();
 
-    await db.moveFile(testFile.path, 'newPath');
+    await db.moveFile(testFile.path, 'new/Path');
 
-    expect(mocked_db.file[0]?.path).toBe('newPath');
+    expect(mocked_db.file[0]?.path).toBe('new/Path');
     expect(mocked_db.file[0]?.owner).toBe(testFile.owner);
+    expect(mocked_db.file[0]?.folder).toBe('new');
+    expect(mocked_db.file[0]?.filename).toBe('Path');
     expect(mocked_lastIndex).toBe('path-index');
   });
 
@@ -405,11 +408,11 @@ describe('DynamoDatabase', (): void => {
   test('DynamoDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
     const db = newDb();
     await db.open();
-    mocked_db.file.push({ ...testFile, all, id, path: 'test/path2', file: 'path2' } as unknown as Item);
-    mocked_db.file.push({ ...testFile, all, id } as unknown as Item);
-    mocked_db.file.push({ ...testFile, all, id, path: 'other/path', folder: 'other' } as unknown as Item);
+    mocked_db.file.push({ ...testFile, all, id, path: 'test/path2', folder: 'test', filename: 'path2' } as unknown as Item);
+    mocked_db.file.push({ ...testFile, all, id, folder: 'test', filename: 'path' } as unknown as Item);
+    mocked_db.file.push({ ...testFile, all, id, path: 'other/path', folder: 'other', filename: 'path' } as unknown as Item);
 
-    const files = await db.listFilesInFolder(testFile.folder);
+    const files = await db.listFilesInFolder('test');
 
     expect(files).toEqual(['path', 'path2']);
   });

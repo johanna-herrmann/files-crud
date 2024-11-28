@@ -6,7 +6,17 @@ import User from '@/types/User';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import UserListItem from '@/types/UserListItem';
 import JwtKey from '@/types/JwtKey';
+import PathParts from '@/types/PathParts';
 import { v4 } from 'uuid';
+
+const getPathParts = function (path: string): PathParts {
+  if (!path.includes('/')) {
+    return { folder: '', filename: path };
+  }
+  const folder = path.substring(0, path.lastIndexOf('/'));
+  const filename = path.substring(path.lastIndexOf('/') + 1);
+  return { folder, filename };
+};
 
 class DynamoDatabase implements Database {
   private readonly config: DynamoDBClientConfig;
@@ -137,12 +147,14 @@ class DynamoDatabase implements Database {
   }
 
   public async addFile(file: File): Promise<void> {
-    await putItem(this.ensureClient(), this.fileTableName, file, true);
+    const { folder, filename } = getPathParts(file.path);
+    await putItem(this.ensureClient(), this.fileTableName, { ...file, folder, filename }, true);
   }
 
   public async moveFile(oldPath: string, newPath: string, owner?: string): Promise<void> {
     const path = newPath;
-    const update = owner ? { path, owner } : { path };
+    const { folder, filename } = getPathParts(path);
+    const update = owner ? { path, folder, filename, owner } : { path, folder, filename };
     const id = await loadId(this.ensureClient(), this.fileTableName, 'path', oldPath, 'path-index');
     await updateItem(this.ensureClient(), this.fileTableName, 'id', id, update);
   }
@@ -162,6 +174,7 @@ class DynamoDatabase implements Database {
   }
 
   public async listFilesInFolder(folder: string): Promise<string[]> {
+    folder = folder.replace(/\/*$/gu, '');
     const files = await loadFiles(this.ensureClient(), this.fileTableName, folder);
     return files.sort();
   }

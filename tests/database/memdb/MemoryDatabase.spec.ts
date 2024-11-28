@@ -297,10 +297,10 @@ describe('MemoryDatabase', (): void => {
 
   test('MemoryDatabase->listFilesInFolder lists files in folder.', async (): Promise<void> => {
     const db = new MemoryDatabase();
-    await db.addFile({ ...testFile, path: 'test/path2', file: 'path2' });
+    await db.addFile({ ...testFile, path: 'test/path2' });
     await db.addFile(testFile);
-    await db.addFile({ ...testFile, path: 'test/sub/subSub', folder: 'test/sub', file: 'subSub' });
-    await db.addFile({ ...testFile, path: 'other', folder: '' });
+    await db.addFile({ ...testFile, path: 'test/sub/subSub' });
+    await db.addFile({ ...testFile, path: 'other' });
 
     const files = await db.listFilesInFolder('test');
 

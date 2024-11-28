@@ -31,8 +31,6 @@ const failedLoginAttemptsSchema = new mongoose.Schema({
 
 const fileSchema = new mongoose.Schema({
   path: { type: String, default: '' },
-  folder: { type: String, default: '' },
-  file: { type: String, default: '' },
   owner: { type: String, default: '' },
   realName: { type: String, default: '' },
   meta: Object
@@ -161,8 +159,9 @@ class MongoDatabase implements Database {
 
   public async listFilesInFolder(folder: string): Promise<string[]> {
     folder = folder.replace(/\/*$/gu, '');
-    const files = await this.File.find({ folder });
-    return files.map((file) => file.file).sort();
+    const regex = new RegExp(`^${folder}/([^/]+)$`, 'u');
+    const files = await this.File.where('path').regex(regex).exec();
+    return files.map((file) => file.path.replace(regex, '$1')).sort();
   }
 
   public async fileExists(path: string): Promise<boolean> {

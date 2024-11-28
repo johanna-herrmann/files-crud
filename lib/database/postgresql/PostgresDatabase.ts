@@ -5,9 +5,9 @@ import { getNewClient, connect, end, definingQuery, writingQuery, readingQuery }
 import User from '@/types/User';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import File from '@/types/File';
-import FileName from '@/types/FileName';
 import UserListItem from '@/types/UserListItem';
 import JwtKey from '@/types/JwtKey';
+import FilePath from '@/types/FilePath';
 import { v4 } from 'uuid';
 
 const createTableIfNotExists = async function (client: Client, table: string, ...fields: string[]): Promise<void> {
@@ -212,13 +212,14 @@ class PostgresDatabase implements Database {
 
   public async listFilesInFolder(folder: string): Promise<string[]> {
     folder = folder.replace(/\/*$/gu, '');
-    const query = 'SELECT file FROM file WHERE folder=$1 ORDER BY file';
-    const values = [folder];
-    const result = await readingQuery<FileName>(this.client, query, values);
+    const regex = `^${folder}/([^/]+)$`;
+    const query = 'SELECT path FROM file WHERE path~$1 ORDER BY path';
+    const values = [regex];
+    const result = await readingQuery<FilePath>(this.client, query, values);
     if (!result || result.rowCount === 0) {
       return [];
     }
-    return result.rows.map((file) => file.file);
+    return result.rows.map((file) => file.path.replace(new RegExp(regex, 'u'), '$1'));
   }
 
   public async fileExists(path: string): Promise<boolean> {

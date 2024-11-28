@@ -438,7 +438,7 @@ describe('PostgresDatabase', (): void => {
   test('PostgresDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
-    when(/^select file from file where folder=\$1 order by file$/iu, ['test']).then([{ file: testFile.file }, { file: 'path2' }]);
+    when(/^select path from file where path~\$1 order by path$/iu, ['^test/([^/]+)$']).then([{ path: testFile.path }, { path: 'test/path2' }]);
 
     const files = await db.listFilesInFolder('test');
 

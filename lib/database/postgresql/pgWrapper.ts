@@ -1,9 +1,9 @@
 import { Client } from 'pg';
 import PgDbConf from '@/types/PgDbConf';
 import DbItem from '@/types/DbItem';
-import FileName from '@/types/FileName';
+import FilePath from '@/types/FilePath';
 
-type Row = DbItem | FileName;
+type Row = DbItem | FilePath;
 
 const getNewClient = function (conf: PgDbConf) {
   return new Client(conf);

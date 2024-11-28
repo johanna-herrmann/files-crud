@@ -195,12 +195,12 @@ describe('dynamoDbHelper', (): void => {
         ExpressionAttributeValues: { ':folder': 'somePath' },
         KeyConditionExpression: 'all = all and folder = :folder',
         IndexName: 'file-index',
-        ProjectionExpression: 'file'
+        ProjectionExpression: 'filename'
       })
       .resolves({
         Items: [
-          { all, folder: 'somePath', file: 'file1' },
-          { all, folder: 'somePath', file: 'file2' }
+          { all, folder: 'somePath', filename: 'file1' },
+          { all, folder: 'somePath', filename: 'file2' }
         ]
       });
 

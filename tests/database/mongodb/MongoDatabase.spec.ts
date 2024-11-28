@@ -357,7 +357,6 @@ describe('MongoDatabase', (): void => {
     const file = await File.findOne({ path: 'newPath' });
     expect(file?.path).toBe('newPath');
     expect(file?.owner).toBe(testFile.owner);
-    expect(file?.folder).toBe(testFile.folder);
     expect(await File.findOne({ path: testFile.path })).toBeNull();
   });
 
@@ -369,7 +368,6 @@ describe('MongoDatabase', (): void => {
     const file = await File.findOne({ path: 'newPath' });
     expect(file?.path).toBe('newPath');
     expect(file?.owner).toBe('newOwner');
-    expect(file?.folder).toBe(testFile.folder);
     expect(await File.findOne({ path: testFile.path })).toBeNull();
   });
 
@@ -408,10 +406,10 @@ describe('MongoDatabase', (): void => {
   test('MongoDatabase->listFilesInFolder lists files.', async (): Promise<void> => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [db, _] = await prepareDbForFile();
-    await db.addFile({ ...testFile, path: 'test/path3', file: 'path3' });
-    await db.addFile({ ...testFile, path: 'test/path2', file: 'path2' });
-    await db.addFile({ ...testFile, path: 'test/sub/subSub', folder: 'test/sub', file: 'subSub' });
-    await db.addFile({ ...testFile, path: 'other/path', folder: 'other' });
+    await db.addFile({ ...testFile, path: 'test/path3' });
+    await db.addFile({ ...testFile, path: 'test/path2' });
+    await db.addFile({ ...testFile, path: 'test/sub/subSub' });
+    await db.addFile({ ...testFile, path: 'other/path' });
 
     const files = await db.listFilesInFolder('test');
 

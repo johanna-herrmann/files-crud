@@ -1,5 +1,6 @@
 import DbItem from '@/types/DbItem';
 import JwtKey from '@/types/JwtKey';
+import PathParts from '@/types/PathParts';
 import UserListItem from '@/types/UserListItem';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
@@ -30,7 +31,7 @@ const buildDbItem = function <T extends DbItem>(itemFound: Record<string, any> |
   return item as T;
 };
 
-const putItem = async function (client: DynamoDBClient, TableName: string, item: DbItem, withId?: boolean): Promise<void> {
+const putItem = async function (client: DynamoDBClient, TableName: string, item: DbItem & Partial<PathParts>, withId?: boolean): Promise<void> {
   const Item: DbItemWithKeyAttributes = { ...item, all };
   if (withId) {
     Item.id = v4();
@@ -160,12 +161,12 @@ const loadFiles = async function (client: DynamoDBClient, TableName: string, fol
       ':folder': folder
     },
     KeyConditionExpression: 'all = all and folder = :folder',
-    ProjectionExpression: 'file'
+    ProjectionExpression: 'filename'
   };
   const command = new QueryCommand(input);
   const result = await client.send(command);
   const items = result.Items ?? [];
-  return items.map((item) => item.file);
+  return items.map((item) => item.filename);
 };
 
 const loadJwtKeys = async function (client: DynamoDBClient, TableName: string): Promise<JwtKey[]> {
