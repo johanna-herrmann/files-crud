@@ -1,6 +1,19 @@
 import { MemoryDatabase, tables } from '@/database/memdb/MemoryDatabase';
 import { testFile, testUser } from '#/testItems';
 
+const mocked_id = 'test-id';
+let mocked_index = 0;
+
+jest.mock('uuid', () => {
+  const actual = jest.requireActual('uuid');
+  return {
+    ...actual,
+    v4() {
+      return mocked_id + mocked_index++;
+    }
+  };
+});
+
 describe('MemoryDatabase', (): void => {
   const fakeDate = new Date('2017-01-01');
   const fakeTime = fakeDate.getTime();
@@ -8,6 +21,7 @@ describe('MemoryDatabase', (): void => {
   beforeEach(async (): Promise<void> => {
     jest.useFakeTimers();
     jest.setSystemTime(fakeDate);
+    mocked_index = 0;
   });
 
   afterEach((): void => {
@@ -147,9 +161,9 @@ describe('MemoryDatabase', (): void => {
     await db.addJwtKeys('key1', 'key2', 'key3');
 
     expect(tables.jwtKey.length).toBe(3);
-    expect(tables.jwtKey[0]).toBe('key1');
-    expect(tables.jwtKey[1]).toBe('key2');
-    expect(tables.jwtKey[2]).toBe('key3');
+    expect(tables.jwtKey[0]).toEqual({ id: mocked_id + 0, key: 'key1' });
+    expect(tables.jwtKey[1]).toEqual({ id: mocked_id + 1, key: 'key2' });
+    expect(tables.jwtKey[2]).toEqual({ id: mocked_id + 2, key: 'key3' });
   });
 
   test('MemoryDatabase->getJwtKeys gets keys.', async (): Promise<void> => {
@@ -159,9 +173,9 @@ describe('MemoryDatabase', (): void => {
     const keys = await db.getJwtKeys();
 
     expect(keys.length).toBe(3);
-    expect(keys[0]).toBe('key1');
-    expect(keys[1]).toBe('key2');
-    expect(keys[2]).toBe('key3');
+    expect(keys[0]).toEqual({ id: mocked_id + 0, key: 'key1' });
+    expect(keys[1]).toEqual({ id: mocked_id + 1, key: 'key2' });
+    expect(keys[2]).toEqual({ id: mocked_id + 2, key: 'key3' });
   });
 
   test('MemoryDatabase->countLoginAttempt creates new item with attempts=1.', async (): Promise<void> => {

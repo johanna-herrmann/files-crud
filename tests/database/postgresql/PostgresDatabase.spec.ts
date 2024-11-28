@@ -33,6 +33,19 @@ const mocked_when_then: WhenThen = {
   result: null
 };
 
+const mocked_id = 'test-id';
+let mocked_index = 0;
+
+jest.mock('uuid', () => {
+  const actual = jest.requireActual('uuid');
+  return {
+    ...actual,
+    v4() {
+      return mocked_id + mocked_index++;
+    }
+  };
+});
+
 jest.mock('@/database/postgresql/pgWrapper', () => {
   return {
     getNewClient(conf: PgDbConf) {
@@ -76,6 +89,7 @@ describe('PostgresDatabase', (): void => {
   beforeEach(async (): Promise<void> => {
     jest.useFakeTimers();
     jest.setSystemTime(fakeDate);
+    mocked_index = 0;
   });
 
   afterEach(async (): Promise<void> => {
@@ -145,8 +159,10 @@ describe('PostgresDatabase', (): void => {
     expect(mocked_data.definingQueries?.at(0)).toMatch(
       /^create table if not exists user_\s*\(username text, hashVersion text, salt text, hash text, admin Boolean, sectionId text, meta JSON\)$/iu
     );
-    expect(mocked_data.definingQueries?.at(1)).toMatch(/^create table if not exists jwtKey\s*\(key text\)$/iu);
-    expect(mocked_data.definingQueries?.at(2)).toMatch(/^create table if not exists failedLoginAttempts\s*\(username text, attempts int\)$/iu);
+    expect(mocked_data.definingQueries?.at(1)).toMatch(/^create table if not exists jwtKey\s*\(id text, key text\)$/iu);
+    expect(mocked_data.definingQueries?.at(2)).toMatch(
+      /^create table if not exists failedLoginAttempts\s*\(username text, attempts int, lastAttempt bigint\)$/iu
+    );
     expect(mocked_data.definingQueries?.at(3)).toMatch(/^create table if not exists file\s*\(path text, owner text, realName text, meta JSON\)$/iu);
   });
 
@@ -281,18 +297,22 @@ describe('PostgresDatabase', (): void => {
 
     await db.addJwtKeys('key1', 'key2');
 
-    expectQueryAndValues(2, 2, 0, 0, /^insert into jwtKey\s*\(key\) values\s*\(\$1\)$/iu, ['key1']);
-    expectQueryAndValues(2, 2, 1, 1, /^insert into jwtKey\s*\(key\) values\s*\(\$1\)$/iu, ['key2']);
+    expectQueryAndValues(2, 2, 0, 0, /^insert into jwtKey\s*\(id, key\) values\s*\(\$1, \$2\)$/iu, [mocked_id + 0, 'key1']);
+    expectQueryAndValues(2, 2, 1, 1, /^insert into jwtKey\s*\(id, key\) values\s*\(\$1, \$2\)$/iu, [mocked_id + 1, 'key2']);
   });
 
   test('PostgresDatabase->getJwtKeys gets keys.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();
-    when(/^select \* from jwtKey$/iu).then([{ key: 'key1' }, { key: 'key2' }]);
+    when(/^select \* from jwtKey$/iu).then([
+      { id: '1', key: 'key1' },
+      { id: '2', key: 'key2' }
+    ]);
 
     const keys = await db.getJwtKeys();
 
-    expect(keys).toEqual(['key1', 'key2']);
+    expect(keys[0]).toEqual({ id: '1', key: 'key1' });
+    expect(keys[1]).toEqual({ id: '2', key: 'key2' });
   });
 
   test('PostgresDatabase->countFailedLoginAttempts creates new entity with attempts=1.', async (): Promise<void> => {

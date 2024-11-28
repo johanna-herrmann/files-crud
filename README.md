@@ -112,7 +112,7 @@ Configuration is done via `config.json` file in the application directory (outsi
 If you want to use `DynamoDB`, please take into account:
 
 ### Tables
-You have to create the tables and provide the names in `config.json`.
+You have to create the tables and provide the names in `config.json` (`TableName`s are suggestions).
 
 The tables have to be created like defined in `dynamodb-schemas/`.
 

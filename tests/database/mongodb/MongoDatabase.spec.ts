@@ -15,6 +15,18 @@ const UserModel = new MongoDatabase('').getConf()[1];
 const FileModel = new MongoDatabase('').getConf()[4];
 
 let mocked_time = 0;
+const mocked_id = 'test-id';
+let mocked_index = 0;
+
+jest.mock('uuid', () => {
+  const actual = jest.requireActual('uuid');
+  return {
+    ...actual,
+    v4() {
+      return mocked_id + mocked_index++;
+    }
+  };
+});
 
 jest.mock('@/database/mongodb/timeWrapper', () => {
   return {
@@ -28,6 +40,7 @@ describe('MongoDatabase', (): void => {
   beforeEach(async (): Promise<void> => {
     mongod = await MongoMemoryServer.create();
     uri = mongod.getUri();
+    mocked_index = 0;
   });
 
   afterEach(async (): Promise<void> => {
@@ -47,6 +60,7 @@ describe('MongoDatabase', (): void => {
 
   const expectJwtKeyModelAndSchema = function (db: MongoDatabase): void {
     expect(db.getConf()[2].modelName).toBe('JwtKey');
+    expect(db.getConf()[2].schema.obj.id).toEqual({ type: String, default: '' });
     expect(db.getConf()[2].schema.obj.key).toEqual({ type: String, default: '' });
   };
 
@@ -237,11 +251,11 @@ describe('MongoDatabase', (): void => {
 
     await db.addJwtKeys('key1', 'key2', 'key3');
 
-    const keys = await JwtKey.find();
+    const keys = (await JwtKey.find()).map(({ id, key }) => ({ id, key }));
     expect(keys.length).toBe(3);
-    expect(keys[0].key).toBe('key1');
-    expect(keys[1].key).toBe('key2');
-    expect(keys[2].key).toBe('key3');
+    expect(keys[0]).toEqual({ id: mocked_id + 0, key: 'key1' });
+    expect(keys[1]).toEqual({ id: mocked_id + 1, key: 'key2' });
+    expect(keys[2]).toEqual({ id: mocked_id + 2, key: 'key3' });
   });
 
   test('MongoDatabase->getJwtKeys gets jwt keys.', async (): Promise<void> => {
@@ -252,9 +266,9 @@ describe('MongoDatabase', (): void => {
     const keys = await db.getJwtKeys();
 
     expect(keys.length).toBe(3);
-    expect(keys[0]).toBe('key1');
-    expect(keys[1]).toBe('key2');
-    expect(keys[2]).toBe('key3');
+    expect(keys[0]).toEqual({ id: mocked_id + 0, key: 'key1' });
+    expect(keys[1]).toEqual({ id: mocked_id + 1, key: 'key2' });
+    expect(keys[2]).toEqual({ id: mocked_id + 2, key: 'key3' });
   });
 
   test('MongoDatabase->countLoginAttempt creates new item with attempts=1.', async (): Promise<void> => {

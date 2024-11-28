@@ -5,6 +5,8 @@ import Database from '@/types/Database';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import { getCurrentTime } from './timeWrapper';
 import UserListItem from '@/types/UserListItem';
+import JwtKey from '@/types/JwtKey';
+import { v4 } from 'uuid';
 
 const userSchema = new mongoose.Schema({
   username: { type: String, default: '' },
@@ -17,6 +19,7 @@ const userSchema = new mongoose.Schema({
 });
 
 const jwtKeySchema = new mongoose.Schema({
+  id: { type: String, default: '' },
   key: { type: String, default: '' }
 });
 
@@ -104,12 +107,12 @@ class MongoDatabase implements Database {
 
   public async addJwtKeys(...keys: string[]): Promise<void> {
     for (const key of keys) {
-      await new this.JwtKey({ key }).save();
+      await new this.JwtKey({ key, id: v4() }).save();
     }
   }
 
-  public async getJwtKeys(): Promise<string[]> {
-    return (await this.JwtKey.find()).map((key) => key.key);
+  public async getJwtKeys(): Promise<JwtKey[]> {
+    return (await this.JwtKey.find()).map(({ id, key }) => ({ id, key }));
   }
 
   public async countLoginAttempt(username: string): Promise<void> {

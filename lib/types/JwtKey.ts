@@ -1,4 +1,5 @@
 interface JwtKey {
+  id: string;
   key: string;
 }
 

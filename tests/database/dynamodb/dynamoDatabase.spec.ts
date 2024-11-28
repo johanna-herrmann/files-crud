@@ -20,6 +20,18 @@ const mocked_db: Tables = {
 let mocked_lastIndex: string | undefined;
 const all = 'all';
 const id = 'test-id';
+const mocked_id = id;
+let mocked_index = 0;
+
+jest.mock('uuid', () => {
+  const actual = jest.requireActual('uuid');
+  return {
+    ...actual,
+    v4() {
+      return mocked_id + mocked_index++;
+    }
+  };
+});
 
 jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
   const all = 'all';
@@ -79,7 +91,7 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
     },
     async loadJwtKeys(client: DynamoDBClient, TableName: string) {
       const keys = mocked_db[TableName];
-      return keys.map((key) => key.key);
+      return keys.map(({ id, key }) => ({ id, key }));
     },
     async itemExists(client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, IndexName?: string) {
       mocked_lastIndex = IndexName;
@@ -96,6 +108,7 @@ describe('DynamoDatabase', (): void => {
   beforeEach(async (): Promise<void> => {
     jest.useFakeTimers();
     jest.setSystemTime(fakeDate);
+    mocked_index = 0;
   });
 
   afterEach(async (): Promise<void> => {
@@ -253,9 +266,9 @@ describe('DynamoDatabase', (): void => {
     await db.addJwtKeys('key1', 'key2', 'key3');
 
     expect(mocked_db.jwtKey).toEqual([
-      { all, key: 'key1' },
-      { all, key: 'key2' },
-      { all, key: 'key3' }
+      { all, id: id + 0, key: 'key1' },
+      { all, id: id + 1, key: 'key2' },
+      { all, id: id + 2, key: 'key3' }
     ]);
     expect(mocked_lastIndex).toBeUndefined();
   });
@@ -264,14 +277,16 @@ describe('DynamoDatabase', (): void => {
     const db = newDb();
     await db.open();
     mocked_db.jwtKey = [
-      { all, key: 'key1' },
-      { all, key: 'key2' },
-      { all, key: 'key3' }
+      { all, id: '1', key: 'key1' },
+      { all, id: '2', key: 'key2' },
+      { all, id: '3', key: 'key3' }
     ];
 
     const keys = await db.getJwtKeys();
 
-    expect(keys).toEqual(['key1', 'key2', 'key3']);
+    expect(keys[0]).toEqual({ id: '1', key: 'key1' });
+    expect(keys[1]).toEqual({ id: '2', key: 'key2' });
+    expect(keys[2]).toEqual({ id: '3', key: 'key3' });
     expect(mocked_lastIndex).toBeUndefined();
   });
 

@@ -212,14 +212,15 @@ describe('dynamoDbHelper', (): void => {
   test('loadAllKeys loads keys correctly.', async (): Promise<void> => {
     dynamoMock.on(ScanCommand, { TableName }).resolves({
       Items: [
-        { all, key: 'key1' },
-        { all, key: 'key2' }
+        { all, id: '1', key: 'key1' },
+        { all, id: '2', key: 'key2' }
       ]
     });
 
     const keys = await loadJwtKeys(client, TableName);
 
-    expect(keys).toEqual(['key1', 'key2']);
+    expect(keys[0]).toEqual({ id: '1', key: 'key1' });
+    expect(keys[1]).toEqual({ id: '2', key: 'key2' });
   });
 
   test('exists returns true if item exists, no index.', async (): Promise<void> => {

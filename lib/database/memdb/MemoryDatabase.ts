@@ -3,10 +3,12 @@ import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import User from '@/types/User';
 import File from '@/types/File';
 import UserListItem from '@/types/UserListItem';
+import JwtKey from '@/types/JwtKey';
+import { v4 } from 'uuid';
 
 interface Tables {
   user: Record<string, User>;
-  jwtKey: string[];
+  jwtKey: JwtKey[];
   failedLoginAttempts: Record<string, FailedLoginAttempts>;
   file: Record<string, File>;
 }
@@ -76,10 +78,10 @@ class MemoryDatabase implements Database {
   }
 
   public async addJwtKeys(...keys: string[]): Promise<void> {
-    keys.forEach((key) => tables.jwtKey.push(key));
+    keys.forEach((key) => tables.jwtKey.push({ key, id: v4() }));
   }
 
-  public async getJwtKeys(): Promise<string[]> {
+  public async getJwtKeys(): Promise<JwtKey[]> {
     return tables.jwtKey;
   }
 

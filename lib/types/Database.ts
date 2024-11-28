@@ -2,6 +2,7 @@ import User from './User';
 import File from './File';
 import FailedLoginAttempts from './FailedLoginAttempts';
 import UserListItem from './UserListItem';
+import JwtKey from './JwtKey';
 
 interface Database {
   /**
@@ -101,7 +102,7 @@ interface Database {
    * Gets all keys as string array
    * @returns Fulfils with string array upon success, one string item per key
    */
-  getJwtKeys: () => Promise<string[]>;
+  getJwtKeys: () => Promise<JwtKey[]>;
 
   /**
    * Counts a failes login attempt.

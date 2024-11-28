@@ -5,6 +5,8 @@ import File from '@/types/File';
 import User from '@/types/User';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
 import UserListItem from '@/types/UserListItem';
+import JwtKey from '@/types/JwtKey';
+import { v4 } from 'uuid';
 
 class DynamoDatabase implements Database {
   private readonly config: DynamoDBClientConfig;
@@ -107,11 +109,11 @@ class DynamoDatabase implements Database {
 
   public async addJwtKeys(...keys: string[]): Promise<void> {
     for (const key of keys) {
-      await putItem(this.ensureClient(), this.jwtKeyTableName, { key });
+      await putItem(this.ensureClient(), this.jwtKeyTableName, { key, id: v4() });
     }
   }
 
-  public async getJwtKeys(): Promise<string[]> {
+  public async getJwtKeys(): Promise<JwtKey[]> {
     return await loadJwtKeys(this.ensureClient(), this.jwtKeyTableName);
   }
 

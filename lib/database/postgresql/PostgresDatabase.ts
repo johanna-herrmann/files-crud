@@ -4,10 +4,11 @@ import { Client } from 'pg';
 import { getNewClient, connect, end, definingQuery, writingQuery, readingQuery } from './pgWrapper';
 import User from '@/types/User';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
-import JwtKey from '@/types/JwtKey';
 import File from '@/types/File';
 import FileName from '@/types/FileName';
 import UserListItem from '@/types/UserListItem';
+import JwtKey from '@/types/JwtKey';
+import { v4 } from 'uuid';
 
 const createTableIfNotExists = async function (client: Client, table: string, ...fields: string[]): Promise<void> {
   await definingQuery(client, `CREATE TABLE IF NOT EXISTS ${table}(${fields.join(', ')})`);
@@ -28,11 +29,11 @@ const createUserTableIfNotExists = async function (client: Client) {
 };
 
 const createJwtKeyTableIfNotExists = async function (client: Client) {
-  createTableIfNotExists(client, 'jwtKey', 'key text');
+  createTableIfNotExists(client, 'jwtKey', 'id text', 'key text');
 };
 
 const createFailedLoginAttemptsTableIfNotExists = async function (client: Client) {
-  createTableIfNotExists(client, 'failedLoginAttempts', 'username text', 'attempts int');
+  createTableIfNotExists(client, 'failedLoginAttempts', 'username text', 'attempts int', 'lastAttempt bigint');
 };
 
 const createFileTableIfNotExists = async function (client: Client) {
@@ -131,16 +132,16 @@ class PostgresDatabase implements Database {
 
   public async addJwtKeys(...keys: string[]): Promise<void> {
     for (const key of keys) {
-      const query = 'INSERT INTO jwtKey(key) VALUES($1)';
-      const values = [key];
+      const query = 'INSERT INTO jwtKey(id, key) VALUES($1, $2)';
+      const values = [v4(), key];
       await writingQuery(this.client, query, values);
     }
   }
 
-  public async getJwtKeys(): Promise<string[]> {
+  public async getJwtKeys(): Promise<JwtKey[]> {
     const query = 'SELECT * FROM jwtKey';
     const result = await readingQuery<JwtKey>(this.client, query);
-    return result ? result.rows.map((row) => row.key) : [];
+    return result ? result.rows.map(({ id, key }) => ({ id, key })) : [];
   }
 
   public async countLoginAttempt(username: string): Promise<void> {

@@ -1,4 +1,5 @@
 import DbItem from '@/types/DbItem';
+import JwtKey from '@/types/JwtKey';
 import UserListItem from '@/types/UserListItem';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
@@ -167,14 +168,14 @@ const loadFiles = async function (client: DynamoDBClient, TableName: string, fol
   return items.map((item) => item.file);
 };
 
-const loadJwtKeys = async function (client: DynamoDBClient, TableName: string): Promise<string[]> {
+const loadJwtKeys = async function (client: DynamoDBClient, TableName: string): Promise<JwtKey[]> {
   const input: ScanCommandInput = {
     TableName
   };
   const command = new ScanCommand(input);
   const result = await client.send(command);
   const items = result.Items ?? [];
-  return items.map((item) => item.key);
+  return items.map(({ id, key }) => ({ id, key }));
 };
 
 const itemExists = async function (
