@@ -1,5 +1,6 @@
-import { register, login } from '@/auth/auth';
+import { register, login, invalidCredentials, lockedExceeded } from '@/auth/auth';
 import { tables } from '@/database/memdb/MemoryDatabase';
+import Database from '@/types/Database';
 
 const username = 'testUser';
 const password = 'testPwd';
@@ -8,6 +9,10 @@ const salt = 'YWFhYWFhYWFhYWFhYWFhYQ==';
 const hash = 'O8fICNHvM2AlfcoaHUamNo5JQJamdZMz0YXMLrnoH/w=';
 const ownerId = 'test-id';
 const meta = { k: 'v' };
+
+let mocked_called_count = false;
+let mocked_called_reset = false;
+let mocked_locked = false;
 
 jest.mock('@/config', () => {
   return {
@@ -36,6 +41,23 @@ jest.mock('@/auth/jwt', () => {
   };
 });
 
+jest.mock('@/auth/locking', () => {
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async countAttempt(db: Database, username: string) {
+      mocked_called_count = true;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async resetAttempts(db: Database, username: string) {
+      mocked_called_reset = true;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async handleLocking(db: Database, username: string) {
+      return mocked_locked;
+    }
+  };
+});
+
 jest.mock('crypto', () => {
   const actual = jest.requireActual('crypto');
   return {
@@ -49,6 +71,9 @@ jest.mock('crypto', () => {
 describe('auth', (): void => {
   beforeEach(async (): Promise<void> => {
     tables.user = {};
+    mocked_called_count = false;
+    mocked_called_reset = false;
+    mocked_locked = false;
   });
 
   test('register registers new user.', async (): Promise<void> => {
@@ -75,34 +100,57 @@ describe('auth', (): void => {
   });
 
   test('login returns token on valid credentials.', async (): Promise<void> => {
+    mocked_locked = false;
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
 
-    const token = await login(username, password);
+    const result = await login(username, password);
 
-    expect(token).toBe(`token for ${username}`);
+    expect(result).toBe(`token for ${username}`);
+    expect(mocked_called_count).toBe(false);
+    expect(mocked_called_reset).toBe(true);
   });
 
-  test('login returns empty string on invalid password.', async (): Promise<void> => {
+  test('login returns invalidCredentials on invalid password.', async (): Promise<void> => {
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    mocked_locked = false;
 
-    const token = await login(username, 'invalid');
+    const result = await login(username, 'invalid');
 
-    expect(token).toBe('');
+    expect(result).toBe(invalidCredentials);
+    expect(mocked_called_count).toBe(true);
+    expect(mocked_called_reset).toBe(false);
   });
 
-  test('login returns empty string on invalid username.', async (): Promise<void> => {
+  test('login returns invalidCredentials on invalid username.', async (): Promise<void> => {
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    mocked_locked = false;
 
-    const token = await login('invalid', password);
+    const result = await login('invalid', password);
 
-    expect(token).toBe('');
+    expect(result).toBe(invalidCredentials);
+    expect(mocked_called_count).toBe(true);
+    expect(mocked_called_reset).toBe(false);
   });
 
-  test('login returns empty string on invalid credentials.', async (): Promise<void> => {
+  test('login returns invalidCredentials on invalid credentials.', async (): Promise<void> => {
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    mocked_locked = false;
 
-    const token = await login('invalid', 'invalid');
+    const result = await login('invalid', 'invalid');
 
-    expect(token).toBe('');
+    expect(result).toBe(invalidCredentials);
+    expect(mocked_called_count).toBe(true);
+    expect(mocked_called_reset).toBe(false);
+  });
+
+  test('login returns attemptsExceeded if locked.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    mocked_locked = true;
+
+    const result = await login(username, password);
+
+    expect(result).toBe(lockedExceeded);
+    expect(mocked_called_count).toBe(false);
+    expect(mocked_called_reset).toBe(false);
   });
 });
