@@ -343,6 +343,19 @@ describe('PostgresDatabase', (): void => {
     ]);
   });
 
+  test('PostgresDatabase->countFailedLoginAttempts increasing attempts in existing entity.', async (): Promise<void> => {
+    const db = new PostgresDatabase(conf);
+    await db.open();
+    when(/^select \* from failedLoginAttempts where username=\$1$/iu, [testUser.username]).then([
+      { username: testUser.username, attempts: 1, lastAttempt: 0 }
+    ]);
+    jest.setSystemTime(42);
+
+    await db.updateLastLoginAttempt(testUser.username);
+
+    expectQueryAndValues(1, 1, 0, 0, /^update failedLoginAttempts set lastAttempt=\$1 where username=\$2$/iu, [42, testUser.username]);
+  });
+
   test('PostgresDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new PostgresDatabase(conf);
     await db.open();

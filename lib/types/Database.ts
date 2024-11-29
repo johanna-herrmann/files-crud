@@ -113,6 +113,13 @@ interface Database {
   countLoginAttempt: (username: string) => Promise<void>;
 
   /**
+   * Updates the last attempt timestamp.
+   * @param username - the username to update the timestamp for
+   * @returns Fulfils with undefined upon success
+   */
+  updateLastLoginAttempt: (username: string) => Promise<void>;
+
+  /**
    * Gets the attempts count for the username
    * @param username - username to get the count for
    * @returns Fulfils with number upon success, amount of attempts since last reset (removeLoginAttempts)

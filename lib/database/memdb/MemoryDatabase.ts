@@ -93,6 +93,11 @@ class MemoryDatabase implements Database {
     tables.failedLoginAttempts[username] = attempts;
   }
 
+  public async updateLastLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = Date.now();
+    tables.failedLoginAttempts[username].lastAttempt = lastAttempt;
+  }
+
   public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
     return tables.failedLoginAttempts[username] ?? null;
   }

@@ -162,6 +162,11 @@ class PostgresDatabase implements Database {
     ]);
   }
 
+  public async updateLastLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = Date.now();
+    await writingQuery(this.client, 'UPDATE failedLoginAttempts SET lastAttempt=$1 WHERE username=$2', [lastAttempt, username]);
+  }
+
   public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
     const query = 'SELECT * FROM failedLoginAttempts WHERE username=$1';
     const values = [username];

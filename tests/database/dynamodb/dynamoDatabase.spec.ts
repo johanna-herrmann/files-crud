@@ -313,6 +313,19 @@ describe('DynamoDatabase', (): void => {
     expect(mocked_lastIndex).toBeUndefined();
   });
 
+  test('DynamoDatabase->updateLastLoginAttempt updates lastAttempt only.', async (): Promise<void> => {
+    const db = newDb();
+    await db.open();
+    mocked_db.failedLoginAttempts[0] = { all, username: testUser.username, attempts: 1 } as unknown as Item;
+    jest.setSystemTime(new Date(42));
+
+    await db.updateLastLoginAttempt(testUser.username);
+
+    expect(mocked_db.failedLoginAttempts[0]?.attempts).toBe(1);
+    expect(mocked_db.failedLoginAttempts[0]?.lastAttempt).toBe(42);
+    expect(mocked_lastIndex).toBeUndefined();
+  });
+
   test('DynamoDatabase->getLoginAttempts returns attempts if item exists.', async (): Promise<void> => {
     const db = newDb();
     await db.open();

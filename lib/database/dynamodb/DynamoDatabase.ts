@@ -138,6 +138,11 @@ class DynamoDatabase implements Database {
     await updateItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username, { attempts: attempts.attempts, lastAttempt });
   }
 
+  public async updateLastLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = Date.now();
+    await updateItem(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username, { lastAttempt });
+  }
+
   public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
     return await loadItem<FailedLoginAttempts>(this.ensureClient(), this.failedLoginAttemptsTableName, 'username', username);
   }

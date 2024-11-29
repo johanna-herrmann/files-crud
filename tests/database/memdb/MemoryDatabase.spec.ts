@@ -198,6 +198,18 @@ describe('MemoryDatabase', (): void => {
     expect(tables.failedLoginAttempts[testUser.username]?.lastAttempt).toBe(fakeTime);
   });
 
+  test('MemoryDatabase->updateLastLoginAttempt updates lastAttempt only.', async (): Promise<void> => {
+    const db = new MemoryDatabase();
+    await db.countLoginAttempt(testUser.username);
+    tables.failedLoginAttempts[testUser.username].lastAttempt = 0;
+    jest.setSystemTime(42);
+
+    await db.updateLastLoginAttempt(testUser.username);
+
+    expect(tables.failedLoginAttempts[testUser.username]?.attempts).toBe(1);
+    expect(tables.failedLoginAttempts[testUser.username]?.lastAttempt).toBe(42);
+  });
+
   test('MemoryDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new MemoryDatabase();
     await db.countLoginAttempt(testUser.username);

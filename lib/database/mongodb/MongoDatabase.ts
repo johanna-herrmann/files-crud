@@ -127,6 +127,11 @@ class MongoDatabase implements Database {
     await attempts.save();
   }
 
+  public async updateLastLoginAttempt(username: string): Promise<void> {
+    const lastAttempt = getCurrentTime();
+    await this.FailedLoginAttempts.findOneAndUpdate({ username }, { lastAttempt });
+  }
+
   public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
     const attempts = await this.FailedLoginAttempts.findOne({ username });
     return attempts ?? null;

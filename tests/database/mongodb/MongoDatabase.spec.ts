@@ -300,6 +300,21 @@ describe('MongoDatabase', (): void => {
     expect(failedLoginAttempts?.lastAttempt).toBe(mocked_time);
   });
 
+  test('MongoDatabase->updateLastLoginAttempt updates lastAttempt only.', async (): Promise<void> => {
+    const db = new MongoDatabase(`${uri}db`);
+    await db.open();
+    const FailedLoginAttempts = db.getConf()[3];
+    await db.countLoginAttempt(testUser.username);
+    mocked_time = 42;
+
+    await db.updateLastLoginAttempt(testUser.username);
+
+    const failedLoginAttempts = await FailedLoginAttempts.findOne({ username: testUser.username });
+    expect(failedLoginAttempts?.username).toBe(testUser.username);
+    expect(failedLoginAttempts?.attempts).toBe(1);
+    expect(failedLoginAttempts?.lastAttempt).toBe(mocked_time);
+  });
+
   test('MongoDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
