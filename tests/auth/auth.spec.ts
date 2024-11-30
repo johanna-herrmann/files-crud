@@ -6,7 +6,8 @@ import {
   userAlreadyExists,
   invalidCredentials,
   lockedExceeded,
-  getLoggedInUser
+  getLoggedInUser,
+  adminCreationRestrictionAdmin
 } from '@/auth/auth';
 import { issueToken } from '@/auth/jwt';
 import { loadConfig } from '@/config';
@@ -106,10 +107,28 @@ describe('auth', (): void => {
   });
 
   test('register registers new admin.', async (): Promise<void> => {
-    const result = await register(username, password, true, {});
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
 
-    expect(tables.user.testUser).toEqual({ username, hashVersion, salt, hash, ownerId, admin: true, meta: {} });
+    const result = await register('someName', password, true, {}, { jwt: `valid_${username}` });
+
+    expect(tables.user.someName).toEqual({ username: 'someName', hashVersion, salt, hash, ownerId, admin: true, meta: {} });
     expect(result).toBe('');
+  });
+
+  test('register rejects if admin=true, but no login.', async (): Promise<void> => {
+    const result = await register('someName', password, true, {});
+
+    expect(tables.user.someName).toBeUndefined();
+    expect(result).toBe(adminCreationRestrictionAdmin);
+  });
+
+  test('register rejects if admin=true, but logged-in user is not admin.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: false, meta: {} };
+
+    const result = await register('someName', password, true, {}, { jwt: `valid_${username}` });
+
+    expect(tables.user.someName).toBeUndefined();
+    expect(result).toBe(adminCreationRestrictionAdmin);
   });
 
   test('register rejects if user already exists.', async (): Promise<void> => {
