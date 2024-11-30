@@ -1,11 +1,20 @@
 import { v4 } from 'uuid';
 import { loadDb, closeDb } from '@/database/db';
+import { getConfig } from '@/config';
 import { versions, current } from './passwordHashing/versions';
 import Database from '@/types/Database';
 import { extractUsername, issueToken, verifyToken } from './jwt';
 import { countAttempt, handleLocking, resetAttempts } from './locking';
 import User from '@/types/User';
 
+interface Token {
+  jwt?: string;
+  register?: string;
+}
+
+const userAlreadyExists = 'USER_ALREADY_EXISTS';
+const registerRestrictedAdmin = 'REGISTER_RESTRICTED_ADMIN';
+const registerRestrictedToken = 'REGISTER_RESTRICTED_TOKEN';
 const invalidCredentials = 'INVALID_CREDENTIALS';
 const lockedExceeded = 'ATTEMPTS_EXCEEDED';
 
@@ -44,12 +53,26 @@ const authorize = async function (db: Database, jwt: string | null): Promise<Use
   return await db.getUser(username);
 };
 
-const register = async function (username: string, password: string, admin: boolean, meta: Record<string, unknown>): Promise<boolean> {
+const register = async function (username: string, password: string, admin: boolean, meta: Record<string, unknown>, token?: Token): Promise<string> {
   try {
     const db = await loadDb();
+    const config = getConfig();
+    if (config.register === 'admin') {
+      const jwt = token?.jwt ?? null;
+      const user = await authorize(db, jwt);
+      if (!user || !user.admin) {
+        return registerRestrictedAdmin;
+      }
+    }
+    if (config.register === 'token') {
+      const registerToken = token?.register ?? '';
+      if (!config.tokens?.includes(registerToken)) {
+        return registerRestrictedToken;
+      }
+    }
     const exists = await db.userExists(username);
     if (exists) {
-      return false;
+      return userAlreadyExists;
     }
     const ownerId = v4();
     const hashVersion = current.version;
@@ -59,7 +82,7 @@ const register = async function (username: string, password: string, admin: bool
   } finally {
     await closeDb();
   }
-  return true;
+  return '';
 };
 
 const login = async function (username: string, password: string): Promise<string> {
@@ -85,4 +108,4 @@ const getLoggedInUser = async function (jwt: string | null): Promise<User | null
   }
 };
 
-export { register, login, getLoggedInUser, invalidCredentials, lockedExceeded };
+export { register, login, getLoggedInUser, registerRestrictedAdmin, registerRestrictedToken, userAlreadyExists, invalidCredentials, lockedExceeded };

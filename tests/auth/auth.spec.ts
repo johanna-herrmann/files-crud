@@ -1,5 +1,15 @@
-import { register, login, invalidCredentials, lockedExceeded, getLoggedInUser } from '@/auth/auth';
+import {
+  register,
+  login,
+  registerRestrictedAdmin,
+  registerRestrictedToken,
+  userAlreadyExists,
+  invalidCredentials,
+  lockedExceeded,
+  getLoggedInUser
+} from '@/auth/auth';
 import { issueToken } from '@/auth/jwt';
+import { loadConfig } from '@/config';
 import { tables } from '@/database/memdb/MemoryDatabase';
 import Database from '@/types/Database';
 
@@ -14,15 +24,6 @@ const meta = { k: 'v' };
 let mocked_called_count = false;
 let mocked_called_reset = false;
 let mocked_locked = false;
-
-jest.mock('@/config', () => {
-  return {
-    loadConfig() {},
-    getConfig() {
-      return {};
-    }
-  };
-});
 
 jest.mock('uuid', () => {
   const actual = jest.requireActual('uuid');
@@ -43,6 +44,21 @@ jest.mock('@/auth/jwt', () => {
         return actual.issueToken(username.substring(5));
       }
       return `token for ${username}`;
+    },
+    verifyToken(token: string | null) {
+      if (token?.startsWith('valid_')) {
+        return true;
+      }
+      if (token?.startsWith('invalid_')) {
+        return false;
+      }
+      return actual.verifyToken(token);
+    },
+    extractUsername(token: string) {
+      if (token?.startsWith('valid_')) {
+        return token.substring(6);
+      }
+      return actual.extractUsername(token);
     }
   };
 });
@@ -83,26 +99,82 @@ describe('auth', (): void => {
   });
 
   test('register registers new user.', async (): Promise<void> => {
-    const created = await register(username, password, false, { k: 'v' });
+    const result = await register(username, password, false, { k: 'v' });
 
     expect(tables.user.testUser).toEqual({ username, hashVersion, salt, hash, ownerId, admin: false, meta });
-    expect(created).toBe(true);
+    expect(result).toBe('');
   });
 
   test('register registers new admin.', async (): Promise<void> => {
-    const created = await register(username, password, true, {});
+    const result = await register(username, password, true, {});
 
     expect(tables.user.testUser).toEqual({ username, hashVersion, salt, hash, ownerId, admin: true, meta: {} });
-    expect(created).toBe(true);
+    expect(result).toBe('');
   });
 
   test('register rejects if user already exists.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+
+    const result = await register(username, password, false, {});
+
+    expect(result).toBe(userAlreadyExists);
+    expect(tables.user.testUser?.admin).toBe(true);
+  });
+
+  test('register rejects if register is restricted to admins and there is no login.', async (): Promise<void> => {
+    loadConfig({ register: 'admin' });
+
+    const result = await register(username, password, false, {});
+
+    expect(result).toBe(registerRestrictedAdmin);
+    expect(tables.user.testUser).toBeUndefined();
+  });
+
+  test('register rejects if register is restricted to admins and user is not an admin.', async (): Promise<void> => {
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: false, meta: {} };
+    loadConfig({ register: 'admin' });
 
-    const created = await register(username, password, true, {});
+    const result = await register('someName', password, false, {}, { jwt: `valid_${username}` });
 
-    expect(created).toBe(false);
-    expect(tables.user.testUser?.admin).toBe(false);
+    expect(result).toBe(registerRestrictedAdmin);
+    expect(tables.user.someName).toBeUndefined();
+  });
+
+  test('register registers user if register is restricted to admins and user is admin.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    loadConfig({ register: 'admin' });
+
+    const result = await register('someName', password, false, {}, { jwt: `valid_${username}` });
+
+    expect(result).toBe('');
+    expect(tables.user.someName?.username).toBe('someName');
+  });
+
+  test('register rejects if register is restricted to token and no token provided.', async (): Promise<void> => {
+    loadConfig({ register: 'token' });
+
+    const result = await register(username, password, false, {});
+
+    expect(result).toBe(registerRestrictedToken);
+    expect(tables.user.testUser).toBeUndefined();
+  });
+
+  test('register rejects if register is restricted to token and invalid token provided.', async (): Promise<void> => {
+    loadConfig({ register: 'token', tokens: ['foo'] });
+
+    const result = await register(username, password, false, {}, { register: 'bar' });
+
+    expect(result).toBe(registerRestrictedToken);
+    expect(tables.user.testUser).toBeUndefined();
+  });
+
+  test('register registers user if register is restricted to token and valid token provided.', async (): Promise<void> => {
+    loadConfig({ register: 'token', tokens: ['foo'] });
+
+    const result = await register(username, password, false, {}, { register: 'foo' });
+
+    expect(result).toBe('');
+    expect(tables.user.testUser?.username).toBe(username);
   });
 
   test('login returns token on valid credentials.', async (): Promise<void> => {

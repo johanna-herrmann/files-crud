@@ -15,9 +15,16 @@ const getConfigString = function () {
   }
 };
 
-const loadConfig = function () {
+const getNewConfig = function (config_?: Config): Record<string, unknown> {
+  if (config_) {
+    return config_ as Record<string, unknown>;
+  }
   const configString = getConfigString();
-  const newConfig = JSON.parse(configString) as Record<string, unknown>;
+  return JSON.parse(configString) as Record<string, unknown>;
+};
+
+const loadConfig = function (config_?: Config) {
+  const newConfig = getNewConfig(config_);
   Object.keys(config).forEach((key) => delete (config as Record<string, unknown>)[key]);
   Object.keys(newConfig).forEach((key) => ((config as Record<string, unknown>)[key] = newConfig[key]));
 };
