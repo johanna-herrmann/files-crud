@@ -1,4 +1,4 @@
-import { loadDb, closeDb, resetDb } from '@/database/db';
+import { loadDb, closeDb, resetDb } from '@/database';
 import { MemoryDatabase } from '@/database/memdb/MemoryDatabase';
 import { MongoDatabase } from '@/database/mongodb/MongoDatabase';
 import { PostgresDatabase } from '@/database/postgresql/PostgresDatabase';

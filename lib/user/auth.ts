@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import { loadDb, closeDb } from '@/database/db';
+import { loadDb, closeDb } from '@/database';
 import { versions, current } from './passwordHashing/versions';
 import Database from '@/types/Database';
 import { extractUsername, issueToken, verifyToken } from './jwt';

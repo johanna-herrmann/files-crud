@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { loadDb, closeDb } from '@/database/db';
+import { loadDb, closeDb } from '@/database';
 import JwtKey from '@/types/JwtKey';
 
 const KEY_LENGTH = 32;
