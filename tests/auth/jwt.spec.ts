@@ -1,9 +1,9 @@
-import { issueToken, verifyToken, getIndex, getKeys, KEYS, algorithm } from '@/auth/jwt';
+import { issueToken, verifyToken, getIndex, getKeys, KEYS, TTL, algorithm } from '@/auth/jwt';
 import jwt from 'jsonwebtoken';
 
 describe('jwt', (): void => {
   const fakeDate = new Date('2017-01-01');
-  const fakeDateExpired = new Date('2017-01-02');
+  const fakeDateExpired = new Date(fakeDate.getTime() + TTL + 1);
   const fakeTime = fakeDate.getTime();
 
   beforeEach(async (): Promise<void> => {

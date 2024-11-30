@@ -74,4 +74,4 @@ const getKeys = function (): JwtKey[] {
 
 initKeys().then();
 
-export { issueToken, verifyToken, getIndex, getKeys, KEYS, algorithm };
+export { issueToken, verifyToken, getIndex, getKeys, KEYS, TTL, algorithm };
