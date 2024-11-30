@@ -1,4 +1,4 @@
-import { issueToken, verifyToken, getIndex, getKeys, KEYS, TTL, algorithm } from '@/auth/jwt';
+import { issueToken, verifyToken, getIndex, getKeys, KEYS, TTL, algorithm, extractUsername } from '@/auth/jwt';
 import jwt from 'jsonwebtoken';
 
 describe('jwt', (): void => {
@@ -86,5 +86,13 @@ describe('jwt', (): void => {
     const result = verifyToken(null);
 
     expect(result).toBe('');
+  });
+
+  test('extractUsername returns username.', async (): Promise<void> => {
+    const token = issueToken('testUser');
+
+    const username = extractUsername(token);
+
+    expect(username).toBe('testUser');
   });
 });

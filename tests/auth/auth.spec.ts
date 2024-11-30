@@ -1,4 +1,5 @@
-import { register, login, invalidCredentials, lockedExceeded } from '@/auth/auth';
+import { register, login, invalidCredentials, lockedExceeded, getLoggedInUser } from '@/auth/auth';
+import { issueToken } from '@/auth/jwt';
 import { tables } from '@/database/memdb/MemoryDatabase';
 import Database from '@/types/Database';
 
@@ -34,8 +35,13 @@ jest.mock('uuid', () => {
 });
 
 jest.mock('@/auth/jwt', () => {
+  const actual = jest.requireActual('@/auth/jwt');
   return {
+    ...actual,
     issueToken(username: string) {
+      if (username.startsWith('real_')) {
+        return actual.issueToken(username.substring(5));
+      }
       return `token for ${username}`;
     }
   };
@@ -84,7 +90,7 @@ describe('auth', (): void => {
   });
 
   test('register registers new admin.', async (): Promise<void> => {
-    const created = await register(username, password, true);
+    const created = await register(username, password, true, {});
 
     expect(tables.user.testUser).toEqual({ username, hashVersion, salt, hash, ownerId, admin: true, meta: {} });
     expect(created).toBe(true);
@@ -93,7 +99,7 @@ describe('auth', (): void => {
   test('register rejects if user already exists.', async (): Promise<void> => {
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: false, meta: {} };
 
-    const created = await register(username, password, true);
+    const created = await register(username, password, true, {});
 
     expect(created).toBe(false);
     expect(tables.user.testUser?.admin).toBe(false);
@@ -150,6 +156,61 @@ describe('auth', (): void => {
     const result = await login(username, password);
 
     expect(result).toBe(lockedExceeded);
+    expect(mocked_called_count).toBe(false);
+    expect(mocked_called_reset).toBe(false);
+  });
+
+  test('getLoggedInUser returns user if logged in.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    mocked_locked = false;
+    const token = issueToken(`real_${username}`);
+
+    const user = await getLoggedInUser(token);
+
+    expect(user?.username).toBe(username);
+    expect(mocked_called_count).toBe(false);
+    expect(mocked_called_reset).toBe(false);
+  });
+
+  test('getLoggedInUser returns null if logged-in user does not exist.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    mocked_locked = false;
+    const token = issueToken(`real_other`);
+
+    const user = await getLoggedInUser(token);
+
+    expect(user).toBeNull();
+    expect(mocked_called_count).toBe(false);
+    expect(mocked_called_reset).toBe(false);
+  });
+
+  test('getLoggedInUser returns null if token is invalid.', async (): Promise<void> => {
+    mocked_locked = false;
+    const token = issueToken(`real_${username}`);
+
+    const user = await getLoggedInUser(token.substring(0, token.length - 2));
+
+    expect(user).toBeNull();
+    expect(mocked_called_count).toBe(false);
+    expect(mocked_called_reset).toBe(false);
+  });
+
+  test('getLoggedInUser returns null if token is empty.', async (): Promise<void> => {
+    mocked_locked = false;
+
+    const user = await getLoggedInUser('');
+
+    expect(user).toBeNull();
+    expect(mocked_called_count).toBe(false);
+    expect(mocked_called_reset).toBe(false);
+  });
+
+  test('getLoggedInUser returns null if no token.', async (): Promise<void> => {
+    mocked_locked = false;
+
+    const user = await getLoggedInUser(null);
+
+    expect(user).toBeNull();
     expect(mocked_called_count).toBe(false);
     expect(mocked_called_reset).toBe(false);
   });

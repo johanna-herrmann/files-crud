@@ -64,6 +64,11 @@ const verifyToken = function (token: string | null): string {
   return decoded.payload.sub;
 };
 
+const extractUsername = function (token: string): string {
+  const decoded = jwt.decode(token) as jwt.JwtPayload;
+  return decoded.sub ?? '';
+};
+
 const getIndex = function (): number {
   return index;
 };
@@ -74,4 +79,4 @@ const getKeys = function (): JwtKey[] {
 
 initKeys().then();
 
-export { issueToken, verifyToken, getIndex, getKeys, KEYS, TTL, algorithm };
+export { issueToken, verifyToken, extractUsername, getIndex, getKeys, KEYS, TTL, algorithm };
