@@ -1,23 +1,14 @@
 import { v4 } from 'uuid';
 import { loadDb, closeDb } from '@/database/db';
-import { getConfig } from '@/config';
 import { versions, current } from './passwordHashing/versions';
 import Database from '@/types/Database';
 import { extractUsername, issueToken, verifyToken } from './jwt';
 import { countAttempt, handleLocking, resetAttempts } from './locking';
 import User from '@/types/User';
 
-interface Token {
-  jwt?: string;
-  register?: string;
-}
-
 const userAlreadyExists = 'USER_ALREADY_EXISTS';
-const registerRestrictedAdmin = 'REGISTER_RESTRICTED_ADMIN';
-const registerRestrictedToken = 'REGISTER_RESTRICTED_TOKEN';
-const adminCreationRestrictionAdmin = 'ADMIN_CREATION_RESTRICTED';
 const invalidCredentials = 'INVALID_CREDENTIALS';
-const lockedExceeded = 'ATTEMPTS_EXCEEDED';
+const attemptsExceeded = 'ATTEMPTS_EXCEEDED';
 
 const updateHash = async function (db: Database, username: string, password: string): Promise<void> {
   const hashVersion = current.version;
@@ -45,41 +36,41 @@ const authenticate = async function (db: Database, username: string, password: s
   return true;
 };
 
-const authorize = async function (db: Database, jwt: string | null): Promise<User | null> {
-  const valid = verifyToken(jwt);
-  if (!valid) {
-    return null;
+const createAndSaveUser = async function (
+  db: Database,
+  username: string,
+  password: string,
+  admin: boolean,
+  meta: Record<string, unknown>
+): Promise<boolean> {
+  const exists = await db.userExists(username);
+  if (exists) {
+    return false;
   }
-  const username = extractUsername(jwt as string);
-  return await db.getUser(username);
+  const ownerId = v4();
+  const hashVersion = current.version;
+  const [salt, hash] = await current.hashPassword(password);
+  const user = { username, hashVersion, salt, hash, ownerId, admin: admin, meta };
+  await db.addUser(user);
+  return true;
 };
 
-const register = async function (username: string, password: string, admin: boolean, meta: Record<string, unknown>, token?: Token): Promise<string> {
+const addUser = async function (username: string, password: string, admin: boolean, meta: Record<string, unknown>): Promise<boolean> {
   try {
     const db = await loadDb();
-    const config = getConfig();
-    if (config.register === 'admin' || admin) {
-      const jwt = token?.jwt ?? null;
-      const user = await authorize(db, jwt);
-      if (!user || !user.admin) {
-        return admin ? adminCreationRestrictionAdmin : registerRestrictedAdmin;
-      }
-    }
-    if (config.register === 'token') {
-      const registerToken = token?.register ?? '';
-      if (!config.tokens?.includes(registerToken)) {
-        return registerRestrictedToken;
-      }
-    }
-    const exists = await db.userExists(username);
-    if (exists) {
+    return await createAndSaveUser(db, username, password, admin, meta);
+  } finally {
+    await closeDb();
+  }
+};
+
+const register = async function (username: string, password: string, meta: Record<string, unknown>): Promise<string> {
+  try {
+    const db = await loadDb();
+    const added = await createAndSaveUser(db, username, password, false, meta);
+    if (!added) {
       return userAlreadyExists;
     }
-    const ownerId = v4();
-    const hashVersion = current.version;
-    const [salt, hash] = await current.hashPassword(password);
-    const user = { username, hashVersion, salt, hash, ownerId, admin: admin, meta };
-    await db.addUser(user);
   } finally {
     await closeDb();
   }
@@ -91,7 +82,7 @@ const login = async function (username: string, password: string): Promise<strin
     const db = await loadDb();
     const locked = await handleLocking(db, username);
     if (locked) {
-      return lockedExceeded;
+      return attemptsExceeded;
     }
     const authenticated = await authenticate(db, username, password);
     return authenticated ? issueToken(username) : invalidCredentials;
@@ -100,23 +91,18 @@ const login = async function (username: string, password: string): Promise<strin
   }
 };
 
-const getLoggedInUser = async function (jwt: string | null): Promise<User | null> {
+const authorize = async function (jwt: string | null): Promise<User | null> {
   try {
     const db = await loadDb();
-    return await authorize(db, jwt);
+    const valid = verifyToken(jwt);
+    if (!valid) {
+      return null;
+    }
+    const username = extractUsername(jwt as string);
+    return await db.getUser(username);
   } finally {
     await closeDb();
   }
 };
 
-export {
-  register,
-  login,
-  getLoggedInUser,
-  registerRestrictedAdmin,
-  registerRestrictedToken,
-  userAlreadyExists,
-  adminCreationRestrictionAdmin,
-  invalidCredentials,
-  lockedExceeded
-};
+export { addUser, register, login, authorize, userAlreadyExists, invalidCredentials, attemptsExceeded };
