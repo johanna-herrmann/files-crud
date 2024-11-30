@@ -91,6 +91,16 @@ const login = async function (username: string, password: string): Promise<strin
   }
 };
 
+const checkPassword = async function (username: string, password: string): Promise<string> {
+  try {
+    const db = await loadDb();
+    const authenticated = await authenticate(db, username, password);
+    return authenticated ? '' : invalidCredentials;
+  } finally {
+    await closeDb();
+  }
+};
+
 const authorize = async function (jwt: string | null): Promise<User | null> {
   try {
     const db = await loadDb();
@@ -105,4 +115,39 @@ const authorize = async function (jwt: string | null): Promise<User | null> {
   }
 };
 
-export { addUser, register, login, authorize, userAlreadyExists, invalidCredentials, attemptsExceeded };
+const changeUsername = async function (oldUsername: string, newUsername: string): Promise<string> {
+  try {
+    const db = await loadDb();
+    const exists = await db.userExists(newUsername);
+    if (exists) {
+      return userAlreadyExists;
+    }
+    await db.changeUsername(oldUsername, newUsername);
+    return '';
+  } finally {
+    await closeDb();
+  }
+};
+
+const changePassword = async function (username: string, password: string): Promise<string> {
+  try {
+    const db = await loadDb();
+    await updateHash(db, username, password);
+    return '';
+  } finally {
+    await closeDb();
+  }
+};
+
+export {
+  addUser,
+  register,
+  login,
+  checkPassword,
+  authorize,
+  changeUsername,
+  changePassword,
+  userAlreadyExists,
+  invalidCredentials,
+  attemptsExceeded
+};

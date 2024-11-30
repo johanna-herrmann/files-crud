@@ -1,5 +1,17 @@
-import { addUser, register, login, userAlreadyExists, invalidCredentials, attemptsExceeded, authorize } from '@/auth/auth';
+import {
+  addUser,
+  register,
+  login,
+  userAlreadyExists,
+  invalidCredentials,
+  attemptsExceeded,
+  authorize,
+  changeUsername,
+  changePassword,
+  checkPassword
+} from '@/auth/auth';
 import { issueToken } from '@/auth/jwt';
+import { current } from '@/auth/passwordHashing/versions';
 import { tables } from '@/database/memdb/MemoryDatabase';
 import Database from '@/types/Database';
 
@@ -184,9 +196,24 @@ describe('auth', (): void => {
     expect(mocked_called_reset).toBe(false);
   });
 
+  test('checkPassword returns empty string on valid credentials.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+
+    const result = await checkPassword(username, password);
+
+    expect(result).toBe('');
+  });
+
+  test('checkPassword returns invalidCredentials on invalid credentials.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+
+    const result = await checkPassword(username, 'invalid');
+
+    expect(result).toBe(invalidCredentials);
+  });
+
   test('authorize returns user if logged in.', async (): Promise<void> => {
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
-    mocked_locked = false;
     const token = issueToken(`real_${username}`);
 
     const user = await authorize(token);
@@ -198,7 +225,6 @@ describe('auth', (): void => {
 
   test('authorize returns null if logged-in user does not exist.', async (): Promise<void> => {
     tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
-    mocked_locked = false;
     const token = issueToken(`real_other`);
 
     const user = await authorize(token);
@@ -209,7 +235,6 @@ describe('auth', (): void => {
   });
 
   test('authorize returns null if token is invalid.', async (): Promise<void> => {
-    mocked_locked = false;
     const token = issueToken(`real_${username}`);
 
     const user = await authorize(token.substring(0, token.length - 2));
@@ -220,8 +245,6 @@ describe('auth', (): void => {
   });
 
   test('authorize returns null if token is empty.', async (): Promise<void> => {
-    mocked_locked = false;
-
     const user = await authorize('');
 
     expect(user).toBeNull();
@@ -230,12 +253,42 @@ describe('auth', (): void => {
   });
 
   test('authorize returns null if no token.', async (): Promise<void> => {
-    mocked_locked = false;
-
     const user = await authorize(null);
 
     expect(user).toBeNull();
     expect(mocked_called_count).toBe(false);
     expect(mocked_called_reset).toBe(false);
+  });
+
+  test('changeUsername changes username.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+
+    const result = await changeUsername(username, 'newUsername');
+
+    expect(tables.user.testUser).toBeUndefined();
+    expect(tables.user.newUsername?.username).toBe('newUsername');
+    expect(result).toBe('');
+  });
+
+  test('changeUsername rejects if user with new username already exists.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash: 'a', ownerId, admin: true, meta: {} };
+    tables.user.newUsername = { username: 'newUsername', hashVersion, salt, hash: 'b', ownerId, admin: true, meta: {} };
+
+    const result = await changeUsername(username, 'newUsername');
+
+    expect(tables.user.testUser?.username).toBe(username);
+    expect(tables.user.testUser?.hash).toBe('a');
+    expect(tables.user.newUsername?.hash).toBe('b');
+    expect(result).toBe(userAlreadyExists);
+  });
+
+  test('changePassword changes password.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion: '', salt: '', hash: '', ownerId, admin: true, meta: {} };
+
+    await changePassword(username, password);
+
+    expect(tables.user.testUser?.hashVersion).toBe(current.version);
+    expect(tables.user.testUser?.salt).toBe(salt);
+    expect(tables.user.testUser?.hash).toBe(hash);
   });
 });
