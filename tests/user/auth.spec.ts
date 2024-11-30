@@ -9,9 +9,9 @@ import {
   changeUsername,
   changePassword,
   checkPassword
-} from '@/auth/auth';
-import { issueToken } from '@/auth/jwt';
-import { current } from '@/auth/passwordHashing/versions';
+} from '@/user/auth';
+import { issueToken } from '@/user/jwt';
+import { current } from '@/user/passwordHashing/versions';
 import { tables } from '@/database/memdb/MemoryDatabase';
 import Database from '@/types/Database';
 
@@ -37,8 +37,8 @@ jest.mock('uuid', () => {
   };
 });
 
-jest.mock('@/auth/jwt', () => {
-  const actual = jest.requireActual('@/auth/jwt');
+jest.mock('@/user/jwt', () => {
+  const actual = jest.requireActual('@/user/jwt');
   return {
     ...actual,
     issueToken(username: string) {
@@ -65,7 +65,7 @@ jest.mock('@/auth/jwt', () => {
   };
 });
 
-jest.mock('@/auth/locking', () => {
+jest.mock('@/user/locking', () => {
   return {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async countAttempt(db: Database, username: string) {

@@ -1,4 +1,4 @@
-import { issueToken, verifyToken, getIndex, getKeys, KEYS, TTL, algorithm, extractUsername } from '@/auth/jwt';
+import { issueToken, verifyToken, getIndex, getKeys, KEYS, TTL, algorithm, extractUsername } from '@/user/jwt';
 import jwt from 'jsonwebtoken';
 
 describe('jwt', (): void => {

@@ -1,4 +1,4 @@
-import { v1PasswordHashing } from '@/auth/passwordHashing/v1';
+import { v1PasswordHashing } from '@/user/passwordHashing/v1';
 import crypto from 'crypto';
 
 let mockRandom: boolean | undefined;

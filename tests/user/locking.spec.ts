@@ -1,4 +1,4 @@
-import { countAttempt, handleLocking, resetAttempts, THRESHOLD, TTL_MIN, TTL_MAX } from '@/auth/locking';
+import { countAttempt, handleLocking, resetAttempts, THRESHOLD, TTL_MIN, TTL_MAX } from '@/user/locking';
 import { MemoryDatabase, tables } from '@/database/memdb/MemoryDatabase';
 
 const username = 'testUser';

@@ -1,5 +1,5 @@
-import { v1PasswordHashing } from '@/auth/passwordHashing/v1';
-import { versions, current } from '@/auth/passwordHashing/versions';
+import { v1PasswordHashing } from '@/user/passwordHashing/v1';
+import { versions, current } from '@/user/passwordHashing/versions';
 
 describe('versions', (): void => {
   test('versions returns object with v1PasswordHashing.', async (): Promise<void> => {
