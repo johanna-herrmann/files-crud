@@ -19,6 +19,7 @@ const username = 'testUser';
 const password = 'testPwd';
 const hashVersion = 'v1';
 const salt = 'YWFhYWFhYWFhYWFhYWFhYQ==';
+// noinspection SpellCheckingInspection
 const hash = 'O8fICNHvM2AlfcoaHUamNo5JQJamdZMz0YXMLrnoH/w=';
 const ownerId = 'test-id';
 const meta = { k: 'v' };
@@ -39,6 +40,7 @@ jest.mock('uuid', () => {
 
 jest.mock('@/user/jwt', () => {
   const actual = jest.requireActual('@/user/jwt');
+  // noinspection JSUnusedGlobalSymbols - used outside
   return {
     ...actual,
     issueToken(username: string) {
@@ -66,17 +68,18 @@ jest.mock('@/user/jwt', () => {
 });
 
 jest.mock('@/user/locking', () => {
+  // noinspection JSUnusedGlobalSymbols - used outside
   return {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async countAttempt(db: Database, username: string) {
+    async countAttempt(_db: Database, _username: string) {
       mocked_called_count = true;
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async resetAttempts(db: Database, username: string) {
+    async resetAttempts(_db: Database, _username: string) {
       mocked_called_reset = true;
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async handleLocking(db: Database, username: string) {
+    async handleLocking(_db: Database, _username: string) {
       return mocked_locked;
     }
   };

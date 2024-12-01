@@ -49,19 +49,16 @@ jest.mock('@/database/postgresql/pgWrapper', () => {
     async definingQuery(_: Client, query: string) {
       mocked_data.definingQueries?.push(query);
     }
-    /*async writingQuery(_: Client, query: string, values?: (string | number | boolean)[]) {
-      mocked_data.writingQueries?.push(query);
-      mocked_data.values?.push(values ?? []);
-    },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async readingQuery<T extends QueryResultRow>(_: Client, query: string, values?: (string | number | boolean)[]) {
-      if (mocked_when_then.queryRegex.test(query) && JSON.stringify(mocked_when_then.values) === JSON.stringify(values)) {
-        return mocked_when_then.result;
-      }
-      return null;
-    }*/
   };
 });
+
+const expectDynamoDb = function (db: DynamoDatabase, key: string, secret: string) {
+  expect(db).toBeInstanceOf(DynamoDatabase);
+  expect(db.getConfig().region).toBe('eu-central-1');
+  expect((db.getConfig().credentials as AwsCredentials)?.accessKeyId).toBe(key);
+  expect((db.getConfig().credentials as AwsCredentials)?.secretAccessKey).toBe(secret);
+  expect(db.getClient()).toBeInstanceOf(DynamoDBClient);
+};
 
 describe('db', (): void => {
   afterEach(async (): Promise<void> => {
@@ -103,7 +100,7 @@ describe('db', (): void => {
     expect(mocked_data.connected).toBe(true);
   });
 
-  test('loadDb loads dynamodb correctly, credentials given specificly.', async (): Promise<void> => {
+  test('loadDb loads dynamodb correctly, credentials given specifically.', async (): Promise<void> => {
     mockFS({
       './config.json':
         '{"database":{"name":"dynamodb", "accessKeyId":"key", "secretAccessKey":"secret"}, "accessKeyId":"test", "secretAccessKey":"test"}'
@@ -112,11 +109,7 @@ describe('db', (): void => {
 
     const db = (await loadDb()) as DynamoDatabase;
 
-    expect(db).toBeInstanceOf(DynamoDatabase);
-    expect(db.getConfig().region).toBe('eu-central-1');
-    expect((db.getConfig().credentials as AwsCredentials)?.accessKeyId).toBe('key');
-    expect((db.getConfig().credentials as AwsCredentials)?.secretAccessKey).toBe('secret');
-    expect(db.getClient()).toBeInstanceOf(DynamoDBClient);
+    expectDynamoDb(db, 'key', 'secret');
   });
 
   test('loadDb loads dynamodb correctly, credentials given globally.', async (): Promise<void> => {
@@ -125,11 +118,7 @@ describe('db', (): void => {
 
     const db = (await loadDb()) as DynamoDatabase;
 
-    expect(db).toBeInstanceOf(DynamoDatabase);
-    expect(db.getConfig().region).toBe('eu-central-1');
-    expect((db.getConfig().credentials as AwsCredentials)?.accessKeyId).toBe('key');
-    expect((db.getConfig().credentials as AwsCredentials)?.secretAccessKey).toBe('secret');
-    expect(db.getClient()).toBeInstanceOf(DynamoDBClient);
+    expectDynamoDb(db, 'key', 'secret');
   });
 
   test('loadDb loads dynamodb correctly, no credentials given.', async (): Promise<void> => {
@@ -138,11 +127,7 @@ describe('db', (): void => {
 
     const db = (await loadDb()) as DynamoDatabase;
 
-    expect(db).toBeInstanceOf(DynamoDatabase);
-    expect(db.getConfig().region).toBe('eu-central-1');
-    expect((db.getConfig().credentials as AwsCredentials)?.accessKeyId).toBe('fallback-key');
-    expect((db.getConfig().credentials as AwsCredentials)?.secretAccessKey).toBe('fallback-secret');
-    expect(db.getClient()).toBeInstanceOf(DynamoDBClient);
+    expectDynamoDb(db, 'fallback-key', 'fallback-secret');
   });
 
   test('closeDb closes db correctly', async (): Promise<void> => {

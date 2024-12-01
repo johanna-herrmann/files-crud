@@ -4,6 +4,7 @@ import { modifyMeta, setAdminState } from '@/user';
 const username = 'testUser';
 const hashVersion = 'v1';
 const salt = 'YWFhYWFhYWFhYWFhYWFhYQ==';
+// noinspection SpellCheckingInspection
 const hash = 'O8fICNHvM2AlfcoaHUamNo5JQJamdZMz0YXMLrnoH/w=';
 const ownerId = 'test-id';
 const meta = { k: 'v' };

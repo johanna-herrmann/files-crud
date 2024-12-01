@@ -41,7 +41,9 @@ describe('v1PasswordHashing', (): void => {
 
   test('checkPassword returns true for valid password.', async (): Promise<void> => {
     const password = 'password123';
+    // noinspection SpellCheckingInspection
     const salt = 'AAAAAAAAAAAAAAAAAAAAAA==';
+    // noinspection SpellCheckingInspection
     const hash = 'SDdwY07PBISVQnAnHnkj8ZgVZYASnvjv27ZF6jivbT0=';
 
     const valid = await v1PasswordHashing.checkPassword(password, salt, hash);
@@ -51,7 +53,9 @@ describe('v1PasswordHashing', (): void => {
 
   test('checkPassword returns false for invalid password.', async (): Promise<void> => {
     const password = 'invalid';
+    // noinspection SpellCheckingInspection
     const salt = 'AAAAAAAAAAAAAAAAAAAAAA==';
+    // noinspection SpellCheckingInspection
     const hash = 'SDdwY07PBISVQnAnHnkj8ZgVZYASnvjv27ZF6jivbT0=';
 
     const valid = await v1PasswordHashing.checkPassword(password, salt, hash);

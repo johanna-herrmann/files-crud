@@ -47,6 +47,7 @@ jest.mock('uuid', () => {
 });
 
 jest.mock('@/database/postgresql/pgWrapper', () => {
+  // noinspection JSUnusedGlobalSymbols - used outside
   return {
     getNewClient(conf: PgDbConf) {
       const newClient = new Mocked_Client(conf);
@@ -58,24 +59,23 @@ jest.mock('@/database/postgresql/pgWrapper', () => {
       return newClient;
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async connect(_: Client) {
+    async connect(_client: Client) {
       mocked_data.connected = true;
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async end(_: Client) {
+    async end(_client: Client) {
       mocked_data.connected = false;
     },
-    async definingQuery(_: Client, query: string) {
+    async definingQuery(_client: Client, query: string) {
       mocked_data.definingQueries?.push(query);
     },
-    async writingQuery(_: Client, query: string, values?: (string | number | boolean)[]) {
+    async writingQuery(_client: Client, query: string, values?: (string | number | boolean)[]) {
       mocked_data.writingQueries?.push(query);
       mocked_data.values?.push(values ?? []);
     },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async readingQuery<T extends QueryResultRow>(_: Client, query: string, values?: (string | number | boolean)[]) {
+    async readingQuery<T extends QueryResultRow>(_client: Client, query: string, values?: (string | number | boolean)[]) {
       if (mocked_when_then.queryRegex.test(query) && JSON.stringify(mocked_when_then.values) === JSON.stringify(values)) {
-        return mocked_when_then.result;
+        return mocked_when_then.result as unknown as T;
       }
       return null;
     }

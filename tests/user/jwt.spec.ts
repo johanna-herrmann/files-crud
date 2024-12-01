@@ -27,6 +27,7 @@ describe('jwt', (): void => {
     const decoded = jwt.decode(token, { complete: true }) as jwt.JwtPayload;
     const index = getIndex();
     const key = getKeys()[index];
+    // noinspection JSDeprecatedSymbols - this is not the string.sub function, it's just an object-property.
     const checkToken = jwt.sign({ sub: 'testUser', iat: fakeTime }, key.key, { algorithm, keyid: key.id });
     const checkDecoded = jwt.decode(checkToken, { complete: true }) as jwt.JwtPayload;
     expect(decoded.header.alg).toBe('HS256');
@@ -68,8 +69,8 @@ describe('jwt', (): void => {
     const [header, payload, signature] = token.split('.');
     const changedHeaderObject = JSON.parse(Buffer.from(header, 'base64url').toString('utf8')) as Record<string, unknown>;
     changedHeaderObject.alg = 'other';
-    const chagedHeader = Buffer.from(JSON.stringify(changedHeaderObject), 'utf8').toString('base64url');
-    const changedToken = [chagedHeader, payload, signature].join('.');
+    const changedHeader = Buffer.from(JSON.stringify(changedHeaderObject), 'utf8').toString('base64url');
+    const changedToken = [changedHeader, payload, signature].join('.');
 
     const result = verifyToken(changedToken);
 

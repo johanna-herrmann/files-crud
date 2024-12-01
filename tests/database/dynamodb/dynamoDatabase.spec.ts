@@ -38,13 +38,14 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
   const all = 'all';
   const id = 'test-id';
 
+  // noinspection JSUnusedGlobalSymbols - used outside
   return {
-    async putItem(client: DynamoDBClient, TableName: string, item: DbItem & Partial<PathParts>, withId?: boolean) {
+    async putItem(_client: DynamoDBClient, TableName: string, item: DbItem & Partial<PathParts>, withId?: boolean) {
       const key = withId ? { all, id } : { all };
       const fullItem = { ...item, ...key };
       mocked_db[TableName].push(fullItem as Item);
     },
-    async updateItem(client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, Update: Record<string, NativeAttributeValue>) {
+    async updateItem(_client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, Update: Record<string, NativeAttributeValue>) {
       const itemIndex = mocked_db[TableName].findIndex((item) => item.all === 'all' && item[keyName] === keyValue);
 
       if (itemIndex >= 0) {
@@ -52,14 +53,14 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
         mocked_db[TableName][itemIndex] = { ...item, ...Update };
       }
     },
-    async deleteItem(client: DynamoDBClient, TableName: string, keyName: string, keyValue: string) {
+    async deleteItem(_client: DynamoDBClient, TableName: string, keyName: string, keyValue: string) {
       const itemIndex = mocked_db[TableName].findIndex((item) => item.all === 'all' && item[keyName] === keyValue);
 
       if (itemIndex >= 0) {
         mocked_db[TableName].splice(itemIndex, 1);
       }
     },
-    async loadItem<T extends DbItem>(client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, IndexName?: string) {
+    async loadItem<T extends DbItem>(_client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, IndexName?: string) {
       mocked_lastIndex = IndexName;
       const item = mocked_db[TableName].find((item) => item.all === 'all' && item[keyName] === keyValue);
 
@@ -72,7 +73,7 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
 
       return payload as unknown as T;
     },
-    async loadId(client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, IndexName?: string) {
+    async loadId(_client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, IndexName?: string) {
       mocked_lastIndex = IndexName;
       const item = mocked_db[TableName].find((item) => item.all === 'all' && item[keyName] === keyValue);
 
@@ -82,19 +83,19 @@ jest.mock('@/database/dynamodb/dynamoDbHelper', () => {
 
       return item.id ?? null;
     },
-    async loadUsers(client: DynamoDBClient, TableName: string) {
+    async loadUsers(_client: DynamoDBClient, TableName: string) {
       const users = mocked_db[TableName];
       return users.map(({ username, admin }) => ({ username, admin }));
     },
-    async loadFiles(client: DynamoDBClient, TableName: string, folder: string) {
+    async loadFiles(_client: DynamoDBClient, TableName: string, folder: string) {
       const files = mocked_db[TableName].filter((item) => item.all === 'all' && item.folder === folder);
       return files.map((file) => file.filename);
     },
-    async loadJwtKeys(client: DynamoDBClient, TableName: string) {
+    async loadJwtKeys(_client: DynamoDBClient, TableName: string) {
       const keys = mocked_db[TableName];
       return keys.map(({ id, key }) => ({ id, key }));
     },
-    async itemExists(client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, IndexName?: string) {
+    async itemExists(_client: DynamoDBClient, TableName: string, keyName: string, keyValue: string, IndexName?: string) {
       mocked_lastIndex = IndexName;
       const item = mocked_db[TableName].find((item) => item.all === 'all' && item[keyName] === keyValue);
       return !!item;

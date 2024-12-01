@@ -42,8 +42,7 @@ class MemoryDatabase implements Database {
 
   public async updateHash(username: string, hashVersion: string, salt: string, hash: string): Promise<void> {
     const user = tables.user[username];
-    const modifiedUser = { ...user, hashVersion, salt, hash };
-    tables.user[username] = modifiedUser;
+    tables.user[username] = { ...user, hashVersion, salt, hash };
   }
 
   public async makeUserAdmin(username: string): Promise<void> {
@@ -94,8 +93,7 @@ class MemoryDatabase implements Database {
   }
 
   public async updateLastLoginAttempt(username: string): Promise<void> {
-    const lastAttempt = Date.now();
-    tables.failedLoginAttempts[username].lastAttempt = lastAttempt;
+    tables.failedLoginAttempts[username].lastAttempt = Date.now();
   }
 
   public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {

@@ -4,21 +4,22 @@ import { S3Client } from '@aws-sdk/client-s3';
 let mocked_s3: Record<string, Buffer | undefined> = {};
 
 jest.mock('@/storage/s3/s3StorageHelper', () => {
+  // noinspection JSUnusedGlobalSymbols - used outside
   return {
-    async getObjectBody(client: S3Client, Bucket: string, Key: string): Promise<Buffer> {
+    async getObjectBody(_client: S3Client, Bucket: string, Key: string): Promise<Buffer> {
       return mocked_s3[`${Bucket}|${Key}`] ?? Buffer.from('');
     },
-    async putObject(client: S3Client, Bucket: string, Key: string, directory: boolean, Body?: Buffer): Promise<void> {
+    async putObject(_client: S3Client, Bucket: string, Key: string, directory: boolean, Body?: Buffer): Promise<void> {
       if (directory) {
         Key += '/';
       }
       mocked_s3[`${Bucket}|${Key}`] = Body ?? Buffer.from('');
     },
-    async deleteObject(client: S3Client, Bucket: string, path: string, directory: boolean): Promise<void> {
+    async deleteObject(_client: S3Client, Bucket: string, path: string, directory: boolean): Promise<void> {
       const Key = directory ? `${path}/` : path;
       delete mocked_s3[`${Bucket}|${Key}`];
     },
-    async copyObject(client: S3Client, Bucket: string, copySource: string, key: string): Promise<void> {
+    async copyObject(_client: S3Client, Bucket: string, copySource: string, key: string): Promise<void> {
       mocked_s3[`${Bucket}|${key}`] = mocked_s3[`${Bucket}|${copySource}`];
     }
   };
@@ -53,7 +54,7 @@ describe('S3Storage', (): void => {
     expect(await client.config.region()).toBe('de');
     expect(client.config.endpoint).toBeDefined();
     expect(client.config.endpoint && (await client.config.endpoint())).toEqual({
-      hostname: 'testendpoint.com',
+      hostname: 'testEndpoint.com'.toLowerCase(),
       path: '/buckets/',
       port: undefined,
       protocol: 'https:',

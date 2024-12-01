@@ -15,7 +15,7 @@ const createTableIfNotExists = async function (client: Client, table: string, ..
 };
 
 const createUserTableIfNotExists = async function (client: Client) {
-  createTableIfNotExists(
+  await createTableIfNotExists(
     client,
     'user_',
     'username text',
@@ -29,17 +29,18 @@ const createUserTableIfNotExists = async function (client: Client) {
 };
 
 const createJwtKeyTableIfNotExists = async function (client: Client) {
-  createTableIfNotExists(client, 'jwtKey', 'id text', 'key text');
+  await createTableIfNotExists(client, 'jwtKey', 'id text', 'key text');
 };
 
 const createFailedLoginAttemptsTableIfNotExists = async function (client: Client) {
-  createTableIfNotExists(client, 'failedLoginAttempts', 'username text', 'attempts int', 'lastAttempt bigint');
+  await createTableIfNotExists(client, 'failedLoginAttempts', 'username text', 'attempts int', 'lastAttempt bigint');
 };
 
 const createFileTableIfNotExists = async function (client: Client) {
-  createTableIfNotExists(client, 'file', 'path text', 'owner text', 'realName text', 'meta JSON');
+  await createTableIfNotExists(client, 'file', 'path text', 'owner text', 'realName text', 'meta JSON');
 };
 
+// noinspection SqlNoDataSourceInspection
 class PostgresDatabase implements Database {
   private readonly conf: PgDbConf;
   private client: Client | null = null;

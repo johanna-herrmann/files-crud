@@ -4,6 +4,7 @@ import File from '@/types/File';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { testUser, testFile } from '#/testItems';
+import { expectKeys } from '#/database/expectKeys';
 
 let mongod: null | MongoMemoryServer;
 let uri = '';
@@ -217,7 +218,7 @@ describe('MongoDatabase', (): void => {
 
     const user = await db.getUser(testUser.username);
 
-    expect(user?.username).toBe(testUser.username);
+    expect(user).toEqual(testUser);
   });
 
   test('MongoDatabase->getUsers gets users.', async (): Promise<void> => {
@@ -258,10 +259,7 @@ describe('MongoDatabase', (): void => {
     await db.addJwtKeys('key1', 'key2', 'key3');
 
     const keys = (await JwtKey.find()).map(({ id, key }) => ({ id, key }));
-    expect(keys.length).toBe(3);
-    expect(keys[0]).toEqual({ id: mocked_id + 0, key: 'key1' });
-    expect(keys[1]).toEqual({ id: mocked_id + 1, key: 'key2' });
-    expect(keys[2]).toEqual({ id: mocked_id + 2, key: 'key3' });
+    expectKeys(keys, mocked_id);
   });
 
   test('MongoDatabase->getJwtKeys gets jwt keys.', async (): Promise<void> => {
@@ -272,10 +270,7 @@ describe('MongoDatabase', (): void => {
 
     const keys = await db.getJwtKeys();
 
-    expect(keys.length).toBe(3);
-    expect(keys[0]).toEqual({ id: mocked_id + 0, key: 'key1' });
-    expect(keys[1]).toEqual({ id: mocked_id + 1, key: 'key2' });
-    expect(keys[2]).toEqual({ id: mocked_id + 2, key: 'key3' });
+    expectKeys(keys, mocked_id);
   });
 
   test('MongoDatabase->countLoginAttempt creates new item with attempts=1.', async (): Promise<void> => {
@@ -335,11 +330,10 @@ describe('MongoDatabase', (): void => {
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
-    expect(attempts?.attempts).toBe(2);
-    expect(attempts?.lastAttempt).toBe(mocked_time);
+    expect(attempts).toEqual({ username: testUser.username, attempts: 2, lastAttempt: mocked_time });
   });
 
-  test('MongoDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
+  test('MongoDatabase->getLoginAttempts returns null if no item exists for username.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     await db.getConf()[3].deleteMany();
@@ -426,10 +420,7 @@ describe('MongoDatabase', (): void => {
 
     const file = await db.getFile(testFile.path);
 
-    expect(file?.path).toBe(testFile.path);
-    expect(file?.owner).toBe(testFile.owner);
-    expect(file?.realName).toBe(testFile.realName);
-    expect(file?.meta).toEqual(testFile.meta);
+    expect(file).toEqual(testFile);
   });
 
   test('MongoDatabase->listFilesInFolder lists files.', async (): Promise<void> => {

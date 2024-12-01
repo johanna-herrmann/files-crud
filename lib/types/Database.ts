@@ -57,9 +57,9 @@ interface Database {
   makeUserNormalUser: (username: string) => Promise<void>;
 
   /**
-   * Modifies the user's meta data
-   * @param username the username of the user to modify the meta data of
-   * @param meta - new meta data object
+   * Modifies the user's metadata
+   * @param username the username of the user to modify the metadata of
+   * @param meta - new metadata object
    * @returns Fulfils with undefined upon success
    */
   modifyUserMeta: (username: string, meta?: Record<string, unknown>) => Promise<void>;
@@ -85,7 +85,7 @@ interface Database {
   getUsers: (username: string) => Promise<UserListItem[]>;
 
   /**
-   * Checks if an user exists with the given username
+   * Checks if a user exists with the given username
    * @param username - username of the user to check existence for
    * @returns Fulfils with boolean upon success, true if user exists
    */
@@ -105,7 +105,7 @@ interface Database {
   getJwtKeys: () => Promise<JwtKey[]>;
 
   /**
-   * Counts a failes login attempt.
+   * Counts a failed login attempt.
    * Creates new dataset or updates an existing one.
    * @param username - the username to count the attempt for
    * @returns Fulfils with undefined upon success
@@ -150,9 +150,9 @@ interface Database {
   moveFile: (oldPath: string, newPath: string, owner?: string) => Promise<void>;
 
   /**
-   * modifies the meta data object of a file dataset
+   * modifies the metadata object of a file dataset
    * @param path - the path of the file
-   * @param meta - the new meta data object
+   * @param meta - the new metadata object
    * @returns Fulfils with undefined upon success
    */
   modifyFileMeta: (path: string, meta?: Record<string, unknown>) => Promise<void>;

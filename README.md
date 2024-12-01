@@ -15,12 +15,12 @@ Written in Typescript
   * in-memory (for testing purposes)
 * Uses CRUD-based permissions, specified for different directories
 
-*Requires you to create the used tables fore-hand.
+*Requires you to create the used tables forehand.
 
 ## Features
 * create, override, read, delete files
 * crud-based permissions can be set for different directories via configuration
-* user-secific permissions
+* user-specific permissions
 * different types of users (`normal`, `admin`)
 * optional public-access (access without login)
 * registration for new users can be open, restricted or disabled
@@ -37,13 +37,13 @@ You also can define file permissions for the file owner/uploader (none if admin 
 ### User's directory
 You as `crud-files` manager can specify, which permissions users will have on their directories (named like their so-called `owner-id`).
 
-Example: There is an user with an ownerId `simsala` and you defined read-only for users, but full-access for the user's directory.
+Example: There is a user with an ownerId `simsala` and you defined read-only for users, but full-access for the user's directory.
 Then the user will have full-access on `simsala/`, but other users only can read files in there.
 
 ## Permissions
 There are four rights: `CREATE`, `READ`, `UPDATE` and `DELETE`
 
-The follwing list explains the meaning of each right
+The following list explains the meaning of each right
 * `CREATE` &minus; The right to upload new files
 * `READ` &minus; The right to retrieve the content of files and list files in directory
 * `UPDATE` &minus; The right to re-upload files, overwriting existing files
@@ -54,11 +54,11 @@ Permissions are given for:
 * `user` &minus; Permissions for normal users (default: `read-only`)
 * `admin` &minus; Permissions for admins (default: `full access`)
 * `owner` &minus; Depends on the directory
-  * In the user's directory permissions definition: The permissions if the logged-in user acceses their directory
+  * In the user's directory permissions definition: The permissions if the logged-in user accesses their directory
   * In any other definition of directory permissions: The permissions for files, created by the logged-in user
 
 ## Config
-Configuration is done via `config.json` file in the application directory (outside of the storage-root), read-in during application startup.
+Configuration is done via `config.json` file in the application directory (outside the storage-root), read-in during application startup.
 
 ### Properties
 * `directories` &minus; defines permissions for directories
@@ -106,28 +106,6 @@ Configuration is done via `config.json` file in the application directory (outsi
   "register_token": "8470b83a-b9bd-4054-b8ec-59cb57e855bd"
 }
 ```
-
-## DynamoDB
-
-If you want to use `DynamoDB`, please take into account:
-
-### Tables
-You have to create the tables and provide the names in `config.json` (`TableName`s are suggestions).
-
-The tables have to be created like defined in `dynamodb-schemas/`.
-
-### Read loads
-To list files in a folder, a high amount of `read capacity units` is required, since the result-set needs to be filtered. \
-
-Example: \
-An user wants to list the files in `some/folder` and the contents are:
-* `some/folder/file.mp3`
-* `some/folder/file2.avi`
-* `some/folder/sub/file.txt`
-* `some/folder/sub/other.mp4`
-
-In this case 4 items must be read by DynamoDB despite only 2 items are desired. \
-The result will only contain 2 items (due to filtering) but you will be charged for
 
 ## Hosting
 !TBD!

@@ -92,7 +92,12 @@ class MongoDatabase implements Database {
   }
 
   public async getUser(username: string): Promise<User | null> {
-    return await this.User.findOne({ username });
+    const item = await this.User.findOne({ username });
+    if (!item) {
+      return null;
+    }
+    const { hashVersion, salt, hash, ownerId, admin, meta } = item;
+    return { username, hashVersion, salt, hash, ownerId, admin, meta };
   }
 
   public async getUsers(): Promise<UserListItem[]> {
@@ -133,8 +138,12 @@ class MongoDatabase implements Database {
   }
 
   public async getLoginAttempts(username: string): Promise<FailedLoginAttempts | null> {
-    const attempts = await this.FailedLoginAttempts.findOne({ username });
-    return attempts ?? null;
+    const item = await this.FailedLoginAttempts.findOne({ username });
+    if (!item) {
+      return null;
+    }
+    const { attempts, lastAttempt } = item;
+    return { username, attempts, lastAttempt };
   }
 
   public async removeLoginAttempts(username: string): Promise<void> {
@@ -159,7 +168,12 @@ class MongoDatabase implements Database {
   }
 
   public async getFile(path: string): Promise<File | null> {
-    return await this.File.findOne({ path });
+    const item = await this.File.findOne({ path });
+    if (!item) {
+      return null;
+    }
+    const { owner, realName, meta } = item;
+    return { path, owner, realName, meta };
   }
 
   public async listFilesInFolder(folder: string): Promise<string[]> {

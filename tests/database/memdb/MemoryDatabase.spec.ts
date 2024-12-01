@@ -1,5 +1,6 @@
 import { MemoryDatabase, tables } from '@/database/memdb/MemoryDatabase';
 import { testFile, testUser } from '#/testItems';
+import { expectKeys } from '#/database/expectKeys';
 
 const mocked_id = 'test-id';
 let mocked_index = 0;
@@ -38,14 +39,7 @@ describe('MemoryDatabase', (): void => {
     await db.addUser(testUser);
 
     const user = tables.user[testUser.username];
-    expect(user?.username).toBe(testUser.username);
-    expect(user?.hashVersion).toBe(testUser.hashVersion);
-    expect(user?.salt).toBe(testUser.salt);
-    expect(user?.hash).toBe(testUser.hash);
-    expect(user?.admin).toBe(testUser.admin);
-    expect(user?.ownerId).toBe(testUser.ownerId);
-    expect(user?.meta).toEqual(testUser.meta);
-    expect(user).not.toBe(testUser);
+    expect(user).toEqual(testUser);
   });
 
   test('MemoryDatabase->changeUsername changes the username.', async (): Promise<void> => {
@@ -172,10 +166,7 @@ describe('MemoryDatabase', (): void => {
 
     const keys = await db.getJwtKeys();
 
-    expect(keys.length).toBe(3);
-    expect(keys[0]).toEqual({ id: mocked_id + 0, key: 'key1' });
-    expect(keys[1]).toEqual({ id: mocked_id + 1, key: 'key2' });
-    expect(keys[2]).toEqual({ id: mocked_id + 2, key: 'key3' });
+    expectKeys(keys, mocked_id);
   });
 
   test('MemoryDatabase->countLoginAttempt creates new item with attempts=1.', async (): Promise<void> => {

@@ -24,7 +24,7 @@ interface Storage {
   unlink: (name: string) => Promise<void>;
 
   /**
-   * Copies file or s3 objecz.
+   * Copies file or s3 object.
    * @param name The name of the file or the key of the object to copy
    * @param copyName The name or key of the copy
    * @returns Fulfils with undefined upon success
