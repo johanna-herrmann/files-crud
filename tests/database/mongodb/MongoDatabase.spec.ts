@@ -29,6 +29,7 @@ jest.mock('uuid', () => {
 });
 
 jest.mock('@/database/mongodb/timeWrapper', () => {
+  // noinspection JSUnusedGlobalSymbols - is used outside
   return {
     getCurrentTime() {
       return mocked_time;
@@ -38,13 +39,14 @@ jest.mock('@/database/mongodb/timeWrapper', () => {
 
 describe('MongoDatabase', (): void => {
   beforeEach(async (): Promise<void> => {
-    mongod = await MongoMemoryServer.create();
-    uri = mongod.getUri();
+    mongod = mongod ?? (await MongoMemoryServer.create());
+    uri = uri || mongod.getUri();
     mocked_index = 0;
   });
 
-  afterEach(async (): Promise<void> => {
+  afterAll(async (): Promise<void> => {
     await mongod?.stop();
+    mongod = null;
   });
 
   const expectUserModelAndSchema = function (db: MongoDatabase): void {
@@ -81,6 +83,7 @@ describe('MongoDatabase', (): void => {
   const prepareDbForUser = async function (user?: User): Promise<[MongoDatabase, typeof UserModel]> {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    await db.getConf()[1].deleteMany();
     const User = db.getConf()[1];
     await db.addUser(user ?? testUser);
 
@@ -90,6 +93,7 @@ describe('MongoDatabase', (): void => {
   const prepareDbForFile = async function (file?: File): Promise<[MongoDatabase, typeof FileModel]> {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    await db.getConf()[4].deleteMany();
     const File = db.getConf()[4];
     await db.addFile(file ?? testFile);
 
@@ -132,6 +136,7 @@ describe('MongoDatabase', (): void => {
   test('MongoDatabase->addUser adds User.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    await db.getConf()[1].deleteMany();
     const User = db.getConf()[1];
 
     await db.addUser(testUser);
@@ -248,6 +253,7 @@ describe('MongoDatabase', (): void => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     const JwtKey = db.getConf()[2];
+    await JwtKey.deleteMany();
 
     await db.addJwtKeys('key1', 'key2', 'key3');
 
@@ -261,6 +267,7 @@ describe('MongoDatabase', (): void => {
   test('MongoDatabase->getJwtKeys gets jwt keys.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    await db.getConf()[2].deleteMany();
     await db.addJwtKeys('key1', 'key2', 'key3');
 
     const keys = await db.getJwtKeys();
@@ -274,6 +281,7 @@ describe('MongoDatabase', (): void => {
   test('MongoDatabase->countLoginAttempt creates new item with attempts=1.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    await db.getConf()[3].deleteMany();
     const FailedLoginAttempts = db.getConf()[3];
     mocked_time = 42;
 
@@ -289,6 +297,7 @@ describe('MongoDatabase', (): void => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     const FailedLoginAttempts = db.getConf()[3];
+    await FailedLoginAttempts.deleteMany();
     mocked_time = 23;
     await db.countLoginAttempt(testUser.username);
 
@@ -304,6 +313,7 @@ describe('MongoDatabase', (): void => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     const FailedLoginAttempts = db.getConf()[3];
+    await FailedLoginAttempts.deleteMany();
     await db.countLoginAttempt(testUser.username);
     mocked_time = 42;
 
@@ -318,6 +328,7 @@ describe('MongoDatabase', (): void => {
   test('MongoDatabase->getLoginAttempts returns attempts for username.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    await db.getConf()[3].deleteMany();
     mocked_time = 815;
     await db.countLoginAttempt(testUser.username);
     await db.countLoginAttempt(testUser.username);
@@ -331,6 +342,7 @@ describe('MongoDatabase', (): void => {
   test('MongoDatabase->getLoginAttempts returns 0 if no item exists for username.', async (): Promise<void> => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
+    await db.getConf()[3].deleteMany();
 
     const attempts = await db.getLoginAttempts(testUser.username);
 
@@ -341,6 +353,7 @@ describe('MongoDatabase', (): void => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     const FailedLoginAttempts = db.getConf()[3];
+    await FailedLoginAttempts.deleteMany();
     await db.countLoginAttempt(testUser.username);
     await db.countLoginAttempt('other');
 
@@ -354,6 +367,7 @@ describe('MongoDatabase', (): void => {
     const db = new MongoDatabase(`${uri}db`);
     await db.open();
     const File = db.getConf()[4];
+    await File.deleteMany();
 
     await db.addFile(testFile);
 
