@@ -10,6 +10,7 @@ import {
   invalidCredentials,
   attemptsExceeded
 } from './auth';
+import { setAdminState, modifyMeta } from './user';
 
 export {
   addUser,
@@ -19,6 +20,8 @@ export {
   authorize,
   changeUsername,
   changePassword,
+  setAdminState,
+  modifyMeta,
   userAlreadyExists,
   invalidCredentials,
   attemptsExceeded
