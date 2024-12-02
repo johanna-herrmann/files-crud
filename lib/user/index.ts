@@ -1,16 +1,5 @@
-import {
-  addUser,
-  register,
-  login,
-  checkPassword,
-  authorize,
-  changeUsername,
-  changePassword,
-  userAlreadyExists,
-  invalidCredentials,
-  attemptsExceeded
-} from './auth';
-import { setAdminState, modifyMeta, deleteUser } from './user';
+import { login, checkPassword, authorize, changePassword, invalidCredentials, attemptsExceeded } from './auth';
+import { addUser, register, changeUsername, setAdminState, modifyMeta, deleteUser, userAlreadyExists } from './user';
 
 export {
   addUser,
