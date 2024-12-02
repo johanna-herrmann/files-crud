@@ -21,4 +21,13 @@ const modifyMeta = async function (username: string, meta?: Record<string, unkno
   }
 };
 
-export { setAdminState, modifyMeta };
+const deleteUser = async function (username: string): Promise<void> {
+  try {
+    const db = await loadDb();
+    await db.removeUser(username);
+  } finally {
+    await closeDb();
+  }
+};
+
+export { setAdminState, modifyMeta, deleteUser };

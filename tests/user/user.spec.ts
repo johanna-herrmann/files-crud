@@ -1,5 +1,5 @@
 import { tables } from '@/database/memdb/MemoryDatabase';
-import { modifyMeta, setAdminState } from '@/user';
+import { deleteUser, modifyMeta, setAdminState } from '@/user';
 
 const username = 'testUser';
 const hashVersion = 'v1';
@@ -33,5 +33,13 @@ describe('user', (): void => {
 
     expect(tables.user.testUser?.meta?.k).toBe('v');
     expect(tables.user.testUser?.meta?.old).toBeUndefined();
+  });
+
+  test('removeUser removes user.', async (): Promise<void> => {
+    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta };
+
+    await deleteUser(username);
+
+    expect(tables.user.testUser).toBeUndefined();
   });
 });
