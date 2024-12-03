@@ -52,9 +52,9 @@ jest.mock('@/database/postgresql/pgWrapper', () => {
   };
 });
 
-const expectDynamoDb = function (db: DynamoDatabase, key: string, secret: string) {
+const expectDynamoDb = function (db: DynamoDatabase, key: string, secret: string, region: string) {
   expect(db).toBeInstanceOf(DynamoDatabase);
-  expect(db.getConfig().region).toBe('eu-central-1');
+  expect(db.getConfig().region).toBe(region);
   expect((db.getConfig().credentials as AwsCredentials)?.accessKeyId).toBe(key);
   expect((db.getConfig().credentials as AwsCredentials)?.secretAccessKey).toBe(secret);
   expect(db.getClient()).toBeInstanceOf(DynamoDBClient);
@@ -100,34 +100,34 @@ describe('db', (): void => {
     expect(mocked_data.connected).toBe(true);
   });
 
-  test('loadDb loads dynamodb correctly, credentials given specifically.', async (): Promise<void> => {
+  test('loadDb loads dynamodb correctly, credentials and region given specifically.', async (): Promise<void> => {
     mockFS({
       './config.json':
-        '{"database":{"name":"dynamodb", "accessKeyId":"key", "secretAccessKey":"secret"}, "accessKeyId":"test", "secretAccessKey":"test"}'
+        '{"database":{"name":"dynamodb", "accessKeyId":"key", "secretAccessKey":"secret", "region":"de"}, "accessKeyId":"test", "secretAccessKey":"test", "region":"us"}'
     });
     loadConfig();
 
     const db = (await loadDb()) as DynamoDatabase;
 
-    expectDynamoDb(db, 'key', 'secret');
+    expectDynamoDb(db, 'key', 'secret', 'de');
   });
 
-  test('loadDb loads dynamodb correctly, credentials given globally.', async (): Promise<void> => {
-    mockFS({ './config.json': '{"database":{"name":"dynamodb"}, "accessKeyId":"key", "secretAccessKey":"secret"}' });
+  test('loadDb loads dynamodb correctly, credentials and region given globally.', async (): Promise<void> => {
+    mockFS({ './config.json': '{"database":{"name":"dynamodb"}, "accessKeyId":"key", "secretAccessKey":"secret", "region":"de"}' });
     loadConfig();
 
     const db = (await loadDb()) as DynamoDatabase;
 
-    expectDynamoDb(db, 'key', 'secret');
+    expectDynamoDb(db, 'key', 'secret', 'de');
   });
 
-  test('loadDb loads dynamodb correctly, no credentials given.', async (): Promise<void> => {
+  test('loadDb loads dynamodb correctly, no credentials and region given.', async (): Promise<void> => {
     mockFS({ './config.json': '{"database":{"name":"dynamodb"}}' });
     loadConfig();
 
     const db = (await loadDb()) as DynamoDatabase;
 
-    expectDynamoDb(db, 'fallback-key', 'fallback-secret');
+    expectDynamoDb(db, 'fallback-key', 'fallback-secret', 'eu-central-1');
   });
 
   test('closeDb closes db correctly', async (): Promise<void> => {

@@ -29,7 +29,7 @@ const getDb = function (): Database {
     return (db = new PostgresDatabase({ host, port, database, user, password: pass }));
   }
 
-  const region = config.database.region || 'eu-central-1';
+  const region = config.database.region || config.region || 'eu-central-1';
   const accessKeyId = config.database.accessKeyId || config.accessKeyId || 'fallback-key';
   const secretAccessKey = config.database.secretAccessKey || config.secretAccessKey || 'fallback-secret';
   const userTableName = config.database.userTableName || 'files-crud-user';

@@ -6,6 +6,7 @@ interface Config {
   storage?: StorageConfig;
   accessKeyId?: string;
   secretAccessKey?: string;
+  region?: string;
   register?: 'all' | 'admin' | 'token';
   tokens?: string[];
 }

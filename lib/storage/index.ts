@@ -6,11 +6,6 @@ import path from 'path';
 
 let storage: Storage | null;
 
-// TODO: test
-
-// TODO: region also on "config.region" not only on "config.storage.region" and "config.database.region"
-// (analog to accessKeyId and secretAccessKey) (don't forget to also modify @/database/index.ts)
-
 const loadStorage = function (): Storage {
   const config = getConfig();
   if (!!storage) {
@@ -22,7 +17,7 @@ const loadStorage = function (): Storage {
     return (storage = new LocalStorage(path.normalize(directory)));
   }
 
-  const region = config.storage.region || 'eu-central-1';
+  const region = config.storage.region || config.region || 'eu-central-1';
   const accessKeyId = config.storage.accessKeyId || config.accessKeyId || 'fallback-key';
   const secretAccessKey = config.storage.secretAccessKey || config.secretAccessKey || 'fallback-secret';
   const bucket = config.storage.bucket ?? 'files-crud';
