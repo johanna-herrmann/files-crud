@@ -56,11 +56,15 @@ class MongoDatabase implements Database {
   }
 
   public async open(): Promise<void> {
-    await mongoose.connect(this.url, { user: this.user, pass: this.pass });
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(this.url, { user: this.user, pass: this.pass });
+    }
   }
 
   public async close(): Promise<void> {
-    await mongoose.connection.close();
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close();
+    }
   }
 
   public async addUser(user: User): Promise<void> {

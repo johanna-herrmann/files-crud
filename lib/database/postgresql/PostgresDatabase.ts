@@ -44,6 +44,7 @@ const createFileTableIfNotExists = async function (client: Client) {
 class PostgresDatabase implements Database {
   private readonly conf: PgDbConf;
   private client: Client | null = null;
+  private connected = false;
 
   constructor(conf: PgDbConf) {
     this.conf = conf;
@@ -54,16 +55,23 @@ class PostgresDatabase implements Database {
   }
 
   public async open(): Promise<void> {
-    this.client = getNewClient(this.conf);
+    if (this.connected) {
+      return;
+    }
+    this.client = this.client || getNewClient(this.conf);
     await connect(this.client);
     await createUserTableIfNotExists(this.client);
     await createJwtKeyTableIfNotExists(this.client);
     await createFailedLoginAttemptsTableIfNotExists(this.client);
     await createFileTableIfNotExists(this.client);
+    this.connected = true;
   }
 
   public async close(): Promise<void> {
-    await end(this.client);
+    if (this.connected) {
+      await end(this.client);
+      this.connected = false;
+    }
   }
 
   public async addUser({ username, hashVersion, salt, hash, admin, ownerId, meta }: User): Promise<void> {

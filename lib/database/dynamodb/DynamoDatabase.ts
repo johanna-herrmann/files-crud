@@ -68,7 +68,7 @@ class DynamoDatabase implements Database {
   }
 
   public async open(): Promise<void> {
-    this.client = new DynamoDBClient(this.config);
+    this.client = this.client || new DynamoDBClient(this.config);
   }
 
   public async addUser(user: User): Promise<void> {
