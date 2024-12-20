@@ -1,10 +1,7 @@
-import { Client } from 'pg';
+import { Client, QueryResult } from 'pg';
 import PgDbConf from '@/types/PgDbConf';
 import DbItem from '@/types/DbItem';
-import FilePath from '@/types/FilePath';
 import PgDbValue from '@/types/PgDbValue';
-
-type Row = DbItem | FilePath;
 
 const getNewClient = function (conf: PgDbConf) {
   return new Client(conf);
@@ -26,7 +23,11 @@ const writingQuery = async function (client: Client | null, query: string, value
   await client?.query(query, values);
 };
 
-const readingQuery = async function <T extends Row>(client: Client | null, query: string, values?: PgDbValue[]) {
+const readingQuery = async function <T extends DbItem>(
+  client: Client | null,
+  query: string,
+  values?: PgDbValue[]
+): Promise<QueryResult<T> | undefined> {
   return await client?.query<T>(query, values);
 };
 

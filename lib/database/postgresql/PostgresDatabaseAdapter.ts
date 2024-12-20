@@ -36,8 +36,8 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
       updateParts.push(`${key}=$${index++}`);
       values.push(typeof value === 'object' ? JSON.stringify(value) : value);
     });
-    const clause = `SET ${updateParts.join(', ')}`;
-    return [clause, values];
+    const updater = `SET ${updateParts.join(', ')}`;
+    return [updater, values];
   }
 
   private buildReadingQuery(table: string, filterKey: string, filterValue: string): [string, PgDbValue[]] {
@@ -129,10 +129,7 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
   public async findAll<T extends DbItem>(table: string): Promise<T[]> {
     const query = `SELECT * FROM ${table}`;
     const result = await readingQuery<T>(this.client, query);
-    if (!result || !result.rowCount || result.rowCount <= 0) {
-      return [];
-    }
-    return result.rows;
+    return result?.rows || [];
   }
 
   public async exists(table: string, filterKey: string, filterValue: string): Promise<boolean> {

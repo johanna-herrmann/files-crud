@@ -199,7 +199,6 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     await db.update('user_', 'username', testUser.username, { hashVersion: 'newVersion', salt: 'newSalt', hash: 'newHash' });
 
-    console.log({ mocked_data });
     expectQueryAndValues(1, 1, 0, 0, /^update user_ set hashVersion=\$1, salt=\$2, hash=\$3 where username=\$4$/iu, [
       'newVersion',
       'newSalt',

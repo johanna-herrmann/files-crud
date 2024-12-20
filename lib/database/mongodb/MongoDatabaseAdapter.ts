@@ -86,7 +86,7 @@ class MongoDatabaseAdapter implements DatabaseAdapter {
 
   public async init<T extends DbItem>(table: string, item: T): Promise<void> {
     let schema: Record<string, unknown> | undefined = schemata[table];
-    if (schema) {
+    if (!!schema) {
       return;
     }
     schema = {};

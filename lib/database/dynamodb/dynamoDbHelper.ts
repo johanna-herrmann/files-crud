@@ -22,15 +22,6 @@ const buildDbItem = function <T extends DbItem>(itemFound: Record<string, any> |
   return itemFound as T;
 };
 
-const putItem = async function (client: DynamoDBClient, TableName: string, Item: DbItem): Promise<void> {
-  const input: PutCommandInput = {
-    TableName,
-    Item
-  };
-  const command = new PutCommand(input);
-  await client.send(command);
-};
-
 const listTables = async function (client: DynamoDBClient): Promise<string[]> {
   let ExclusiveStartTableName: string | undefined;
   let more = true;
@@ -54,6 +45,15 @@ const createTable = async function (client: DynamoDBClient, TableName: string, k
     KeySchema: [{ AttributeName: keyName, KeyType: 'HASH' }]
   };
   const command = new CreateTableCommand(input);
+  await client.send(command);
+};
+
+const putItem = async function (client: DynamoDBClient, TableName: string, Item: DbItem): Promise<void> {
+  const input: PutCommandInput = {
+    TableName,
+    Item
+  };
+  const command = new PutCommand(input);
   await client.send(command);
 };
 
