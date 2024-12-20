@@ -4,7 +4,7 @@ const testUser = {
   salt: 'testSalt',
   hash: 'testHash',
   admin: false,
-  ownerId: 'testSectionId',
+  ownerId: 'testOwnerId',
   meta: { testProp: 'testValue' }
 };
 

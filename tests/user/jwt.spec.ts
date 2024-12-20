@@ -28,11 +28,11 @@ describe('jwt', (): void => {
     const index = getIndex();
     const key = getKeys()[index];
     // noinspection JSDeprecatedSymbols - this is not the string.sub function, it's just an object-property.
-    const checkToken = jwt.sign({ sub: 'testUser', iat: fakeTime }, key.key, { algorithm, keyid: key.id });
+    const checkToken = jwt.sign({ sub: 'testUser', iat: fakeTime }, key.key, { algorithm, keyid: key.kid });
     const checkDecoded = jwt.decode(checkToken, { complete: true }) as jwt.JwtPayload;
     expect(decoded.header.alg).toBe('HS256');
     expect(decoded.header.typ).toBe('JWT');
-    expect(decoded.header.kid).toBe(getKeys()[index].id);
+    expect(decoded.header.kid).toBe(getKeys()[index].kid);
     expect(decoded.payload.sub).toBe('testUser');
     expect(decoded.payload.iat).toBe(fakeTime);
     expect(decoded.signature).toBe(checkDecoded.signature);

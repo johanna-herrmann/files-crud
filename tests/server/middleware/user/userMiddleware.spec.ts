@@ -1,5 +1,5 @@
 import User from '@/types/User';
-import { tables } from '@/database/memdb/MemoryDatabase';
+import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
 import { assertError, assertPass, buildRequest, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { userMiddleware } from '@/server/middleware';
@@ -28,7 +28,7 @@ jest.mock('@/user/auth', () => {
 });
 
 const passesIfAdmin = async function (action: string): Promise<void> {
-  tables.user.testUser = { ...testUser, admin: true };
+  data.user_[0] = { ...testUser, admin: true };
   let next = false;
   const req = buildRequest('valid_admin_token', action, undefined, {});
   const res = buildResponse();
@@ -39,7 +39,7 @@ const passesIfAdmin = async function (action: string): Promise<void> {
 };
 
 const passesIfSelf = async function (action: string, usernameParam: boolean): Promise<void> {
-  tables.user.testUser = { ...testUser, admin: false };
+  data.user_[0] = { ...testUser, admin: false };
   let next = false;
   const username = testUser.username;
   const body = usernameParam ? {} : { username };
@@ -52,7 +52,7 @@ const passesIfSelf = async function (action: string, usernameParam: boolean): Pr
 };
 
 const passesIfSelfAndValidPassword = async function (): Promise<void> {
-  tables.user.testUser = { ...testUser, admin: false };
+  data.user_[0] = { ...testUser, admin: false };
   let next = false;
   const req = buildRequest('valid_user_token', 'password', undefined, { username: testUser.username, oldPassword: 'password123' });
   const res = buildResponse();
@@ -63,7 +63,7 @@ const passesIfSelfAndValidPassword = async function (): Promise<void> {
 };
 
 const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
-  tables.user.testUser = { ...testUser, admin: false };
+  data.user_[0] = { ...testUser, admin: false };
   let next = false;
   const req = buildRequest('valid_user_token', 'password', undefined, { username: testUser.username, oldPassword: 'invalid' });
   const res = buildResponse();
@@ -74,7 +74,7 @@ const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
 };
 
 const rejectsIfForeign = async function (action: string, usernameParam: boolean): Promise<void> {
-  tables.user.testUser = { ...testUser, admin: false };
+  data.user_[0] = { ...testUser, admin: false };
   let next = false;
   const body = usernameParam ? {} : { username: 'other' };
   const req = buildRequest('valid_user_token', action, usernameParam ? 'other' : undefined, body);
@@ -86,7 +86,7 @@ const rejectsIfForeign = async function (action: string, usernameParam: boolean)
 };
 
 const rejectsIfNotAdmin = async function (action: string): Promise<void> {
-  tables.user.testUser = { ...testUser, admin: false };
+  data.user_[0] = { ...testUser, admin: false };
   let next = false;
   const req = buildRequest('valid_user_token', action, undefined, {});
   const res = buildResponse();
@@ -108,7 +108,7 @@ const rejectsIfPublic = async function (action: string): Promise<void> {
 
 describe('userMiddleware', (): void => {
   afterEach(async () => {
-    tables.user = {};
+    data.user_ = [];
     mocked_token = null;
     mocked_user = null;
     resetLastMessage();

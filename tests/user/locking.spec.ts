@@ -1,11 +1,13 @@
 import { countAttempt, handleLocking, resetAttempts, THRESHOLD, TTL_MIN, TTL_MAX } from '@/user/locking';
-import { MemoryDatabase, tables } from '@/database/memdb/MemoryDatabase';
+import { Database } from '@/database/Database';
+import { data } from '@/database/memdb/MemoryDatabaseAdapter';
+import { testUser } from '#/testItems';
 
 const username = 'testUser';
 
 describe('locking', () => {
   beforeEach(async (): Promise<void> => {
-    tables.failedLoginAttempts = {};
+    data.failedLoginAttempts = [];
     jest.useFakeTimers();
   });
 
@@ -14,29 +16,30 @@ describe('locking', () => {
   });
 
   test('countAttempt counts attempt.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 1, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 1, lastAttempt: 0 };
     jest.setSystemTime(new Date(42));
 
     await countAttempt(db, username);
 
-    expect(tables.failedLoginAttempts.testUser?.attempts).toBe(2);
-    expect(tables.failedLoginAttempts.testUser?.lastAttempt).toBe(42);
+    expect(data.failedLoginAttempts[0]?.username).toBe(testUser.username);
+    expect(data.failedLoginAttempts[0]?.attempts).toBe(2);
+    expect(data.failedLoginAttempts[0]?.lastAttempt).toBe(42);
   });
 
   test('resetAttempts resets attempts.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 1, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 1, lastAttempt: 0 };
     jest.setSystemTime(new Date(42));
 
     await resetAttempts(db, username);
 
-    expect(tables.failedLoginAttempts.testUser).toBeUndefined();
+    expect(data.failedLoginAttempts.length).toBe(0);
   });
 
   test('handleLocking returns false, if attempts < threshold.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 1, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 1, lastAttempt: 0 };
     jest.setSystemTime(new Date(42));
 
     const locked = await handleLocking(db, username);
@@ -45,8 +48,8 @@ describe('locking', () => {
   });
 
   test('handleLocking returns false, if lock is expired, smallest TTL.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 5, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 5, lastAttempt: 0 };
     jest.setSystemTime(new Date(TTL_MIN + 1));
 
     const locked = await handleLocking(db, username);
@@ -55,19 +58,19 @@ describe('locking', () => {
   });
 
   test('handleLocking returns true, if lock is active, also updates lastAttempt, smallest TTL.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 5, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 5, lastAttempt: 0 };
     jest.setSystemTime(new Date(TTL_MIN - 500));
 
     const locked = await handleLocking(db, username);
 
     expect(locked).toBe(true);
-    expect(tables.failedLoginAttempts.testUser.lastAttempt).toBe(TTL_MIN - 500);
+    expect(data.failedLoginAttempts[0]?.lastAttempt).toBe(TTL_MIN - 500);
   });
 
   test('handleLocking returns false, if lock is expired, medium TTL.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 8, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 8, lastAttempt: 0 };
     const factor = 2 ** (8 - THRESHOLD);
     const ttl = TTL_MIN * factor;
     jest.setSystemTime(new Date(ttl + 1));
@@ -78,8 +81,8 @@ describe('locking', () => {
   });
 
   test('handleLocking returns true, if lock is active, also updates lastAttempt, medium TTL.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 8, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 8, lastAttempt: 0 };
     const factor = 2 ** (8 - THRESHOLD);
     const ttl = TTL_MIN * factor;
     jest.setSystemTime(new Date(ttl - 500));
@@ -87,12 +90,12 @@ describe('locking', () => {
     const locked = await handleLocking(db, username);
 
     expect(locked).toBe(true);
-    expect(tables.failedLoginAttempts.testUser.lastAttempt).toBe(ttl - 500);
+    expect(data.failedLoginAttempts[0]?.lastAttempt).toBe(ttl - 500);
   });
 
   test('handleLocking returns false, if lock is expired, biggest TTL.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 12, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 12, lastAttempt: 0 };
     jest.setSystemTime(new Date(TTL_MAX + 1));
 
     const locked = await handleLocking(db, username);
@@ -101,13 +104,13 @@ describe('locking', () => {
   });
 
   test('handleLocking returns true, if lock is active, also updates lastAttempt, biggest TTL.', async (): Promise<void> => {
-    const db = new MemoryDatabase();
-    tables.failedLoginAttempts.testUser = { username, attempts: 12, lastAttempt: 0 };
+    const db = new Database();
+    data.failedLoginAttempts[0] = { username, attempts: 12, lastAttempt: 0 };
     jest.setSystemTime(new Date(TTL_MAX - 500));
 
     const locked = await handleLocking(db, username);
 
     expect(locked).toBe(true);
-    expect(tables.failedLoginAttempts.testUser.lastAttempt).toBe(TTL_MAX - 500);
+    expect(data.failedLoginAttempts[0]?.lastAttempt).toBe(TTL_MAX - 500);
   });
 });

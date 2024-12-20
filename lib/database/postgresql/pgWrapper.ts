@@ -2,6 +2,7 @@ import { Client } from 'pg';
 import PgDbConf from '@/types/PgDbConf';
 import DbItem from '@/types/DbItem';
 import FilePath from '@/types/FilePath';
+import PgDbValue from '@/types/PgDbValue';
 
 type Row = DbItem | FilePath;
 
@@ -21,11 +22,11 @@ const definingQuery = async function (client: Client | null, query: string) {
   await client?.query(query);
 };
 
-const writingQuery = async function (client: Client | null, query: string, values?: (string | number | boolean)[]) {
+const writingQuery = async function (client: Client | null, query: string, values?: PgDbValue[]) {
   await client?.query(query, values);
 };
 
-const readingQuery = async function <T extends Row>(client: Client | null, query: string, values?: (string | number | boolean)[]) {
+const readingQuery = async function <T extends Row>(client: Client | null, query: string, values?: PgDbValue[]) {
   return await client?.query<T>(query, values);
 };
 

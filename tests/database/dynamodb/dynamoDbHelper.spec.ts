@@ -1,6 +1,15 @@
-import { putItem, updateItem, deleteItem, loadItem, loadId, loadUsers, loadFiles, loadJwtKeys, itemExists } from '@/database/dynamodb/dynamoDbHelper';
+import {
+  putItem,
+  updateItem,
+  deleteItem,
+  loadItem,
+  loadItems,
+  itemExists,
+  listTables,
+  createTable
+} from '@/database/dynamodb/dynamoDbHelper';
 import { mockClient } from 'aws-sdk-client-mock';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { CreateTableCommand, DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
 import { PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import User from '@/types/User';
 import { testUser } from '#/testItems';
@@ -9,35 +18,30 @@ const dynamoMock = mockClient(DynamoDBClient);
 const client = new DynamoDBClient();
 const TableName = 'table-name';
 
-const all = 'all';
-const id = 'test-id';
-
-const mockForLoad = function (withId: boolean, IndexName?: string) {
-  const item = withId ? { ...testUser, all, id } : { ...testUser, all };
+const mockForLoad = function () {
+  const item = { ...testUser };
   dynamoMock
     .on(QueryCommand, {
       TableName,
       ExpressionAttributeNames: { '#key': 'username' },
       ExpressionAttributeValues: { ':value': 'someName' },
-      KeyConditionExpression: 'all = all and #key = :value',
-      Limit: 1,
-      IndexName
+      KeyConditionExpression: '#key = :value',
+      Limit: 1
     })
     .resolves({
       Items: [item]
     });
 };
 
-const mockForExists = function (exists: boolean, IndexName?: string) {
+const mockForExists = function (exists: boolean) {
   dynamoMock
     .on(QueryCommand, {
       TableName,
       ExpressionAttributeNames: { '#key': 'username' },
       ExpressionAttributeValues: { ':value': 'someName' },
-      KeyConditionExpression: 'all = all and #key = :value',
+      KeyConditionExpression: '#key = :value',
       Limit: 1,
-      ProjectionExpression: '',
-      IndexName
+      ProjectionExpression: ''
     })
     .resolves({
       Items: exists ? [{}] : []
@@ -59,20 +63,36 @@ describe('dynamoDbHelper', (): void => {
     dynamoMock.reset();
   });
 
-  test('putItem calls dynamodb api putCommand correctly, with key.', async (): Promise<void> => {
+  test('listTables calls dynamodb api ListTableCommand correctly.', async (): Promise<void> => {
     let called = false;
-    dynamoMock.on(PutCommand, { TableName, Item: { ...testUser, id, all } }).callsFake(() => (called = true));
+    dynamoMock.on(ListTablesCommand, {}).callsFake(() => (called = true));
 
-    await putItem(client, TableName, testUser, true);
+    await listTables(client);
 
     expect(called).toBe(true);
   });
 
-  test('putItem calls dynamodb api putCommand correctly, without key.', async (): Promise<void> => {
+  test('createTable calls dynamodb api CreateTableCommand correctly.', async (): Promise<void> => {
+    let called = false;
+    dynamoMock
+      .on(CreateTableCommand, {
+        BillingMode: 'PAY_PER_REQUEST',
+        TableClass: 'STANDARD',
+        AttributeDefinitions: [{ AttributeName: 'username', AttributeType: 'S' }],
+        KeySchema: [{ AttributeName: 'username', KeyType: 'HASH' }]
+      })
+      .callsFake(() => (called = true));
+
+    await createTable(client, TableName, 'username');
+
+    expect(called).toBe(true);
+  });
+
+  test('putItem calls dynamodb api putCommand correctly.', async (): Promise<void> => {
     let called = false;
     dynamoMock.on(PutCommand, { TableName, Item: { ...testUser } }).callsFake(() => (called = true));
 
-    await putItem(client, TableName, testUser, true);
+    await putItem(client, TableName, testUser);
 
     expect(called).toBe(true);
   });
@@ -82,13 +102,13 @@ describe('dynamoDbHelper', (): void => {
     dynamoMock
       .on(UpdateCommand, {
         TableName,
-        Key: { all, id },
+        Key: { username: testUser.username },
         ExpressionAttributeValues: { ':username': 'newUsername' },
         UpdateExpression: 'username = :username'
       })
       .callsFake(() => (called = true));
 
-    await updateItem(client, TableName, 'id', id, { username: 'newUsername' });
+    await updateItem(client, TableName, 'username', testUser.username, { username: 'newUsername' });
 
     expect(called).toBe(true);
   });
@@ -98,132 +118,43 @@ describe('dynamoDbHelper', (): void => {
     dynamoMock
       .on(UpdateCommand, {
         TableName,
-        Key: { id, all },
+        Key: { username: testUser.username },
         ExpressionAttributeValues: { ':meta': { k: 'v' } },
         UpdateExpression: 'meta = :meta'
       })
       .callsFake(() => (called = true));
 
-    await updateItem(client, TableName, 'id', id, { meta: { k: 'v' } });
+    await updateItem(client, TableName, 'username', testUser.username, { meta: { k: 'v' } });
 
     expect(called).toBe(true);
   });
 
   test('deleteItem calls dynamodb api deleteCommand correctly.', async (): Promise<void> => {
     let called = false;
-    dynamoMock.on(DeleteCommand, { TableName, Key: { id, all } }).callsFake(() => (called = true));
+    dynamoMock.on(DeleteCommand, { TableName, Key: { username: testUser.username } }).callsFake(() => (called = true));
 
-    await deleteItem(client, TableName, 'id', id);
+    await deleteItem(client, TableName, 'username', testUser.username);
 
     expect(called).toBe(true);
   });
 
-  test('loadItem loads Item correctly, no id, no index.', async (): Promise<void> => {
-    mockForLoad(false);
+  test('loadItem loads Item correctly.', async (): Promise<void> => {
+    mockForLoad();
 
     const userItem = await loadItem<User>(client, TableName, 'username', 'someName');
 
     expect(userItem).toEqual(testUser);
   });
 
-  test('loadItem loads Item correctly, no id, with index.', async (): Promise<void> => {
-    mockForLoad(false, 'index');
+  test('loadItems loads items correctly.', async (): Promise<void> => {
+    dynamoMock.on(ScanCommand, { TableName }).resolves({ Items: [testUser, { ...testUser, username: 'other' }] });
 
-    const userItem = await loadItem<User>(client, TableName, 'username', 'someName', 'index');
+    const items = await loadItems<User>(client, TableName);
 
-    expect(userItem).toEqual(testUser);
+    expect(items).toEqual([testUser, { ...testUser, username: 'other' }]);
   });
 
-  test('loadItem loads Item correctly, with id, no index.', async (): Promise<void> => {
-    mockForLoad(true);
-
-    const userItem = await loadItem<User>(client, TableName, 'username', 'someName');
-
-    expect(userItem).toEqual(testUser);
-  });
-
-  test('loadItem loads Item correctly, with id, with index.', async (): Promise<void> => {
-    mockForLoad(true, 'index');
-
-    const userItem = await loadItem<User>(client, TableName, 'username', 'someName', 'index');
-
-    expect(userItem).toEqual(testUser);
-  });
-
-  test('loadId gets id correctly.', async (): Promise<void> => {
-    dynamoMock
-      .on(QueryCommand, {
-        TableName,
-        ExpressionAttributeNames: { '#key': 'folder' },
-        ExpressionAttributeValues: { ':value': 'somePath' },
-        KeyConditionExpression: 'all = all and #key = :value',
-        IndexName: 'index',
-        ProjectionExpression: 'id'
-      })
-      .resolves({
-        Items: [{ all, id, folder: 'somePath' }]
-      });
-
-    const idReturned = await loadId(client, TableName, 'folder', 'somePath', 'index');
-
-    expect(idReturned).toBe(id);
-  });
-
-  test('loadUsers loads users correctly.', async (): Promise<void> => {
-    const list = [
-      { username: 'user1', admin: true },
-      { username: 'user2', admin: false }
-    ];
-    dynamoMock
-      .on(ScanCommand, {
-        TableName,
-        ProjectionExpression: 'username,admin'
-      })
-      .resolves({
-        Items: list
-      });
-
-    const userList = await loadUsers(client, TableName);
-
-    expect(userList).toEqual(list);
-  });
-
-  test('loadFiles loads files correctly.', async (): Promise<void> => {
-    dynamoMock
-      .on(QueryCommand, {
-        TableName,
-        ExpressionAttributeValues: { ':folder': 'somePath' },
-        KeyConditionExpression: 'all = all and folder = :folder',
-        IndexName: 'file-index',
-        ProjectionExpression: 'filename'
-      })
-      .resolves({
-        Items: [
-          { all, folder: 'somePath', filename: 'file1' },
-          { all, folder: 'somePath', filename: 'file2' }
-        ]
-      });
-
-    const files = await loadFiles(client, TableName, 'somePath');
-
-    expect(files).toEqual(['file1', 'file2']);
-  });
-
-  test('loadAllKeys loads keys correctly.', async (): Promise<void> => {
-    dynamoMock.on(ScanCommand, { TableName }).resolves({
-      Items: [
-        { all, id: '1', key: 'key1' },
-        { all, id: '2', key: 'key2' }
-      ]
-    });
-
-    const keys = await loadJwtKeys(client, TableName);
-
-    expect(keys[0]).toEqual({ id: '1', key: 'key1' });
-    expect(keys[1]).toEqual({ id: '2', key: 'key2' });
-  });
-
-  test('exists returns true if item exists, no index.', async (): Promise<void> => {
+  test('exists returns true if item exists.', async (): Promise<void> => {
     mockForExists(true);
 
     const exists = await itemExists(client, TableName, 'username', 'someName');
@@ -231,26 +162,10 @@ describe('dynamoDbHelper', (): void => {
     expect(exists).toBe(true);
   });
 
-  test('exists returns false if item does not exist, no index.', async (): Promise<void> => {
+  test('exists returns false if item does not exist.', async (): Promise<void> => {
     mockForExists(false);
 
     const exists = await itemExists(client, TableName, 'username', 'someName');
-
-    expect(exists).toBe(false);
-  });
-
-  test('exists returns true if item exists, with index.', async (): Promise<void> => {
-    mockForExists(true, 'username-index');
-
-    const exists = await itemExists(client, TableName, 'username', 'someName', 'username-index');
-
-    expect(exists).toBe(true);
-  });
-
-  test('exists returns false if item does not exist, with index.', async (): Promise<void> => {
-    mockForExists(false, 'username-index');
-
-    const exists = await itemExists(client, TableName, 'username', 'someName', 'username-index');
 
     expect(exists).toBe(false);
   });

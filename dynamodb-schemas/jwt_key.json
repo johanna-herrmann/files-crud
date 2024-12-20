@@ -1,16 +1,16 @@
 {
-  "TableName": "jwt_key",
+  "TableName": "files-crud-jwtkey",
   "BillingMode": "PAY_PER_REQUEST",
   "TableClass": "STANDARD",
   "AttributeDefinitions": [
     {
-      "AttributeName": "all",
+      "AttributeName": "kid",
       "AttributeType": "S"
     }
   ],
   "KeySchema": [
     {
-      "AttributeName": "all",
+      "AttributeName": "kid",
       "KeyType": "HASH"
     }
   ]

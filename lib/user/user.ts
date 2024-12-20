@@ -72,7 +72,7 @@ const setAdminState = async function (username: string, admin: boolean): Promise
   }
 };
 
-const modifyMeta = async function (username: string, meta?: Record<string, unknown>): Promise<void> {
+const modifyMeta = async function (username: string, meta: Record<string, unknown>): Promise<void> {
   try {
     const db = await loadDb();
     await db.modifyUserMeta(username, meta);

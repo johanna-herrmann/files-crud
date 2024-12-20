@@ -1,8 +1,9 @@
 import { login, invalidCredentials, attemptsExceeded, authorize, changePassword, checkPassword } from '@/user/auth';
 import { issueToken } from '@/user/jwt';
 import { current } from '@/user/passwordHashing/versions';
-import { tables } from '@/database/memdb/MemoryDatabase';
+import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import Database from '@/types/Database';
+import User from '@/types/User';
 
 const username = 'testUser';
 const password = 'testPwd';
@@ -75,7 +76,7 @@ jest.mock('crypto', () => {
 
 describe('auth', (): void => {
   beforeEach(async (): Promise<void> => {
-    tables.user = {};
+    data.user_ = [];
     mocked_called_count = false;
     mocked_called_reset = false;
     mocked_locked = false;
@@ -83,7 +84,7 @@ describe('auth', (): void => {
 
   test('login returns token on valid credentials.', async (): Promise<void> => {
     mocked_locked = false;
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
 
     const result = await login(username, password);
 
@@ -93,7 +94,7 @@ describe('auth', (): void => {
   });
 
   test('login returns invalidCredentials on invalid password.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
     mocked_locked = false;
 
     const result = await login(username, 'invalid');
@@ -104,7 +105,7 @@ describe('auth', (): void => {
   });
 
   test('login returns invalidCredentials on invalid username.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
     mocked_locked = false;
 
     const result = await login('invalid', password);
@@ -115,7 +116,7 @@ describe('auth', (): void => {
   });
 
   test('login returns invalidCredentials on invalid credentials.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
     mocked_locked = false;
 
     const result = await login('invalid', 'invalid');
@@ -126,7 +127,7 @@ describe('auth', (): void => {
   });
 
   test('login returns attemptsExceeded if locked.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
     mocked_locked = true;
 
     const result = await login(username, password);
@@ -137,7 +138,7 @@ describe('auth', (): void => {
   });
 
   test('checkPassword returns empty string on valid credentials.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
 
     const result = await checkPassword(username, password);
 
@@ -145,7 +146,7 @@ describe('auth', (): void => {
   });
 
   test('checkPassword returns invalidCredentials on invalid credentials.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
 
     const result = await checkPassword(username, 'invalid');
 
@@ -153,7 +154,7 @@ describe('auth', (): void => {
   });
 
   test('authorize returns user if logged in.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
     const token = issueToken(`real_${username}`);
 
     const user = await authorize(token);
@@ -164,7 +165,7 @@ describe('auth', (): void => {
   });
 
   test('authorize returns null if logged-in user does not exist.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
     const token = issueToken(`real_other`);
 
     const user = await authorize(token);
@@ -201,12 +202,12 @@ describe('auth', (): void => {
   });
 
   test('changePassword changes password.', async (): Promise<void> => {
-    tables.user.testUser = { username, hashVersion: '', salt: '', hash: '', ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion: '', salt: '', hash: '', ownerId, admin: true, meta: {} };
 
     await changePassword(username, password);
 
-    expect(tables.user.testUser?.hashVersion).toBe(current.version);
-    expect(tables.user.testUser?.salt).toBe(salt);
-    expect(tables.user.testUser?.hash).toBe(hash);
+    expect((data.user_[0] as User)?.hashVersion).toBe(current.version);
+    expect((data.user_[0] as User)?.salt).toBe(salt);
+    expect((data.user_[0] as User)?.hash).toBe(hash);
   });
 });

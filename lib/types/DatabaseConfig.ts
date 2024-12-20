@@ -10,6 +10,11 @@ interface DatabaseConfig {
   region?: string;
   accessKeyId?: string;
   secretAccessKey?: string;
+  dynamoTableNames?: {
+    user: string;
+    failedLoginAttempts: string;
+    jwtKey: string;
+  };
   userTableName?: string;
   jwtKeyTableName?: string;
   failedLoginAttemptsTableName?: string;
