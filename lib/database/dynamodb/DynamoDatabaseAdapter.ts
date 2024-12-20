@@ -62,6 +62,14 @@ class DynamoDatabaseAdapter implements DatabaseAdapter {
     this.client = null;
   }
 
+  /**
+   * Creates a new table/collection.
+   * The first key of `item` is used as key.
+   * @param table The name of the table.
+   * @param item Dummy Item to derive the fields from.
+   *             Example: Provide dummy user item, so fields of user can be derived.
+   *             The table/collection will be created if it not exists already.
+   */
   public async init<T extends DbItem>(table: string, item: T): Promise<void> {
     const actualTable = this.getDynamoTableName(table);
     const tables = await listTables(this.ensureClient());
