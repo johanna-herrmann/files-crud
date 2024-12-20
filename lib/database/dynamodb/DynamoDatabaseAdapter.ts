@@ -64,7 +64,7 @@ class DynamoDatabaseAdapter implements DatabaseAdapter {
 
   /**
    * Creates a new table/collection.
-   * The first key of `item` is used as key.
+   * The first key of `item` is used as partition key / hash key.
    * @param table The name of the table.
    * @param item Dummy Item to derive the fields from.
    *             Example: Provide dummy user item, so fields of user can be derived.

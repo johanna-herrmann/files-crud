@@ -95,6 +95,14 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
     }
   }
 
+  /**
+   * Creates a new table/collection.
+   * The first key of `item` is used as primary key.
+   * @param table The name of the table.
+   * @param item Dummy Item to derive the fields from.
+   *             Example: Provide dummy user item, so fields of user can be derived.
+   *             The table/collection will be created if it not exists already.
+   */
   public async init<T extends DbItem>(table: string, item: T): Promise<void> {
     const types: Record<string, string> = {
       string: 'text',
@@ -107,6 +115,7 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
       const type = typeof value;
       fields.push(`${key} ${types[type]}`);
     });
+    fields.push(`PRIMARY KEY(${Object.keys(item)[0]})`);
     const query = `CREATE TABLE IF NOT EXISTS ${table}(${fields.join(', ')})`;
     await definingQuery(this.client, query);
   }

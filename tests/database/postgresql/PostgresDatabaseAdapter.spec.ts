@@ -165,7 +165,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     expect(mocked_data.connected).toBe(false);
   });
 
-  test('PostgresDatabaseAdapter->init itializes user table.', async (): Promise<void> => {
+  test('PostgresDatabaseAdapter->init initializes user table.', async (): Promise<void> => {
     db = new PostgresDatabaseAdapter();
     await db.open();
 
@@ -173,8 +173,30 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     expect(mocked_data.definingQueries?.length).toBe(1);
     expect(mocked_data.definingQueries?.at(0)).toMatch(
-      /^create table if not exists user_\s*\(username text, hashVersion text, salt text, hash text, admin Boolean, ownerId text, meta JSON\)$/iu
+      /^CREATE TABLE IF NOT EXISTS user_\s*\(username text, hashVersion text, salt text, hash text, admin Boolean, ownerId text, meta JSON, PRIMARY KEY\(username\)\)$/u
     );
+  });
+
+  test('PostgresDatabaseAdapter->init initializes failedLoginAttempts table.', async (): Promise<void> => {
+    db = new PostgresDatabaseAdapter();
+    await db.open();
+
+    await db.init('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
+
+    expect(mocked_data.definingQueries?.length).toBe(1);
+    expect(mocked_data.definingQueries?.at(0)).toMatch(
+      /^CREATE TABLE IF NOT EXISTS failedLoginAttempts\s*\(username text, attempts bigint, lastAttempt bigint, PRIMARY KEY\(username\)\)$/u
+    );
+  });
+
+  test('PostgresDatabaseAdapter->init initializes jwtKey table.', async (): Promise<void> => {
+    db = new PostgresDatabaseAdapter();
+    await db.open();
+
+    await db.init('jwtKey', { kid: '', key: '' });
+
+    expect(mocked_data.definingQueries?.length).toBe(1);
+    expect(mocked_data.definingQueries?.at(0)).toMatch(/^CREATE TABLE IF NOT EXISTS jwtKey\s*\(kid text, key text, PRIMARY KEY\(kid\)\)$/u);
   });
 
   test('PostgresDatabaseAdapter->add adds item.', async (): Promise<void> => {
@@ -188,7 +210,7 @@ describe('PostgresDatabaseAdapter', (): void => {
       1,
       0,
       0,
-      /^insert into user_\s*\(username, hashVersion, salt, hash, admin, ownerId, meta\) values\s*\(\$1, \$2, \$3, \$4, \$5, \$6, \$7\)$/iu,
+      /^INSERT INTO user_\s*\(username, hashVersion, salt, hash, admin, ownerId, meta\) VALUES\s*\(\$1, \$2, \$3, \$4, \$5, \$6, \$7\)$/u,
       [testUser.username, testUser.hashVersion, testUser.salt, testUser.hash, testUser.admin, testUser.ownerId, JSON.stringify(testUser.meta)]
     );
   });
@@ -199,7 +221,7 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     await db.update('user_', 'username', testUser.username, { hashVersion: 'newVersion', salt: 'newSalt', hash: 'newHash' });
 
-    expectQueryAndValues(1, 1, 0, 0, /^update user_ set hashVersion=\$1, salt=\$2, hash=\$3 where username=\$4$/iu, [
+    expectQueryAndValues(1, 1, 0, 0, /^UPDATE user_ SET hashVersion=\$1, salt=\$2, hash=\$3 WHERE username=\$4$/u, [
       'newVersion',
       'newSalt',
       'newHash',
@@ -213,13 +235,13 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     await db.update('user_', 'username', testUser.username, { username: 'newUsername' });
 
-    expectQueryAndValues(1, 1, 0, 0, /^update user_ set username=\$1 where username=\$2$/iu, ['newUsername', testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^UPDATE user_ SET username=\$1 WHERE username=\$2$/u, ['newUsername', testUser.username]);
   });
 
   test('PostgresDatabaseAdapter->findOne finds one.', async (): Promise<void> => {
     db = new PostgresDatabaseAdapter();
     await db.open();
-    when(/^select \* from user_ where username=\$1$/iu, [testUser.username]).then([testUser]);
+    when(/^SELECT \* FROM user_ WHERE username=\$1$/u, [testUser.username]).then([testUser]);
 
     const user = await db.findOne<User>('user_', 'username', testUser.username);
 
@@ -230,7 +252,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     const otherUser = { ...testUser, username: 'other' };
     db = new PostgresDatabaseAdapter();
     await db.open();
-    when(/^select \* from user_$/iu).then([testUser, otherUser]);
+    when(/^SELECT \* FROM user_$/u).then([testUser, otherUser]);
 
     const items = await db.findAll<User>('user_');
 
@@ -242,7 +264,7 @@ describe('PostgresDatabaseAdapter', (): void => {
   test('PostgresDatabaseAdapter->exists returns true if item exists.', async (): Promise<void> => {
     db = new PostgresDatabaseAdapter();
     await db.open();
-    when(/^select \* from user_ where username=\$1$/iu, [testUser.username]).then([testUser]);
+    when(/^SELECT \* FROM user_ WHERE username=\$1$/u, [testUser.username]).then([testUser]);
 
     const exists = await db.exists('user_', 'username', testUser.username);
 
@@ -252,7 +274,7 @@ describe('PostgresDatabaseAdapter', (): void => {
   test('PostgresDatabaseAdapter->exists returns false if item does not exist.', async (): Promise<void> => {
     db = new PostgresDatabaseAdapter();
     await db.open();
-    when(/^select \* from user_ where username=\$1$/iu, ['other']).then();
+    when(/^SELECT \* FROM user_ WHERE username=\$1$/u, ['other']).then();
 
     const exists = await db.exists('user_', 'username', 'other');
 
@@ -265,6 +287,6 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     await db.delete('user_', 'username', testUser.username);
 
-    expectQueryAndValues(1, 1, 0, 0, /^delete from user_ where username=\$1$/iu, [testUser.username]);
+    expectQueryAndValues(1, 1, 0, 0, /^DELETE FROM user_ WHERE username=\$1$/u, [testUser.username]);
   });
 });
