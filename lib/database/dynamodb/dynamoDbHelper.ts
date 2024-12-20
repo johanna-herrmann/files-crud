@@ -32,9 +32,17 @@ const putItem = async function (client: DynamoDBClient, TableName: string, Item:
 };
 
 const listTables = async function (client: DynamoDBClient): Promise<string[]> {
-  const command = new ListTablesCommand();
-  const result = await client.send(command);
-  return result.TableNames || [];
+  let ExclusiveStartTableName: string | undefined;
+  let more = true;
+  const tables: string[] = [];
+  while (more) {
+    const command = new ListTablesCommand(ExclusiveStartTableName ? { ExclusiveStartTableName } : {});
+    const result = await client.send(command);
+    tables.push(...(result.TableNames || []));
+    ExclusiveStartTableName = result.LastEvaluatedTableName;
+    more = !!ExclusiveStartTableName;
+  }
+  return tables;
 };
 
 const createTable = async function (client: DynamoDBClient, TableName: string, keyName: string): Promise<void> {

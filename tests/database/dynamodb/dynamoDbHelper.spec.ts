@@ -63,13 +63,21 @@ describe('dynamoDbHelper', (): void => {
     dynamoMock.reset();
   });
 
-  test('listTables calls dynamodb api ListTableCommand correctly.', async (): Promise<void> => {
-    let called = false;
-    dynamoMock.on(ListTablesCommand, {}).callsFake(() => (called = true));
+  test('listTables returns tables correctly, single call.', async (): Promise<void> => {
+    dynamoMock.on(ListTablesCommand, {}).resolves({ TableNames: ['one', 'second'] });
 
-    await listTables(client);
+    const tables = await listTables(client);
 
-    expect(called).toBe(true);
+    expect(tables).toEqual(['one', 'second']);
+  });
+
+  test('listTables returns tables correctly, multiple calls.', async (): Promise<void> => {
+    dynamoMock.on(ListTablesCommand, {}).resolves({ TableNames: ['one', 'second'], LastEvaluatedTableName: 'second' });
+    dynamoMock.on(ListTablesCommand, { ExclusiveStartTableName: 'second' }).resolves({ TableNames: ['third'] });
+
+    const tables = await listTables(client);
+
+    expect(tables).toEqual(['one', 'second', 'third']);
   });
 
   test('createTable calls dynamodb api CreateTableCommand correctly.', async (): Promise<void> => {
