@@ -1,13 +1,4 @@
-import {
-  putItem,
-  updateItem,
-  deleteItem,
-  loadItem,
-  loadItems,
-  itemExists,
-  listTables,
-  createTable
-} from '@/database/dynamodb/dynamoDbHelper';
+import { putItem, updateItem, deleteItem, loadItem, loadItems, itemExists, listTables, createTable } from '@/database/dynamodb/dynamoDbHelper';
 import { mockClient } from 'aws-sdk-client-mock';
 import { CreateTableCommand, DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
 import { PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
