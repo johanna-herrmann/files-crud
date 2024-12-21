@@ -10,7 +10,6 @@ import UserListItem from '@/types/UserListItem';
 import { v4 } from 'uuid';
 import JwtKey from '@/types/JwtKey';
 import FailedLoginAttempts from '@/types/FailedLoginAttempts';
-import File from '@/types/File';
 
 class Database implements DatabaseType {
   private readonly db: DatabaseAdapter;
@@ -44,7 +43,6 @@ class Database implements DatabaseType {
     await this.db.init<User>('user_', { username: '', admin: false, hashVersion: '', salt: '', hash: '', ownerId: '', meta: {} });
     await this.db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
     await this.db.init<JwtKey>('jwtKey', { kid: '', key: '' });
-    await this.db.init<File>('file', { path: '', realName: '', owner: '', meta: {} });
   }
 
   public async addUser(user: User): Promise<void> {
@@ -121,41 +119,6 @@ class Database implements DatabaseType {
 
   public async removeLoginAttempts(username: string): Promise<void> {
     return await this.db.delete('failedLoginAttempts', 'username', username);
-  }
-
-  public async addFile(file: File): Promise<void> {
-    await this.db.add<File>('file', file);
-  }
-
-  public async moveFile(oldPath: string, path: string, owner?: string): Promise<void> {
-    const ownerGiven = !!owner;
-    await this.db.update('file', 'path', oldPath, ownerGiven ? { path, owner } : { path });
-  }
-
-  public async modifyFileMeta(path: string, meta: Record<string, unknown>): Promise<void> {
-    await this.db.update('file', 'path', path, { meta });
-  }
-
-  public async removeFile(path: string): Promise<void> {
-    await this.db.delete('file', 'path', path);
-  }
-
-  public async getFile(path: string): Promise<File | null> {
-    return await this.db.findOne<File>('file', 'path', path);
-  }
-
-  public async listFilesInFolder(folder: string): Promise<string[]> {
-    folder = folder.replace(/\/*$/gu, '');
-    const regex = new RegExp(`^${folder}/([^/]+)$`, 'u');
-    const files = await this.db.findAll<File>('file');
-    return files
-      .filter((file) => regex.test(file.path))
-      .map((file) => file.path)
-      .sort();
-  }
-
-  public async fileExists(path: string): Promise<boolean> {
-    return this.db.exists('file', 'path', path);
   }
 }
 

@@ -7,10 +7,10 @@ import User from '@/types/User';
 import Permissions from '@/types/Permissions';
 import { getConfig } from '@/config';
 import PermissionConfig from '@/types/PermissionConfig';
-import { closeDb, loadDb } from '@/database';
-import Database from '@/types/Database';
-import File from '@/types/File';
 import Right from '@/types/Right';
+import { loadStorage } from '@/storage';
+import FileData from '@/types/FileData';
+import { Storage } from '@/storage/Storage';
 
 type Body = Record<string, string>;
 
@@ -41,14 +41,14 @@ const getPermissionConfig = function (path: string, exists: boolean, list?: bool
   return directoryPermissions[path.split('/')[0]] ?? config.defaultPermissions ?? {};
 };
 
-const getPermissions = function (user: User | null, path: string, file: File | null, list?: boolean): Permissions {
-  const permissionConfig = getPermissionConfig(path, !!file, list);
+const getPermissions = function (user: User | null, path: string, data: FileData | null, list?: boolean): Permissions {
+  const permissionConfig = getPermissionConfig(path, !!data, list);
 
   if (user?.admin) {
     return permissionConfig.admin ?? config.defaultPermissions?.admin ?? allPermissions;
   }
 
-  if (file?.owner === user?.ownerId || path.split('/')[0] === `user_${user?.ownerId}`) {
+  if (data?.owner === user?.ownerId || path.split('/')[0] === `user_${user?.ownerId}`) {
     return permissionConfig.owner ?? permissionConfig.user ?? config.defaultPermissions?.user ?? { read: true };
   }
 
@@ -67,13 +67,14 @@ const getRequiredRights = function (action: string, exists: boolean): Right[] {
       return [exists ? 'update' : 'create'];
     case 'moveSource':
       return ['read', 'delete'];
-    case 'meta':
+    case 'save-meta':
       return ['update'];
     case 'delete':
       return ['delete'];
     case 'one':
     case 'list':
     case 'copySource':
+    case 'load-meta':
     default:
       return ['read'];
   }
@@ -87,35 +88,37 @@ const ensureRights = function (permissions: Permissions, rights: Right[], path: 
   });
 };
 
-const handleTargetedAction = async function (db: Database, user: User | null, action: string, target: string, res: express.Response): Promise<void> {
-  const file = await db.getFile(target);
+const handleTargetedAction = async function (
+  storage: Storage,
+  user: User | null,
+  action: string,
+  target: string,
+  res: express.Response
+): Promise<void> {
+  const data = await storage.loadData(target);
   const ioAction = getIoAction(action, 'Target');
-  const permissions = getPermissions(user, target, file);
-  const requiredRights = getRequiredRights(ioAction, !!file);
+  const permissions = getPermissions(user, target, data);
+  const requiredRights = getRequiredRights(ioAction, !!data);
   ensureRights(permissions, requiredRights, target, res);
 };
 
 const fileMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-  try {
-    const db = await loadDb();
+  const storage = loadStorage();
 
-    const user = await authorize(getToken(req));
-    const { action, path, target } = req.params as FileActionParams;
-    const body = req.body as Body;
-    const actualPath = path ?? body.path ?? '[]';
-    const file = await db.getFile(actualPath);
-    const ioAction = getIoAction(action, 'Source');
-    const permissions = getPermissions(user, actualPath, file, action === 'list');
-    const requiredRights = getRequiredRights(ioAction, !!file);
-    ensureRights(permissions, requiredRights, actualPath, res);
-    if (!!target) {
-      return await handleTargetedAction(db, user, action, target, res);
-    }
-
-    next();
-  } finally {
-    await closeDb();
+  const user = await authorize(getToken(req));
+  const { action, path, target } = req.params as FileActionParams;
+  const body = req.body as Body;
+  const actualPath = path ?? body.path ?? '[]';
+  const data = await storage.loadData(actualPath);
+  const ioAction = getIoAction(action, 'Source');
+  const permissions = getPermissions(user, actualPath, data, action === 'list');
+  const requiredRights = getRequiredRights(ioAction, !!data);
+  ensureRights(permissions, requiredRights, actualPath, res);
+  if (!!target) {
+    return await handleTargetedAction(storage, user, action, target, res);
   }
+
+  next();
 };
 
 export { fileMiddleware };

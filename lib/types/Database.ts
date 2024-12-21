@@ -1,5 +1,4 @@
 import User from './User';
-import File from './File';
 import FailedLoginAttempts from './FailedLoginAttempts';
 import UserListItem from './UserListItem';
 import JwtKey from './JwtKey';
@@ -124,54 +123,6 @@ interface Database {
    * @param username - username to delete the counting dataset for
    */
   removeLoginAttempts: (username: string) => Promise<void>;
-
-  /**
-   * Saves new file dataset
-   * @param file - the file to save
-   */
-  addFile: (file: File) => Promise<void>;
-
-  /**
-   * Changes the path for a file. Optionally also changing the owner
-   * @param oldPath - the current path (to find the file dataset)
-   * @param path - the new path
-   * @param owner - optional - if given, the value is used as new owner
-   */
-  moveFile: (oldPath: string, path: string, owner?: string) => Promise<void>;
-
-  /**
-   * modifies the metadata object of a file dataset
-   * @param path - the path of the file
-   * @param meta - the new metadata object
-   */
-  modifyFileMeta: (path: string, meta: Record<string, unknown>) => Promise<void>;
-
-  /**
-   * Removes the file dataset - This is irreversible
-   * @param path - the path of the file dataset to remove
-   */
-  removeFile: (path: string) => Promise<void>;
-
-  /**
-   * Gets the file dataset with the given path
-   * @param path - path of the file dataset to get
-   * @returns Promise fulfilling with file or null
-   */
-  getFile: (path: string) => Promise<File | null>;
-
-  /**
-   * lists all files (paths) into the given folder
-   * @param folder - the path of the folder to lists the files in
-   * @returns Promise fulfilling with an array, one item for each file in folder
-   */
-  listFilesInFolder: (folder: string) => Promise<string[]>;
-
-  /**
-   * Checks if a file dataset exists with the given path
-   * @param path - path of the file to check existence for
-   * @returns Promise fulfilling with boolean, true if file exists
-   */
-  fileExists: (path: string) => Promise<boolean>;
 }
 
 export default Database;

@@ -5,6 +5,7 @@ import PermissionConfig from '@/types/PermissionConfig';
 interface Config {
   database?: DatabaseConfig;
   storage?: StorageConfig;
+  path?: string;
   accessKeyId?: string;
   secretAccessKey?: string;
   region?: string;

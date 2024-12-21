@@ -1,5 +1,5 @@
 interface StorageConfig {
-  name: 'local' | 's3';
+  name: 'fs' | 's3';
   path?: string;
   region?: string;
   accessKeyId?: string;

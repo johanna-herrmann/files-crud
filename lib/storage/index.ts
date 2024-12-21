@@ -1,29 +1,12 @@
-import Storage from '@/types/Storage';
-import { getConfig } from '@/config';
-import { LocalStorage } from './local/LocalStorage';
-import { S3Storage } from './s3/S3Storage';
-import path from 'path';
+import { Storage } from './Storage';
 
 let storage: Storage | null;
 
 const loadStorage = function (): Storage {
-  const config = getConfig();
   if (!!storage) {
     return storage;
   }
-
-  if (!config.storage || config.storage.name === 'local') {
-    const directory = config.storage?.path ?? './files/';
-    return (storage = new LocalStorage(path.normalize(directory)));
-  }
-
-  const region = config.storage.region || config.region || 'eu-central-1';
-  const accessKeyId = config.storage.accessKeyId || config.accessKeyId || 'fallback-key';
-  const secretAccessKey = config.storage.secretAccessKey || config.secretAccessKey || 'fallback-secret';
-  const bucket = config.storage.bucket ?? 'files-crud';
-  const endpoint = config.storage.endpoint;
-  const forcePathStyle = config.storage.forcePathStyle;
-  return (storage = new S3Storage(region, accessKeyId, secretAccessKey, bucket, endpoint, forcePathStyle));
+  return (storage = new Storage());
 };
 
 const resetStorage = function (): void {

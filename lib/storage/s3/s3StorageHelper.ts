@@ -31,22 +31,22 @@ const getObjectBody = async function (client: S3Client, Bucket: string, Key: str
   return Buffer.from(dataArray ?? new Uint8Array());
 };
 
-const putObject = async function (client: S3Client, Bucket: string, key: string, directory: boolean, Body?: Buffer): Promise<void> {
+const putObject = async function (client: S3Client, Bucket: string, key: string, Body: Buffer): Promise<void> {
   const Key = trim(key);
   const commandInput: PutObjectCommandInput = {
     Bucket,
-    Key: directory ? `${Key}/` : Key,
-    Body: Body ?? Buffer.from('')
+    Key,
+    Body
   };
   const command = new PutObjectCommand(commandInput);
   await client.send(command);
 };
 
-const deleteObject = async function (client: S3Client, Bucket: string, key: string, directory: boolean): Promise<void> {
+const deleteObject = async function (client: S3Client, Bucket: string, key: string): Promise<void> {
   const Key = trim(key);
   const commandInput: DeleteObjectCommandInput = {
     Bucket,
-    Key: directory ? `${Key}/` : Key
+    Key
   };
   const command = new DeleteObjectCommand(commandInput);
   await client.send(command);

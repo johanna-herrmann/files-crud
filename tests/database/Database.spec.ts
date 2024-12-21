@@ -37,7 +37,6 @@ describe('Database', (): void => {
     data.user_ = [];
     data.jwtKey = [];
     data.failedLoginAttempts = [];
-    data.file = [];
     jest.useRealTimers();
   });
 
@@ -89,12 +88,11 @@ describe('Database', (): void => {
     delete data.user_;
     delete data.jwtKey;
     delete data.failedLoginAttempts;
-    delete data.file;
     const db = new Database();
 
     await db.init();
 
-    expect(Object.keys(data)).toEqual(['user_', 'failedLoginAttempts', 'jwtKey', 'file']);
+    expect(Object.keys(data)).toEqual(['user_', 'failedLoginAttempts', 'jwtKey']);
   });
 
   test('Database->addUser adds user.', async (): Promise<void> => {

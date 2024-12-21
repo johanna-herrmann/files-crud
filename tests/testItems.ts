@@ -8,11 +8,4 @@ const testUser = {
   meta: { testProp: 'testValue' }
 };
 
-const testFile = {
-  path: 'test/path',
-  owner: 'testOwner',
-  realName: 'testRealName',
-  meta: { testProp: 'testValue' }
-};
-
-export { testUser, testFile };
+export { testUser };

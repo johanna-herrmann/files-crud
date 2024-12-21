@@ -36,7 +36,7 @@ describe('s3StorageHelper', (): void => {
     let called = false;
     s3Mock.on(PutObjectCommand, { Bucket: bucket, Key: 'testKey', Body: body }).callsFake(() => (called = true));
 
-    await putObject(client, bucket, 'testKey', false, body);
+    await putObject(client, bucket, 'testKey', body);
 
     expect(called).toBe(true);
   });
@@ -45,7 +45,7 @@ describe('s3StorageHelper', (): void => {
     let called = false;
     s3Mock.on(DeleteObjectCommand, { Bucket: bucket, Key: 'testFile' }).callsFake(() => (called = true));
 
-    await deleteObject(client, bucket, 'testFile', false);
+    await deleteObject(client, bucket, 'testFile');
 
     expect(called).toBe(true);
   });
