@@ -226,7 +226,7 @@ describe('Storage', (): void => {
     expect(fileExists).toBe(false);
   });
 
-  test('Storage->list returns items in directory, sorted alphabetically, directories first, directories with trailing slash.', async (): Promise<void> => {
+  test('Storage->list returns items in directory, sorted alphabetically, directories first and with trailing slashes.', async (): Promise<void> => {
     mockFS({ '/base': { files: { a: { file2: '', dir2: {}, file1: '', dir1: {} } } } });
     const storage = new Storage();
 

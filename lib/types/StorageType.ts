@@ -66,7 +66,7 @@ interface StorageType {
 
   /**
    * Lists the names of directories and files in a directory.
-   * The names will be sorted alphabetically, directories before files.
+   * The names will be sorted alphabetically, directories first.
    * Directory names will be suffixed with a trailing slash.
    * @param path The path of the directory
    * @returns Promise fulfilling with an array, one item for each file or directory name
