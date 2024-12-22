@@ -54,7 +54,7 @@ const passesIfSelf = async function (action: string, usernameParam: boolean): Pr
 const passesIfSelfAndValidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequest('valid_user_token', 'password', undefined, { username: testUser.username, oldPassword: 'password123' });
+  const req = buildRequest('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'password123' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -65,7 +65,7 @@ const passesIfSelfAndValidPassword = async function (): Promise<void> {
 const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequest('valid_user_token', 'password', undefined, { username: testUser.username, oldPassword: 'invalid' });
+  const req = buildRequest('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'invalid' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -132,21 +132,21 @@ describe('userMiddleware', (): void => {
     });
   });
 
-  describe('route admin', (): void => {
+  describe('route set-admin', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('admin');
+      await passesIfAdmin('set-admin');
     });
 
     test('rejects if logged-in user is not admin.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await rejectsIfNotAdmin('admin');
+      await rejectsIfNotAdmin('set-admin');
     });
 
     test('rejects on public call.', async (): Promise<void> => {
-      await rejectsIfPublic('admin');
+      await rejectsIfPublic('set-admin');
     });
   });
 
@@ -168,51 +168,75 @@ describe('userMiddleware', (): void => {
     });
   });
 
-  describe('route username', (): void => {
+  describe('route change-username', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('username');
+      await passesIfAdmin('change-username');
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('username', false);
+      await passesIfSelf('change-username', false);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await rejectsIfForeign('username', false);
+      await rejectsIfForeign('change-username', false);
     });
 
     test('rejects on public call.', async (): Promise<void> => {
-      await rejectsIfPublic('username');
+      await rejectsIfPublic('change-username');
     });
   });
 
-  describe('route meta', (): void => {
+  describe('route save-meta', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('meta');
+      await passesIfAdmin('save-meta');
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('meta', false);
+      await passesIfSelf('save-meta', false);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await rejectsIfForeign('meta', false);
+      await rejectsIfForeign('save-meta', false);
     });
 
     test('rejects on public call.', async (): Promise<void> => {
-      await rejectsIfPublic('meta');
+      await rejectsIfPublic('save-meta');
+    });
+  });
+
+  describe('route load-meta', (): void => {
+    test('passes if logged-in user is admin.', async (): Promise<void> => {
+      mocked_token = 'valid_admin_token';
+      mocked_user = { ...testUser, admin: true };
+      await passesIfAdmin('load-meta');
+    });
+
+    test('passes if self.', async (): Promise<void> => {
+      mocked_token = 'valid_user_token';
+      mocked_user = { ...testUser, admin: false };
+      await passesIfSelf('load-meta', false);
+    });
+
+    test('rejects if foreign.', async (): Promise<void> => {
+      mocked_token = 'valid_user_token';
+      mocked_user = { ...testUser, admin: false };
+      await rejectsIfForeign('load-meta', false);
+    });
+
+    test('rejects on public call.', async (): Promise<void> => {
+      await rejectsIfPublic('load-meta');
     });
   });
 
@@ -264,11 +288,11 @@ describe('userMiddleware', (): void => {
     });
   });
 
-  describe('route password', (): void => {
+  describe('route change-password', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('password');
+      await passesIfAdmin('change-password');
     });
 
     test('passes if self and valid password.', async (): Promise<void> => {

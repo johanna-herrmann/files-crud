@@ -15,12 +15,12 @@ const isSelfAction = function (user: User, username: string): boolean {
 };
 
 const isAdminAction = function (user: User, action: string, username: string): boolean {
-  const adminOnlyActions = ['add', 'admin', 'list'];
+  const adminOnlyActions = ['add', 'set-admin', 'list'];
   return adminOnlyActions.includes(action) || !isSelfAction(user, username);
 };
 
 const isSelfPasswordChange = function (user: User, action: string, username: string): boolean {
-  return isSelfAction(user, username) && action === 'password';
+  return isSelfAction(user, username) && action === 'change-password';
 };
 
 const handleAdminAction = function (admin: boolean, res: express.Response, next: express.NextFunction): void {
