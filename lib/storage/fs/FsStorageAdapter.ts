@@ -2,15 +2,7 @@ import fse from 'fs-extra';
 import fs from 'fs/promises';
 import paths from 'path';
 import StorageAdapter from '@/types/StorageAdapter';
-
-const sanitizePath = function (path: string): string {
-  return path
-    .replace(/(^\.+|\.+$)/gu, '')
-    .replace(/\/\.+/gu, '/')
-    .replace(/\.+\//gu, '/')
-    .replace(/(^\/+|\/+$)/gu, '')
-    .replace(/\/\/+/gu, '/');
-};
+import { sanitizePath } from '@/storage/sanitizePath';
 
 /**
  * StorageAdapter for fs storage.
@@ -21,11 +13,11 @@ class FsStorageAdapter implements StorageAdapter {
   private readonly directory: string;
 
   public constructor(path: string) {
-    this.directory = `/${sanitizePath(path)}`;
+    this.directory = paths.join(paths.sep, sanitizePath(path));
   }
 
   private resolvePath(path: string): string {
-    return `${this.directory}/${sanitizePath(path)}`;
+    return paths.join(this.directory, sanitizePath(path));
   }
 
   private async removeParentDirectoryIfEmpty(path: string): Promise<void> {

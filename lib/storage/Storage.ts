@@ -5,15 +5,8 @@ import FileData from '@/types/FileData';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import StorageType from '@/types/StorageType';
-
-const sanitizePath = function (path: string): string {
-  return path
-    .replace(/(^\.+|\.+$)/gu, '')
-    .replace(/\/\.+/gu, '/')
-    .replace(/\.+\//gu, '/')
-    .replace(/(^\/+|\/+$)/gu, '')
-    .replace(/\/\/+/gu, '/');
-};
+import { sanitizePath } from '@/storage/sanitizePath';
+import paths from 'path';
 
 const removeTildeFromPath = function (path: string): string {
   return path.replace(/~/gu, '-');
@@ -28,18 +21,18 @@ class Storage implements StorageType {
   public constructor() {
     const config = getConfig();
     const directory = config.storage?.path ?? config.path ?? 'opt/files-crud';
-    this.directory = `/${sanitizePath(directory)}`;
+    this.directory = paths.join(paths.sep, sanitizePath(directory));
     this.storageType = config.storage?.name ?? 'fs';
     this.dataStorage = new FsStorageAdapter(this.directory);
-    this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(`${this.directory}/files`);
+    this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(paths.join(this.directory, 'files'));
   }
 
   private getPathKey(path: string): string {
-    return path.replace(/\//gu, '~');
+    return sanitizePath(path).replace(/[/\\]/gu, '~');
   }
 
   private resolvePath(path: string, sub: string): string {
-    return `${sub}/${sanitizePath(path)}`;
+    return paths.join(sub, sanitizePath(path));
   }
 
   private resolveContentPath(path: string): string {
@@ -101,11 +94,11 @@ class Storage implements StorageType {
   }
 
   public async exists(path: string): Promise<boolean> {
-    return existsSync(`${this.directory}/${this.resolveContentPath(path)}`);
+    return existsSync(paths.join(this.directory, this.resolveContentPath(path)));
   }
 
   public async list(path: string): Promise<string[]> {
-    const resolvedPath = `${this.directory}/${this.resolveContentPath(path)}`;
+    const resolvedPath = paths.join(this.directory, this.resolveContentPath(path));
     const items = await fs.readdir(resolvedPath);
     const directories: string[] = [];
     const files: string[] = [];

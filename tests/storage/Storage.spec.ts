@@ -234,4 +234,95 @@ describe('Storage', (): void => {
 
     expect(items).toEqual(['dir1/', 'dir2/', 'file1', 'file2']);
   });
+
+  test('Storage->save does not jail break base.', async (): Promise<void> => {
+    mockFS({ '/base': {} });
+    const storage = new Storage();
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+
+    await storage.save('../sub/file', 'content', data, 'utf8');
+
+    expect(await exists('/base/files/sub/file')).toBe(true);
+    expect(await exists('/base/data/sub~file')).toBe(true);
+    expect(await exists('/base/sub/file')).toBe(false);
+    expect(await exists('/base/sub~file')).toBe(false);
+    expect(await exists('/base/data/..~sub~file')).toBe(false);
+  });
+
+  test('Storage->load does not jail break base.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { file: 'bad', files: { file: 'content' }, data: { file: JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const result = await storage.load('../file', 'utf8');
+
+    expect(result[0]).toBe('content');
+  });
+
+  test('Storage->delete does not jail break base.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { bad: '', files: { file: 'content' }, data: { file: JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    await storage.delete('../file');
+
+    expect(await exists('/base/files/file')).toBe(false);
+    expect(await exists('/base/bad')).toBe(true);
+  });
+
+  test('Storage->copy does not jail break base.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { file: 'bad', copy: 'badCopy', files: { file: 'content' }, data: { file: JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    await storage.copy('../file', '../copy');
+
+    expect(await exists('/base/files/file')).toBe(true);
+    expect(await exists('/base/files/copy')).toBe(true);
+    expect(await exists('/base/file')).toBe(true);
+    expect(await exists('/base/copy')).toBe(true);
+    expect(await fs.readFile('/base/files/file', 'utf8')).toBe('content');
+    expect(await fs.readFile('/base/file', 'utf8')).toBe('bad');
+    expect(await fs.readFile('/base/copy', 'utf8')).toBe('badCopy');
+  });
+
+  test('Storage->loadData does not jail break base.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { file: JSON.stringify({ ...data, owner: 'bad' }), data: { file: JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const actualData = await storage.loadData('../file');
+
+    expect(actualData).toEqual(data);
+  });
+
+  test('Storage->setData does not jail break base.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { file: JSON.stringify({ ...data, owner: 'bad' }), data: { file: JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    await storage.setData('../file', { ...data, contentType: 'image/png' });
+
+    expect(await exists('/base/data/file')).toBe(true);
+    expect(JSON.parse(await fs.readFile('/base/data/file', 'utf8'))).toEqual({ ...data, contentType: 'image/png' });
+  });
+
+  test('Storage->exists does not jail break base.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { files: { file: 'content' }, data: { 'a~file': JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const fileExists = await storage.exists('../file');
+
+    expect(fileExists).toBe(true);
+  });
+
+  test('Storage->list does not jail break base.', async (): Promise<void> => {
+    mockFS({ '/base': { a: {}, files: { a: { file2: '', dir2: {}, file1: '', dir1: {} } } } });
+    const storage = new Storage();
+
+    const items = await storage.list('../a');
+
+    expect(items).toEqual(['dir1/', 'dir2/', 'file1', 'file2']);
+  });
 });
