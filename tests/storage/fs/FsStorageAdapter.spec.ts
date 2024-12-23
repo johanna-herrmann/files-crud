@@ -30,7 +30,7 @@ describe('FsStorageAdapter', (): void => {
     expect(newStorage.getDirectory()).toBe('/given');
   });
 
-  test('FsStorageAdapter->write writes file.', async (): Promise<void> => {
+  test('FsStorageAdapter->write writes file, string.', async (): Promise<void> => {
     mockFS({ '/base': {} });
 
     await storage.write('sub/file', 'content', 'utf8');
@@ -39,7 +39,16 @@ describe('FsStorageAdapter', (): void => {
     expect(await fs.readFile('/base/sub/file', 'utf8')).toBe('content');
   });
 
-  test('FsStorageAdapter->read reads file.', async (): Promise<void> => {
+  test('FsStorageAdapter->write writes file, buffer.', async (): Promise<void> => {
+    mockFS({ '/base': {} });
+
+    await storage.write('sub/file', Buffer.from('content', 'utf8'));
+
+    expect(await exists('/base/sub/file')).toBe(true);
+    expect(await fs.readFile('/base/sub/file', 'utf8')).toBe('content');
+  });
+
+  test('FsStorageAdapter->read reads file, string.', async (): Promise<void> => {
     mockFS({
       '/base': {
         file: 'content'
@@ -49,6 +58,18 @@ describe('FsStorageAdapter', (): void => {
     const content = await storage.read('file', 'utf8');
 
     expect(content).toBe('content');
+  });
+
+  test('FsStorageAdapter->read reads file, buffer.', async (): Promise<void> => {
+    mockFS({
+      '/base': {
+        file: 'content'
+      }
+    });
+
+    const content = await storage.read('file');
+
+    expect(content.toString('utf8')).toBe('content');
   });
 
   test('FsStorageAdapter->delete deletes file.', async (): Promise<void> => {

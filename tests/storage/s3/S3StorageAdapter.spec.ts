@@ -107,20 +107,36 @@ describe('S3Storage', (): void => {
     expect(bucket).toBe('files-crud');
   });
 
-  test('S3StorageAdapter->write creates object.', async (): Promise<void> => {
+  test('S3StorageAdapter->write creates object, string.', async (): Promise<void> => {
     const storage = new S3StorageAdapter();
     await storage.write('file', 'content', 'utf8');
 
     expect(mocked_s3['files-crud|file']).toEqual(Buffer.from('content', 'utf8'));
   });
 
-  test('S3StorageAdapter->read reads file.', async (): Promise<void> => {
+  test('S3StorageAdapter->write creates object, buffer.', async (): Promise<void> => {
+    const storage = new S3StorageAdapter();
+    await storage.write('file', Buffer.from('content', 'utf8'));
+
+    expect(mocked_s3['files-crud|file']).toEqual(Buffer.from('content', 'utf8'));
+  });
+
+  test('S3StorageAdapter->read reads file, read.', async (): Promise<void> => {
     mocked_s3['files-crud|file'] = Buffer.from('content', 'utf8');
     const storage = new S3StorageAdapter();
 
     const content = await storage.read('file', 'utf8');
 
     expect(content).toBe('content');
+  });
+
+  test('S3StorageAdapter->read reads file, buffer.', async (): Promise<void> => {
+    mocked_s3['files-crud|file'] = Buffer.from('content', 'utf8');
+    const storage = new S3StorageAdapter();
+
+    const content = await storage.read('file');
+
+    expect(content.toString('utf8')).toBe('content');
   });
 
   test('S3StorageAdapter->delete deletes object.', async (): Promise<void> => {
