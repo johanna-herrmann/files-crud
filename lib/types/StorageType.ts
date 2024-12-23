@@ -9,17 +9,15 @@ interface StorageType {
    * @param path The path of the file to save
    * @param content The content of the file
    * @param data The data of the file
-   * @param encoding The encoding, if content is an encoded string
    */
-  save(path: string, content: string | Buffer, data: FileData, encoding?: BufferEncoding): Promise<void>;
+  save(path: string, content: Buffer, data: FileData): Promise<void>;
 
   /**
    * Loads a file and it's data.
    * @param path The path of the file to load
-   * @param encoding The encoding, if content should be returned as encoded string
    * @returns Promise fulfilling with an array, first item is the content, seconds item is the data.
    */
-  load(path: string, encoding?: BufferEncoding): Promise<[string | Buffer, FileData]>;
+  load(path: string): Promise<[Buffer, FileData]>;
 
   /**
    * Deletes a file and it's data.

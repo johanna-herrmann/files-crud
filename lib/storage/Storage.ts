@@ -47,16 +47,16 @@ class Storage implements StorageType {
     return [this.storageType, this.directory, this.dataStorage, this.contentStorage];
   }
 
-  public async save(path: string, content: string | Buffer, data: FileData, encoding?: BufferEncoding): Promise<void> {
+  public async save(path: string, content: Buffer, data: FileData): Promise<void> {
     await this.setData(path, data);
     await this.dataStorage.write(this.resolveContentPath(path), '', 'utf8');
-    return await this.contentStorage.write(sanitizePath(path), content, encoding);
+    return await this.contentStorage.write(sanitizePath(path), content);
   }
 
-  public async load(path: string, encoding?: BufferEncoding): Promise<[string | Buffer, FileData]> {
+  public async load(path: string): Promise<[Buffer, FileData]> {
     const data = await this.loadData(path);
-    const content = await this.contentStorage.read(sanitizePath(path), encoding);
-    return [content ?? '', data];
+    const content = await this.contentStorage.read(sanitizePath(path));
+    return [(content as Buffer) ?? Buffer.from(''), data];
   }
 
   public async delete(path: string): Promise<void> {

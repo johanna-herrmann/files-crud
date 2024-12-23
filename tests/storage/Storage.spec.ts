@@ -80,7 +80,7 @@ describe('Storage', (): void => {
     const storage = new Storage();
     const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
 
-    await storage.save('sub/file', 'content', data, 'utf8');
+    await storage.save('sub/file', Buffer.from('content', 'utf8'), data);
 
     expect(await exists('/base/files/sub/file')).toBe(true);
     expect(await exists('/base/data/sub~file')).toBe(true);
@@ -93,9 +93,9 @@ describe('Storage', (): void => {
     mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
     const storage = new Storage();
 
-    const [content, actualData] = await storage.load('a/file', 'utf8');
+    const [content, actualData] = await storage.load('a/file');
 
-    expect(content).toBe('content');
+    expect(content.toString('utf8')).toBe('content');
     expect(actualData).toEqual(data);
   });
 
@@ -240,7 +240,7 @@ describe('Storage', (): void => {
     const storage = new Storage();
     const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
 
-    await storage.save('../sub/file', 'content', data, 'utf8');
+    await storage.save('../sub/file', Buffer.from('content', 'utf8'), data);
 
     expect(await exists('/base/files/sub/file')).toBe(true);
     expect(await exists('/base/data/sub~file')).toBe(true);
@@ -254,9 +254,9 @@ describe('Storage', (): void => {
     mockFS({ '/base': { file: 'bad', files: { file: 'content' }, data: { file: JSON.stringify(data) } } });
     const storage = new Storage();
 
-    const result = await storage.load('../file', 'utf8');
+    const result = await storage.load('../file');
 
-    expect(result[0]).toBe('content');
+    expect(result[0].toString('utf8')).toBe('content');
   });
 
   test('Storage->delete does not jail break base.', async (): Promise<void> => {
