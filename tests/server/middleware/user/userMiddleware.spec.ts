@@ -19,7 +19,7 @@ jest.mock('@/user/auth', () => {
       return await actual.authorize(token);
     },
     async checkPassword(username: string, password: string): Promise<string> {
-      if (username === testUser.username && password === 'password123') {
+      if (username === testUser.username && password === 'passwordOK') {
         return '';
       }
       return invalidCredentials;
@@ -54,7 +54,7 @@ const passesIfSelf = async function (action: string, usernameParam: boolean): Pr
 const passesIfSelfAndValidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'password123' });
+  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'passwordOK' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
