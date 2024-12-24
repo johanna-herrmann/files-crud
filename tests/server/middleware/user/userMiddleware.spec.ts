@@ -1,7 +1,7 @@
 import User from '@/types/User';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import { assertError, assertPass, buildRequest, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertError, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { userMiddleware } from '@/server/middleware';
 import { invalidCredentials } from '@/user';
 
@@ -30,7 +30,7 @@ jest.mock('@/user/auth', () => {
 const passesIfAdmin = async function (action: string): Promise<void> {
   data.user_[0] = { ...testUser, admin: true };
   let next = false;
-  const req = buildRequest('valid_admin_token', action, undefined, {});
+  const req = buildRequestForUserAction('valid_admin_token', action, undefined, {});
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -43,7 +43,7 @@ const passesIfSelf = async function (action: string, usernameParam: boolean): Pr
   let next = false;
   const username = testUser.username;
   const body = usernameParam ? {} : { username };
-  const req = buildRequest('valid_user_token', action, usernameParam ? username : undefined, body);
+  const req = buildRequestForUserAction('valid_user_token', action, usernameParam ? username : undefined, body);
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -54,7 +54,7 @@ const passesIfSelf = async function (action: string, usernameParam: boolean): Pr
 const passesIfSelfAndValidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequest('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'password123' });
+  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'password123' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -65,7 +65,7 @@ const passesIfSelfAndValidPassword = async function (): Promise<void> {
 const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequest('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'invalid' });
+  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'invalid' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -77,7 +77,7 @@ const rejectsIfForeign = async function (action: string, usernameParam: boolean)
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
   const body = usernameParam ? {} : { username: 'other' };
-  const req = buildRequest('valid_user_token', action, usernameParam ? 'other' : undefined, body);
+  const req = buildRequestForUserAction('valid_user_token', action, usernameParam ? 'other' : undefined, body);
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -88,7 +88,7 @@ const rejectsIfForeign = async function (action: string, usernameParam: boolean)
 const rejectsIfNotAdmin = async function (action: string): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequest('valid_user_token', action, undefined, {});
+  const req = buildRequestForUserAction('valid_user_token', action, undefined, {});
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -98,7 +98,7 @@ const rejectsIfNotAdmin = async function (action: string): Promise<void> {
 
 const rejectsIfPublic = async function (action: string): Promise<void> {
   let next = false;
-  const req = buildRequest('', action, undefined, {});
+  const req = buildRequestForUserAction('', action, undefined, {});
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));

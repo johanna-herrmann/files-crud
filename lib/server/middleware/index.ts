@@ -1,3 +1,21 @@
-import { userMiddleware, registerMiddleware } from '@/server/middleware/user';
+import { userMiddleware, registerMiddleware } from './user';
+import { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware } from './file/file';
+import { fileCopyMoveMiddleware } from './file/copyMove';
 
-export { userMiddleware, registerMiddleware };
+const fileLoadMiddleware = loadMiddleware;
+const fileLoadMetaMiddleware = loadMiddleware;
+const fileCopyMiddleware = fileCopyMoveMiddleware;
+const fileMoveMiddleware = fileCopyMoveMiddleware;
+
+export {
+  userMiddleware,
+  registerMiddleware,
+  fileSaveMiddleware,
+  fileSaveMetaMiddleware,
+  fileLoadMiddleware,
+  fileLoadMetaMiddleware,
+  fileDeleteMiddleware,
+  directoryListingMiddleware,
+  fileCopyMiddleware,
+  fileMoveMiddleware
+};

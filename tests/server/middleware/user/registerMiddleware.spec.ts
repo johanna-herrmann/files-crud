@@ -1,4 +1,4 @@
-import { assertError, assertPass, buildRequest, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertError, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { loadConfig } from '@/config';
 import { registerMiddleware } from '@/server/middleware';
 
@@ -9,7 +9,7 @@ describe('registerMiddleware', (): void => {
 
   test('passes without token', async (): Promise<void> => {
     loadConfig();
-    const req = buildRequest('', '-', undefined, { username: 'username', password: 'password' });
+    const req = buildRequestForUserAction('', '-', undefined, { username: 'username', password: 'password' });
     const res = buildResponse();
     let next = false;
 
@@ -20,7 +20,7 @@ describe('registerMiddleware', (): void => {
 
   test('passes with valid token', async (): Promise<void> => {
     loadConfig({ register: 'token', tokens: ['valid'] });
-    const req = buildRequest('', '-', undefined, { username: 'username', password: 'password', token: 'valid' });
+    const req = buildRequestForUserAction('', '-', undefined, { username: 'username', password: 'password', token: 'valid' });
     const res = buildResponse();
     let next = false;
 
@@ -31,7 +31,7 @@ describe('registerMiddleware', (): void => {
 
   test('rejects with invalid token', async (): Promise<void> => {
     loadConfig({ register: 'token', tokens: ['valid'] });
-    const req = buildRequest('', '-', undefined, { username: 'username', password: 'password', token: 'invalid' });
+    const req = buildRequestForUserAction('', '-', undefined, { username: 'username', password: 'password', token: 'invalid' });
     const res = buildResponse();
     let next = false;
 
@@ -42,7 +42,7 @@ describe('registerMiddleware', (): void => {
 
   test('rejects register completely', async (): Promise<void> => {
     loadConfig({ register: 'admin' });
-    const req = buildRequest('', '-', undefined, { username: 'username', password: 'password' });
+    const req = buildRequestForUserAction('', '-', undefined, { username: 'username', password: 'password' });
     const res = buildResponse();
     let next = false;
 

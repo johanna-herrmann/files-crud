@@ -3,10 +3,23 @@ import express from 'express';
 
 let lastMessage = '{}';
 
-const buildRequest = function (token: string, action: string, usernameParam: string | undefined, body: Record<string, unknown>): Request {
+const buildRequestForUserAction = function (
+  token: string,
+  action: string,
+  usernameParam: string | undefined,
+  body: Record<string, unknown>
+): Request {
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
     params: { action, username: usernameParam },
+    body
+  } as unknown as Request;
+};
+
+const buildRequestForFileAction = function (token: string, action: string, pathParam: string | undefined, body: Record<string, unknown>): Request {
+  return {
+    headers: { authorization: token ? `Bearer ${token}` : '' },
+    params: { action, path: pathParam },
     body
   } as unknown as Request;
 };
@@ -30,11 +43,11 @@ const assertPass = function (next: boolean, res: express.Response) {
 const assertError = function (next: boolean, res: express.Response, message: string) {
   expect(next).toBe(false);
   expect(res.statusCode).toBe(401);
-  expect(lastMessage).toBe(JSON.stringify({ success: false, error: `Unauthorized. ${message}.` }));
+  expect(lastMessage).toBe(JSON.stringify({ error: `Unauthorized. ${message}.` }));
 };
 
 const resetLastMessage = function () {
   lastMessage = '{}';
 };
 
-export { buildRequest, buildResponse, assertPass, assertError, resetLastMessage };
+export { buildRequestForUserAction, buildRequestForFileAction, buildResponse, assertPass, assertError, resetLastMessage };

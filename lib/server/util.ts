@@ -7,7 +7,7 @@ const getToken = function (req: Request): string {
 
 const sendUnauthorized = function (res: express.Response, message: string): void {
   res.statusCode = 401;
-  res.json({ success: false, error: `Unauthorized. ${message.replace(/\.$/, '')}.` });
+  res.json({ error: `Unauthorized. ${message.replace(/\.$/, '')}.` });
 };
 
 export { getToken, sendUnauthorized };
