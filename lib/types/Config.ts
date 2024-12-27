@@ -1,10 +1,12 @@
 import DatabaseConfig from './DatabaseConfig';
 import StorageConfig from '@/types/StorageConfig';
 import PermissionConfig from '@/types/PermissionConfig';
+import LoggingConfig from '@/types/LoggingConfig';
 
 interface Config {
   database?: DatabaseConfig;
   storage?: StorageConfig;
+  logging?: LoggingConfig;
   path?: string;
   accessKeyId?: string;
   secretAccessKey?: string;
