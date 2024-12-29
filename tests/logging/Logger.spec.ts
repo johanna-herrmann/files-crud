@@ -33,8 +33,15 @@ describe('Logger', (): void => {
 
   describe('logs to console', (): void => {
     const assertMessage = function (loggedMessage: string, level: string): void {
+      const colorSequenceNumbers: Record<string, number> = {
+        debug: 34,
+        info: 32,
+        warn: 33,
+        error: 31
+      };
       expect(loggedMessage.split(' - ')[0]).toBe('1970-01-01T00:00:00.042Z');
-      expect(loggedMessage.split(' - ')[1]).toBe(level.toUpperCase());
+      expect(loggedMessage.split(' - ')[1]).toMatch(level.toUpperCase());
+      expect(loggedMessage.split(' - ')[1]).toBe(`\x1B[${colorSequenceNumbers[level]}m${level.toUpperCase()}\x1B[39m`);
       expect(loggedMessage.split(' - ')[2]).toMatch(/.*\/files-crud\/.*\/.*\.js/u);
       expect(loggedMessage.split(' - ')[3].trim()).toBe('test message');
     };

@@ -4,10 +4,19 @@ import express from 'express';
 import Request from '@/types/Request';
 import { getConfig } from '@/config';
 
-const { combine, timestamp, printf } = format;
+const { combine, timestamp, printf, colorize } = format;
 
 const FORMAT_WITH_LEVEL = printf(({ level, message, timestamp }) => {
   return `${timestamp} - ${level.toUpperCase()} - ${message}`;
+});
+
+const FORMAT_WITH_COLORED_LEVEL = printf(({ level, message, timestamp }) => {
+  const coloredLevelRegex = new RegExp('^(.*)(debug|info|warn|error)(.*)$', 'g');
+  const colorPrefix = level.replace(coloredLevelRegex, '$1');
+  const actualLevel = level.replace(coloredLevelRegex, '$2');
+  const colorSuffix = level.replace(coloredLevelRegex, '$3');
+  const coloredLevelUpperCase = `${colorPrefix}${actualLevel.toUpperCase()}${colorSuffix}`;
+  return `${timestamp} - ${coloredLevelUpperCase} - ${message}`;
 });
 
 const FORMAT_WITHOUT_LEVEL = printf(({ message, timestamp }) => {
@@ -51,7 +60,7 @@ class Logger {
     this.sourcePath = getCaller().getFileName() || '-';
     this.ttyLogger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
-      format: combine(timestamp(), FORMAT_WITH_LEVEL),
+      format: combine(timestamp(), colorize(), FORMAT_WITH_COLORED_LEVEL),
       transports: [new transports.Console({ forceConsole: forceConsole })]
     });
     this.accessLogger = createLogger({
