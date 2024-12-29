@@ -67,8 +67,8 @@ class Logger {
     });
   }
 
-  public getLoggers(): WinstonLogger[] {
-    return [this.ttyLogger, this.accessLogger, this.errorLogger];
+  public getAccessLogger(): WinstonLogger {
+    return this.accessLogger;
   }
 
   public getErrorLogger(): WinstonLogger {
@@ -90,7 +90,7 @@ class Logger {
   public error(message: string): void {
     const fullMessage = `${this.sourcePath} - ${message}`;
     this.errorLogger.error(fullMessage);
-    //this.ttyLogger.error(fullMessage);
+    this.ttyLogger.error(fullMessage);
   }
 
   public access(req: Request, res: express.Response): void {
