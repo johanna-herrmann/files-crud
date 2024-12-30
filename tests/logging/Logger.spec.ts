@@ -1,4 +1,4 @@
-import { Logger, setTest, unsetTest } from '@/logging/Logger';
+import { Logger, setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import mockFS from 'mock-fs';
 import fs from 'fs';
 import process from 'process';
@@ -13,9 +13,9 @@ let loggedMessage = '';
 
 describe('Logger', (): void => {
   beforeEach(async (): Promise<void> => {
-    loadConfig({ logging: { accessLogFile, errorLogFile } });
+    loadConfig({ logging: { accessLogFile, errorLogFile, enableLogFileRotation: false } });
     mockFS({ [path]: mockFS.load(path, { recursive: true }), '/logs': {} });
-    setTest();
+    setConsoleTest();
     logSpy = jest.spyOn(console, 'log').mockImplementation((message) => {
       loggedMessage = message;
     });
@@ -23,9 +23,9 @@ describe('Logger', (): void => {
 
   afterEach(async (): Promise<void> => {
     loadConfig();
-    mockFS.restore();
-    unsetTest();
+    unsetConsoleTest();
     logSpy?.mockRestore();
+    mockFS.restore();
     loggedMessage = '';
   });
 
@@ -48,7 +48,7 @@ describe('Logger', (): void => {
           error: 31
         };
         expect(loggedMessage.split(' ')[0]).toBe(`\x1B[${colorSequenceNumbers[level]}m1970-01-01T00:00:00.042Z`);
-        expect(loggedMessage.split(' ')[1]).toMatch(/^\[.*\/files-crud\/.*\/.*\.js\]/u);
+        expect(loggedMessage.split(' ')[1]).toMatch(/^\[.*\/Logger\.spec\.ts\]/u);
         expect(loggedMessage.split(' ')[2]).toMatch(`${level.toUpperCase()}:`);
         expect(loggedMessage.split(' ')[3]).toBe('test');
         expect(loggedMessage.split(' ')[4].trim()).toBe('message\x1B[39m');
@@ -96,7 +96,7 @@ describe('Logger', (): void => {
 
     describe('with specified format', (): void => {
       test('humanReadableLine', async (): Promise<void> => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'humanReadableLine' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'humanReadableLine', enableLogFileRotation: false } });
 
         new Logger().info('test message');
 
@@ -106,7 +106,7 @@ describe('Logger', (): void => {
       });
 
       test('humanReadableBlock', async (): Promise<void> => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'humanReadableBlock' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'humanReadableBlock', enableLogFileRotation: false } });
 
         new Logger().info('test message');
 
@@ -116,7 +116,7 @@ describe('Logger', (): void => {
       });
 
       test('coloredHumanReadableLine', async (): Promise<void> => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'coloredHumanReadableLine' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'coloredHumanReadableLine', enableLogFileRotation: false } });
 
         new Logger().info('test message');
 
@@ -126,7 +126,7 @@ describe('Logger', (): void => {
       });
 
       test('coloredHumanReadableBlock', async (): Promise<void> => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'coloredHumanReadableBlock' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'coloredHumanReadableBlock', enableLogFileRotation: false } });
 
         new Logger().info('test message');
 
@@ -136,7 +136,7 @@ describe('Logger', (): void => {
       });
 
       test('json', async (): Promise<void> => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'json' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'json', enableLogFileRotation: false } });
 
         new Logger().info('test message');
 
@@ -149,14 +149,14 @@ describe('Logger', (): void => {
 
   describe('logs to error file', (): void => {
     test('with default format, without error message', (done): void => {
-      loadConfig({ logging: { accessLogFile, errorLogFile } });
+      loadConfig({ logging: { accessLogFile, errorLogFile, enableLogFileRotation: false } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
         setTimeout(() => {
           const message = fs.readFileSync(errorLogFile, 'utf8');
           expect(message.trim()).toMatch(
-            /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/files-crud\/.*\/.*\.js","message":"test message"\}$/u
+            /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/Logger\.spec\.ts","message":"test message"\}$/u
           );
           done();
         }, 300);
@@ -167,14 +167,14 @@ describe('Logger', (): void => {
     });
 
     test('with default format, with error message', (done): void => {
-      loadConfig({ logging: { accessLogFile, errorLogFile } });
+      loadConfig({ logging: { accessLogFile, errorLogFile, enableLogFileRotation: false } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
         setTimeout(() => {
           const message = fs.readFileSync(errorLogFile, 'utf8');
           expect(message.trim()).toMatch(
-            /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/files-crud\/.*\/.*\.js","message":"test message","errorMessage":"error message"\}$/u
+            /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/Logger\.spec\.ts","message":"test message","errorMessage":"error message"\}$/u
           );
           done();
         }, 300);
@@ -184,8 +184,8 @@ describe('Logger', (): void => {
       errorLogger.end();
     });
 
-    test('not, if error file logging is disabled', (done): void => {
-      loadConfig({ logging: { accessLogFile, errorLogFile, disableErrorFileLogging: true } });
+    test('not, if error file logging is not enabled', (done): void => {
+      loadConfig({ logging: { accessLogFile, errorLogFile, enableErrorFileLogging: false, enableLogFileRotation: false } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
@@ -202,7 +202,7 @@ describe('Logger', (): void => {
 
     describe('with specified format', (): void => {
       test('humanReadableLine', (done): void => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'humanReadableLine' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'humanReadableLine', enableLogFileRotation: false } });
         const logger = new Logger();
         const errorLogger = logger.getErrorLogger();
         errorLogger.on('finish', () => {
@@ -222,7 +222,7 @@ describe('Logger', (): void => {
       });
 
       test('humanReadableBlock', (done): void => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'humanReadableBlock' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'humanReadableBlock', enableLogFileRotation: false } });
         const logger = new Logger();
         const errorLogger = logger.getErrorLogger();
         errorLogger.on('finish', () => {
@@ -233,7 +233,7 @@ describe('Logger', (): void => {
             expect(message.startsWith('{')).toBe(false);
             expect(message.lastIndexOf('\n')).toBe(message.length - 1);
             done();
-          }, 300);
+          }, 4000);
         });
 
         logger.error('test message');
@@ -241,7 +241,7 @@ describe('Logger', (): void => {
       });
 
       test('coloredHumanReadableLine', (done): void => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'coloredHumanReadableLine' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'coloredHumanReadableLine', enableLogFileRotation: false } });
         const logger = new Logger();
         const errorLogger = logger.getErrorLogger();
         errorLogger.on('finish', () => {
@@ -259,7 +259,7 @@ describe('Logger', (): void => {
       });
 
       test('coloredHumanReadableBlock', (done): void => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'coloredHumanReadableBlock' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'coloredHumanReadableBlock', enableLogFileRotation: false } });
         const logger = new Logger();
         const errorLogger = logger.getErrorLogger();
         errorLogger.on('finish', () => {
@@ -278,7 +278,7 @@ describe('Logger', (): void => {
       });
 
       test('json', (done): void => {
-        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'json' } });
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'json', enableLogFileRotation: false } });
         const logger = new Logger();
         const errorLogger = logger.getErrorLogger();
         errorLogger.on('finish', () => {

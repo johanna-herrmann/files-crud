@@ -4,9 +4,12 @@ interface LoggingConfig {
   accessLogFile?: string;
   errorLogFile?: string;
   ttyLoggingFormat?: LoggingFormat;
-  disableErrorFileLogging?: boolean;
-  disableAccessLogging?: boolean;
+  enableErrorFileLogging?: boolean;
+  enableAccessLogging?: boolean;
   fileLoggingFormat?: LoggingFormat;
+  enableLogFileRotation?: boolean;
+  logFileRotationMaxFiles?: string;
+  logFileRotationEnableCompression?: boolean;
 }
 
 export default LoggingConfig;
