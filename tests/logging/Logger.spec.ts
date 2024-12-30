@@ -4,8 +4,6 @@ import fs from 'fs';
 import process from 'process';
 import paths from 'path';
 import { loadConfig } from '@/config';
-import Request from '@/types/Request';
-import express from 'express';
 
 const path = `${paths.dirname(paths.dirname(__dirname))}/node_modules/`;
 const accessLogFile = paths.join('/logs', 'access.log');
@@ -32,20 +30,6 @@ describe('Logger', (): void => {
   });
 
   describe('logs to console', (): void => {
-    const assertMessage = function (loggedMessage: string, level: string): void {
-      const colorSequenceNumbers: Record<string, number> = {
-        debug: 34,
-        info: 32,
-        warn: 33,
-        error: 31
-      };
-      expect(loggedMessage.split(' - ')[0]).toBe('1970-01-01T00:00:00.042Z');
-      expect(loggedMessage.split(' - ')[1]).toMatch(level.toUpperCase());
-      expect(loggedMessage.split(' - ')[1]).toBe(`\x1B[${colorSequenceNumbers[level]}m${level.toUpperCase()}\x1B[39m`);
-      expect(loggedMessage.split(' - ')[2]).toMatch(/.*\/files-crud\/.*\/.*\.js/u);
-      expect(loggedMessage.split(' - ')[3].trim()).toBe('test message');
-    };
-
     beforeEach(async (): Promise<void> => {
       jest.useFakeTimers();
       jest.setSystemTime(42);
@@ -55,60 +39,125 @@ describe('Logger', (): void => {
       jest.useRealTimers();
     });
 
-    test('on level debug, if log level is debug', async (): Promise<void> => {
-      process.env.LOG_LEVEL = 'debug';
+    describe('with default format', (): void => {
+      const assertMessage = function (loggedMessage: string, level: string): void {
+        const colorSequenceNumbers: Record<string, number> = {
+          debug: 34,
+          info: 32,
+          warn: 33,
+          error: 31
+        };
+        expect(loggedMessage.split(' ')[0]).toBe(`\x1B[${colorSequenceNumbers[level]}m1970-01-01T00:00:00.042Z`);
+        expect(loggedMessage.split(' ')[1]).toMatch(/^\[.*\/files-crud\/.*\/.*\.js\]/u);
+        expect(loggedMessage.split(' ')[2]).toMatch(`${level.toUpperCase()}:`);
+        expect(loggedMessage.split(' ')[3]).toBe('test');
+        expect(loggedMessage.split(' ')[4].trim()).toBe('message\x1B[39m');
+      };
 
-      new Logger().debug('test message');
+      test('on level debug, if log level is debug', async (): Promise<void> => {
+        process.env.LOG_LEVEL = 'debug';
 
-      expect(logSpy).toHaveBeenCalled();
-      assertMessage(loggedMessage, 'debug');
+        new Logger().debug('test message');
+
+        expect(logSpy).toHaveBeenCalled();
+        assertMessage(loggedMessage, 'debug');
+      });
+
+      test('on level info', async (): Promise<void> => {
+        new Logger().info('test message');
+
+        expect(logSpy).toHaveBeenCalled();
+        assertMessage(loggedMessage, 'info');
+      });
+
+      test('on level warn', async (): Promise<void> => {
+        new Logger().warn('test message');
+
+        expect(logSpy).toHaveBeenCalled();
+        assertMessage(loggedMessage, 'warn');
+      });
+
+      test('on level error', async (): Promise<void> => {
+        new Logger().error('test message');
+
+        expect(logSpy).toHaveBeenCalled();
+        assertMessage(loggedMessage, 'error');
+      });
+
+      test('not on level debug, if log level is info', async (): Promise<void> => {
+        process.env.LOG_LEVEL = 'info';
+
+        new Logger().debug('test message');
+
+        expect(logSpy).not.toHaveBeenCalled();
+        expect(loggedMessage).toBe('');
+      });
     });
 
-    test('on level info', async (): Promise<void> => {
-      new Logger().info('test message');
+    describe('with specified format', (): void => {
+      test('humanReadableLine', async (): Promise<void> => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'humanReadableLine' } });
 
-      expect(logSpy).toHaveBeenCalled();
-      assertMessage(loggedMessage, 'info');
-    });
+        new Logger().info('test message');
 
-    test('on level warn', async (): Promise<void> => {
-      new Logger().warn('test message');
+        expect(logSpy).toHaveBeenCalled();
+        expect(loggedMessage.split('\n').length).toBe(1);
+        expect(loggedMessage.startsWith('1970-01-01T00:00:00.042Z')).toBe(true);
+      });
 
-      expect(logSpy).toHaveBeenCalled();
-      assertMessage(loggedMessage, 'warn');
-    });
+      test('humanReadableBlock', async (): Promise<void> => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'humanReadableBlock' } });
 
-    test('on level error', async (): Promise<void> => {
-      new Logger().error('test message');
+        new Logger().info('test message');
 
-      expect(logSpy).toHaveBeenCalled();
-      assertMessage(loggedMessage, 'error');
-    });
+        expect(logSpy).toHaveBeenCalled();
+        expect(loggedMessage.split('\n').length).toBe(6);
+        expect(loggedMessage.startsWith('1970-01-01T00:00:00.042Z')).toBe(true);
+      });
 
-    test('not on level debug, if log level is info', async (): Promise<void> => {
-      process.env.LOG_LEVEL = 'info';
+      test('coloredHumanReadableLine', async (): Promise<void> => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'coloredHumanReadableLine' } });
 
-      new Logger().debug('test message');
+        new Logger().info('test message');
 
-      expect(logSpy).not.toHaveBeenCalled();
-      expect(loggedMessage).toBe('');
+        expect(logSpy).toHaveBeenCalled();
+        expect(loggedMessage.split('\n').length).toBe(1);
+        expect(loggedMessage.startsWith('\x1B[32m1970-01-01T00:00:00.042Z')).toBe(true);
+      });
+
+      test('coloredHumanReadableBlock', async (): Promise<void> => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'coloredHumanReadableBlock' } });
+
+        new Logger().info('test message');
+
+        expect(logSpy).toHaveBeenCalled();
+        expect(loggedMessage.split('\n').length).toBe(6);
+        expect(loggedMessage.startsWith('\x1B[32m1970-01-01T00:00:00.042Z')).toBe(true);
+      });
+
+      test('json', async (): Promise<void> => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, ttyLoggingFormat: 'json' } });
+
+        new Logger().info('test message');
+
+        expect(logSpy).toHaveBeenCalled();
+        expect(loggedMessage.split('\n').length).toBe(1);
+        expect(loggedMessage.startsWith('{"timestamp":"1970-01-01T00:00:00.042Z')).toBe(true);
+      });
     });
   });
 
-  describe('logs to file', (): void => {
-    const assertMessage = function (loggedMessage: string, level: string): void {
-      expect(loggedMessage.split(' - ')[0]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
-      expect(loggedMessage.split(' - ')[1]).toBe(level.toUpperCase());
-      expect(loggedMessage.split(' - ')[2]).toMatch(/.*\/files-crud\/.*\/.*\.js/u);
-      expect(loggedMessage.split(' - ')[3].trim()).toBe('test message');
-    };
-
-    test('on error', (done): void => {
+  describe('logs to error file', (): void => {
+    test('with default format', (done): void => {
+      loadConfig({ logging: { accessLogFile, errorLogFile } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
         setTimeout(() => {
-          assertMessage(fs.readFileSync(errorLogFile, 'utf8'), 'error');
+          const message = fs.readFileSync(errorLogFile, 'utf8');
+          expect(message.trim()).toMatch(
+            /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/files-crud\/.*\/.*\.js","message":"test message"\}$/u
+          );
           done();
         }, 300);
       });
@@ -117,30 +166,116 @@ describe('Logger', (): void => {
       errorLogger.end();
     });
 
-    test('on access', (done): void => {
-      const req = {
-        method: 'GET',
-        path: '/text.txt',
-        httpVersion: 'HTTP/2.0'
-      } as unknown as Request;
-      const res = {
-        statusCode: 200,
-        getHeader(key: string): string {
-          return `${key === 'content-length' ? 42 : 0}`;
-        }
-      } as unknown as express.Response;
+    test('not, if error file logging is disabled', (done): void => {
+      loadConfig({ logging: { accessLogFile, errorLogFile, disableErrorFileLogging: true } });
       const logger = new Logger();
-      const accessLogger = logger.getAccessLogger();
-      accessLogger.on('finish', () => {
+      const errorLogger = logger.getErrorLogger();
+      errorLogger.on('finish', () => {
         setTimeout(() => {
-          const message = fs.readFileSync(accessLogFile, 'utf8');
-          expect(message).toMatch(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] - "GET \/text\.txt HTTP\/2\.0" 200 42/u);
+          const message = fs.readFileSync(errorLogFile, 'utf8');
+          expect(message.trim()).toBe('');
           done();
         }, 300);
       });
 
-      logger.access(req, res);
-      accessLogger.end();
+      logger.error('test message');
+      errorLogger.end();
+    });
+
+    describe('with specified format', (): void => {
+      test('humanReadableLine', (done): void => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'humanReadableLine' } });
+        const logger = new Logger();
+        const errorLogger = logger.getErrorLogger();
+        errorLogger.on('finish', () => {
+          setTimeout(() => {
+            const message = fs.readFileSync(errorLogFile, 'utf8').trim();
+            logSpy.mockRestore();
+            console.log({ message });
+            expect(message.split('\n').length).toBe(1);
+            expect(message.startsWith('\x1B')).toBe(false);
+            expect(message.startsWith('{')).toBe(false);
+            done();
+          }, 300);
+        });
+
+        logger.error('test message');
+        errorLogger.end();
+      });
+
+      test('humanReadableBlock', (done): void => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'humanReadableBlock' } });
+        const logger = new Logger();
+        const errorLogger = logger.getErrorLogger();
+        errorLogger.on('finish', () => {
+          setTimeout(() => {
+            const message = fs.readFileSync(errorLogFile, 'utf8');
+            expect(message.split('\n').length).toBe(7);
+            expect(message.startsWith('\x1B')).toBe(false);
+            expect(message.startsWith('{')).toBe(false);
+            expect(message.lastIndexOf('\n')).toBe(message.length - 1);
+            done();
+          }, 300);
+        });
+
+        logger.error('test message');
+        errorLogger.end();
+      });
+
+      test('coloredHumanReadableLine', (done): void => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'coloredHumanReadableLine' } });
+        const logger = new Logger();
+        const errorLogger = logger.getErrorLogger();
+        errorLogger.on('finish', () => {
+          setTimeout(() => {
+            const message = fs.readFileSync(errorLogFile, 'utf8').trim();
+            expect(message.split('\n').length).toBe(1);
+            expect(message.startsWith('\x1B')).toBe(true);
+            expect(message.startsWith('{')).toBe(false);
+            done();
+          }, 300);
+        });
+
+        logger.error('test message');
+        errorLogger.end();
+      });
+
+      test('coloredHumanReadableBlock', (done): void => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'coloredHumanReadableBlock' } });
+        const logger = new Logger();
+        const errorLogger = logger.getErrorLogger();
+        errorLogger.on('finish', () => {
+          setTimeout(() => {
+            const message = fs.readFileSync(errorLogFile, 'utf8');
+            expect(message.split('\n').length).toBe(7);
+            expect(message.startsWith('\x1B')).toBe(true);
+            expect(message.startsWith('{')).toBe(false);
+            expect(message.lastIndexOf('\n')).toBe(message.length - 1);
+            done();
+          }, 300);
+        });
+
+        logger.error('test message');
+        errorLogger.end();
+      });
+
+      test('json', (done): void => {
+        loadConfig({ logging: { accessLogFile, errorLogFile, fileLoggingFormat: 'json' } });
+        const logger = new Logger();
+        const errorLogger = logger.getErrorLogger();
+        errorLogger.on('finish', () => {
+          setTimeout(() => {
+            const message = fs.readFileSync(errorLogFile, 'utf8').trim();
+            expect(message.split('\n').length).toBe(1);
+            expect(message.startsWith('\x1B')).toBe(false);
+            expect(message.startsWith('{')).toBe(true);
+            done();
+          }, 300);
+        });
+
+        logger.error('test message');
+        errorLogger.end();
+      });
     });
   });
 });

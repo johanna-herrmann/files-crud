@@ -1,27 +1,7 @@
-import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
+import { createLogger, transports, Logger as WinstonLogger } from 'winston';
 import process from 'process';
-import express from 'express';
-import Request from '@/types/Request';
 import { getConfig } from '@/config';
-
-const { combine, timestamp, printf, colorize } = format;
-
-const FORMAT_WITH_LEVEL = printf(({ level, message, timestamp }) => {
-  return `${timestamp} - ${level.toUpperCase()} - ${message}`;
-});
-
-const FORMAT_WITH_COLORED_LEVEL = printf(({ level, message, timestamp }) => {
-  const coloredLevelRegex = new RegExp('^(.*)(debug|info|warn|error)(.*)$', 'g');
-  const colorPrefix = level.replace(coloredLevelRegex, '$1');
-  const actualLevel = level.replace(coloredLevelRegex, '$2');
-  const colorSuffix = level.replace(coloredLevelRegex, '$3');
-  const coloredLevelUpperCase = `${colorPrefix}${actualLevel.toUpperCase()}${colorSuffix}`;
-  return `${timestamp} - ${coloredLevelUpperCase} - ${message}`;
-});
-
-const FORMAT_WITHOUT_LEVEL = printf(({ message, timestamp }) => {
-  return `[${timestamp}] - ${message}`;
-});
+import { formats } from '@/logging/formats';
 
 const getCaller = function (): NodeJS.CallSite {
   const stack = getStack();
@@ -48,70 +28,51 @@ let lazy = true;
 class Logger {
   private readonly sourcePath: string;
   private readonly ttyLogger: WinstonLogger;
-  private readonly accessLogger: WinstonLogger;
-  private readonly errorLogger: WinstonLogger;
-  private readonly accessLogFile: string;
+  private readonly fileLogger: WinstonLogger;
   private readonly errorLogFile: string;
+  private readonly errorFileLoggingEnabled: boolean;
 
   constructor() {
     const config = getConfig();
-    this.accessLogFile = config.logging?.accessLogFile ?? 'access.log';
+    const ttyLoggingFormat = config.logging?.ttyLoggingFormat ?? 'coloredHumanReadableLine';
+    const fileLoggingFormat = config.logging?.fileLoggingFormat ?? 'json';
     this.errorLogFile = config.logging?.errorLogFile ?? 'error.log';
+    this.errorFileLoggingEnabled = !config.logging?.disableErrorFileLogging;
     this.sourcePath = getCaller().getFileName() || '-';
     this.ttyLogger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
-      format: combine(timestamp(), colorize(), FORMAT_WITH_COLORED_LEVEL),
+      format: formats[ttyLoggingFormat],
       transports: [new transports.Console({ forceConsole: forceConsole })]
     });
-    this.accessLogger = createLogger({
-      level: 'info',
-      format: combine(timestamp(), FORMAT_WITHOUT_LEVEL),
-      transports: [new transports.File({ filename: this.accessLogFile, lazy })]
-    });
-    this.errorLogger = createLogger({
+    this.fileLogger = createLogger({
       exitOnError: false,
       level: 'error',
-      format: combine(timestamp(), FORMAT_WITH_LEVEL),
+      format: formats[fileLoggingFormat],
       transports: [new transports.File({ filename: this.errorLogFile, lazy })]
     });
   }
 
-  public getAccessLogger(): WinstonLogger {
-    return this.accessLogger;
-  }
-
   public getErrorLogger(): WinstonLogger {
-    return this.errorLogger;
+    return this.fileLogger;
   }
 
   public debug(message: string): void {
-    this.ttyLogger.debug(`${this.sourcePath} - ${message}`);
+    this.ttyLogger.debug(message, { sourcePath: this.sourcePath });
   }
 
   public info(message: string): void {
-    this.ttyLogger.info(`${this.sourcePath} - ${message}`);
+    this.ttyLogger.info(message, { sourcePath: this.sourcePath });
   }
 
   public warn(message: string): void {
-    this.ttyLogger.warn(`${this.sourcePath} - ${message}`);
+    this.ttyLogger.warn(message, { sourcePath: this.sourcePath });
   }
 
   public error(message: string): void {
-    const fullMessage = `${this.sourcePath} - ${message}`;
-    this.errorLogger.error(fullMessage);
-    this.ttyLogger.error(fullMessage);
-  }
-
-  public access(req: Request, res: express.Response): void {
-    const data = {
-      method: req.method,
-      path: req.path,
-      http: req.httpVersion,
-      status: res.statusCode,
-      contentLength: res.getHeader('content-length') || '-'
-    };
-    const message = `"${data.method} ${data.path} ${data.http}" ${data.status} ${data.contentLength}`;
-    this.accessLogger.info(message);
+    this.ttyLogger.error(message, { sourcePath: this.sourcePath });
+    if (this.errorFileLoggingEnabled) {
+      this.fileLogger.error(message, { sourcePath: this.sourcePath });
+    }
   }
 }
 
