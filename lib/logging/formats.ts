@@ -7,37 +7,44 @@ const BOTTOM_LINE = '\u2500'.repeat(process.stdout.columns || 80);
 
 const humanReadableLine = combine(
   timestamp(),
-  printf(({ level, message, timestamp, sourcePath }) => {
-    return `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}`;
+  printf(({ level, message, timestamp, sourcePath, error }) => {
+    const errorPad = error ? ` - ${(error as Error).message}` : '';
+    return `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`;
   })
 );
 
 const humanReadableBlock = combine(
   timestamp(),
-  printf(({ level, message, timestamp, sourcePath }) => {
-    return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}\n${BOTTOM_LINE}\n`;
+  printf(({ level, message, timestamp, sourcePath, error }) => {
+    const errorPad = error ? `\n${(error as Error).message}` : '';
+    return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}${errorPad}\n${BOTTOM_LINE}\n`;
   })
 );
 
 const coloredHumanReadableLine = combine(
   timestamp(),
-  printf(({ level, message, timestamp, sourcePath }) => {
-    return colorize().colorize(level, `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}`);
+  printf(({ level, message, timestamp, sourcePath, error }) => {
+    const errorPad = error ? ` - ${(error as Error).message}` : '';
+    return colorize().colorize(level, `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`);
   })
 );
 
 const coloredHumanReadableBlock = combine(
   timestamp(),
-  printf(({ level, message, timestamp, sourcePath }) => {
-    const block = colorize().colorize(level, `${timestamp} - [${sourcePath}] - ${level.toUpperCase()}: - ${message}`).split(' - ').join('\n');
+  printf(({ level, message, timestamp, sourcePath, error }) => {
+    const errorPad = error ? ` - ${(error as Error).message}` : '';
+    const block = colorize()
+      .colorize(level, `${timestamp} - [${sourcePath}] - ${level.toUpperCase()}: - ${message}${errorPad}`)
+      .split(' - ')
+      .join('\n');
     return `${block}\n${BOTTOM_LINE}\n`;
   })
 );
 
 const json = combine(
   timestamp(),
-  printf(({ level, message, timestamp, sourcePath }) => {
-    const logEntry = { timestamp, level, source: sourcePath, message };
+  printf(({ level, message, timestamp, sourcePath, error }) => {
+    const logEntry = { timestamp, level, source: sourcePath, message, errorMessage: (error as Error)?.message ?? undefined };
     return JSON.stringify(logEntry);
   })
 );

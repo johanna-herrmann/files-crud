@@ -68,10 +68,10 @@ class Logger {
     this.ttyLogger.warn(message, { sourcePath: this.sourcePath });
   }
 
-  public error(message: string): void {
-    this.ttyLogger.error(message, { sourcePath: this.sourcePath });
+  public error(message: string, error?: Error): void {
+    this.ttyLogger.error(message, { sourcePath: this.sourcePath, error });
     if (this.errorFileLoggingEnabled) {
-      this.fileLogger.error(message, { sourcePath: this.sourcePath });
+      this.fileLogger.error(message, { sourcePath: this.sourcePath, error });
     }
   }
 }

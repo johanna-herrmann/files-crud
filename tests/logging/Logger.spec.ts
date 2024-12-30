@@ -148,7 +148,7 @@ describe('Logger', (): void => {
   });
 
   describe('logs to error file', (): void => {
-    test('with default format', (done): void => {
+    test('with default format, without error message', (done): void => {
       loadConfig({ logging: { accessLogFile, errorLogFile } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
@@ -163,6 +163,24 @@ describe('Logger', (): void => {
       });
 
       logger.error('test message');
+      errorLogger.end();
+    });
+
+    test('with default format, with error message', (done): void => {
+      loadConfig({ logging: { accessLogFile, errorLogFile } });
+      const logger = new Logger();
+      const errorLogger = logger.getErrorLogger();
+      errorLogger.on('finish', () => {
+        setTimeout(() => {
+          const message = fs.readFileSync(errorLogFile, 'utf8');
+          expect(message.trim()).toMatch(
+            /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/files-crud\/.*\/.*\.js","message":"test message","errorMessage":"error message"\}$/u
+          );
+          done();
+        }, 300);
+      });
+
+      logger.error('test message', new Error('error message'));
       errorLogger.end();
     });
 
