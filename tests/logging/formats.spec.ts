@@ -80,7 +80,6 @@ describe('logging formats', (): void => {
   test('coloredHumanReadableBlock returns colored human readable block on info.', async (): Promise<void> => {
     const result = formats.coloredHumanReadableBlock.transform({ timestamp, level: 'info', message, sourcePath }) as Record<symbol, string>;
 
-    console.log({ result });
     expect(result[Object.getOwnPropertySymbols(result)[0]]).toBe(
       `\x1B[32m${timestamp}\n[${sourcePath}]\nINFO:\n${message}\x1B[39m\n${BOTTOM_LINE}\n`
     );

@@ -167,6 +167,9 @@ describe('Logger', (): void => {
     });
 
     test('with default format, with error message', (done): void => {
+      logSpy = jest.spyOn(console, 'log').mockImplementation((message) => {
+        loggedMessage = message;
+      });
       loadConfig({ logging: { accessLogFile, errorLogFile, enableLogFileRotation: false } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
@@ -208,8 +211,6 @@ describe('Logger', (): void => {
         errorLogger.on('finish', () => {
           setTimeout(() => {
             const message = fs.readFileSync(errorLogFile, 'utf8').trim();
-            logSpy.mockRestore();
-            console.log({ message });
             expect(message.split('\n').length).toBe(1);
             expect(message.startsWith('\x1B')).toBe(false);
             expect(message.startsWith('{')).toBe(false);
