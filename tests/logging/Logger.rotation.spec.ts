@@ -54,8 +54,8 @@ describe('Logger rotation', (): void => {
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
         setTimeout(() => {
-          const items = fs.readdirSync('/logs');
-          expect(items[1]).toMatch(/^error\.log\.\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/);
+          const items = fs.readdirSync('/logs').filter((item) => item.startsWith('error.log'));
+          expect(items[0]).toMatch(/^error\.log\.\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/);
           done();
         }, 300);
       });
@@ -70,14 +70,48 @@ describe('Logger rotation', (): void => {
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
         setTimeout(() => {
-          const items = fs.readdirSync('/logs');
-          expect(items[1]).toMatch(/^error\.log\.\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/);
+          const items = fs.readdirSync('/logs').filter((item) => item.startsWith('error.log'));
+          expect(items[0]).toMatch(/^error\.log\.\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/);
           done();
         }, 300);
       });
 
       logger.error('test message');
       errorLogger.end();
+    });
+
+    describe('with symlink', (): void => {
+      afterEach(async (): Promise<void> => {
+        fs.readdirSync('./')
+          .filter((item) => /^(error\.log.*|\..*-audit\.json)$/u.test(item))
+          .forEach((item) => {
+            fs.unlinkSync(`./${item}`);
+          });
+      });
+
+      test('created', (done): void => {
+        mockFS.restore();
+        loadConfig({
+          logging: {
+            errorLogFile: './error.log',
+            enableAccessLogging: false,
+            logFileRotationFrequencyUnit: 's'
+          }
+        });
+        const logger = new Logger();
+        const errorLogger = logger.getErrorLogger();
+        errorLogger.on('finish', () => {
+          setTimeout(() => {
+            const items = fs.readdirSync('./').filter((item) => item.startsWith('error.log'));
+            expect(items[0]).toBe('error.log');
+            expect(items[1]).toMatch(/^error\.log\.\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/);
+            done();
+          }, 300);
+        });
+
+        logger.error('error message');
+        errorLogger.end();
+      });
     });
   });
 

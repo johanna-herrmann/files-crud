@@ -24,7 +24,7 @@ class Logger {
   private readonly rotationEnabled: boolean;
   private readonly rotationFrequencyUnit: LogFileRotationFrequencyUnit;
   private readonly rotationMaxFiles: string;
-  private readonly errorFileLoggingCompressionEnabled: boolean;
+  private readonly logFileRotationCompressionEnabled: boolean;
 
   constructor() {
     const config = getConfig();
@@ -35,7 +35,7 @@ class Logger {
     this.rotationEnabled = config.logging?.enableLogFileRotation ?? true;
     this.rotationFrequencyUnit = config.logging?.logFileRotationFrequencyUnit ?? 'd';
     this.rotationMaxFiles = config.logging?.logFileRotationMaxFiles ?? '14d';
-    this.errorFileLoggingCompressionEnabled = config.logging?.logFileRotationEnableCompression ?? true;
+    this.logFileRotationCompressionEnabled = config.logging?.logFileRotationEnableCompression ?? true;
     this.sourcePath = getSourcePath();
     this.ttyLogger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
@@ -43,10 +43,12 @@ class Logger {
       transports: [new transports.Console({ forceConsole: forceConsole })]
     });
     const rotationTransportOptions = {
-      filename: this.errorLogFile,
       datePattern: DATE_PATTERNS[this.rotationFrequencyUnit],
-      zippedArchive: this.errorFileLoggingCompressionEnabled,
-      maxFiles: this.rotationMaxFiles
+      zippedArchive: this.logFileRotationCompressionEnabled,
+      maxFiles: this.rotationMaxFiles,
+      createSymlink: true,
+      filename: `${this.errorLogFile}.%DATE%`,
+      symlinkName: this.errorLogFile
     };
     const noneRotationTransportOptions = { filename: this.errorLogFile };
     this.fileLogger = createLogger({
