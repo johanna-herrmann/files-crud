@@ -49,6 +49,20 @@ const json = combine(
   })
 );
 
+const accessClassic = combine(
+  timestamp(),
+  printf(({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent }) => {
+    return `${ip} - [${timestamp}] "${method} ${path} ${httpVersion}" ${statusCode} ${contentLength} "${referer}" "${userAgent}"`;
+  })
+);
+
+const accessJson = combine(
+  timestamp(),
+  printf(({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent }) => {
+    return JSON.stringify({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent });
+  })
+);
+
 const formats: Record<LoggingFormat, typeof humanReadableLine> = {
   humanReadableLine,
   humanReadableBlock,

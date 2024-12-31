@@ -1,4 +1,4 @@
-import { Logger, setConsoleTest, setPatternTest, unsetConsoleTest, unsetPatternTest } from '@/logging/Logger';
+import { Logger, setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import mockFS from 'mock-fs';
 import fs from 'fs';
 import paths from 'path';
@@ -22,14 +22,12 @@ describe('Logger rotation', (): void => {
   beforeEach(async (): Promise<void> => {
     mockFS({ [path]: mockFS.load(path, { recursive: true }), '/logs': {} });
     setConsoleTest();
-    setPatternTest();
     logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(async (): Promise<void> => {
     loadConfig();
     unsetConsoleTest();
-    unsetPatternTest();
     logSpy?.mockRestore();
     mockFS.restore();
   });
@@ -51,7 +49,7 @@ describe('Logger rotation', (): void => {
     });
 
     test('if enabled per configuration', (done): void => {
-      loadConfig({ logging: { errorLogFile, enableLogFileRotation: true, enableAccessLogging: false } });
+      loadConfig({ logging: { errorLogFile, enableLogFileRotation: true, enableAccessLogging: false, logFileRotationFrequencyUnit: 's' } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
@@ -67,7 +65,7 @@ describe('Logger rotation', (): void => {
     });
 
     test('if enabled per default', (done): void => {
-      loadConfig({ logging: { errorLogFile, enableAccessLogging: false } });
+      loadConfig({ logging: { errorLogFile, enableAccessLogging: false, logFileRotationFrequencyUnit: 's' } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
@@ -88,7 +86,8 @@ describe('Logger rotation', (): void => {
       errorLogFile,
       enableAccessLogging: false,
       logFileRotationMaxFiles: '3',
-      fileLoggingFormat: 'humanReadableLine'
+      fileLoggingFormat: 'humanReadableLine',
+      logFileRotationFrequencyUnit: 's'
     } as LoggingConfig;
 
     const doLogs = function (logger: Logger, errorLogger: winston.Logger) {
@@ -141,9 +140,25 @@ describe('Logger rotation', (): void => {
       doLogs(logger, errorLogger);
     });
 
+    test('minutely', (done): void => {
+      loadConfig({ logging: { ...loggingConfig, logFileRotationEnableCompression: false, logFileRotationFrequencyUnit: 'm' } });
+      const logger = new Logger();
+      const errorLogger = logger.getErrorLogger();
+      errorLogger.on('finish', () => {
+        setTimeout(() => {
+          const items = fs.readdirSync('/logs').filter((item) => item.startsWith('error.log'));
+          expect(items.length).toBe(1);
+          expect(items[0]).toMatch(/^error\.log\.\d{4}-\d{2}-\d{2}_\d{2}-\d{2}$/);
+          done();
+        }, 300);
+      });
+
+      logger.error('error message');
+      errorLogger.end();
+    });
+
     test('hourly', (done): void => {
-      unsetPatternTest();
-      loadConfig({ logging: { ...loggingConfig, logFileRotationEnableCompression: false } });
+      loadConfig({ logging: { ...loggingConfig, logFileRotationEnableCompression: false, logFileRotationFrequencyUnit: 'h' } });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger.on('finish', () => {
@@ -155,7 +170,25 @@ describe('Logger rotation', (): void => {
         }, 300);
       });
 
-      doLogs(logger, errorLogger);
+      logger.error('error message');
+      errorLogger.end();
+    });
+
+    test('daily', (done): void => {
+      loadConfig({ logging: { ...loggingConfig, logFileRotationEnableCompression: false, logFileRotationFrequencyUnit: 'd' } });
+      const logger = new Logger();
+      const errorLogger = logger.getErrorLogger();
+      errorLogger.on('finish', () => {
+        setTimeout(() => {
+          const items = fs.readdirSync('/logs').filter((item) => item.startsWith('error.log'));
+          expect(items.length).toBe(1);
+          expect(items[0]).toMatch(/^error\.log\.\d{4}-\d{2}-\d{2}$/);
+          done();
+        }, 300);
+      });
+
+      logger.error('error message');
+      errorLogger.end();
     });
   });
 });

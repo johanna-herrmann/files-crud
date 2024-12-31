@@ -4,9 +4,16 @@ import process from 'process';
 import { getConfig } from '@/config';
 import { formats } from '@/logging/formats';
 import { getSourcePath } from '@/logging/getSourcePath';
+import LogFileRotationFrequencyUnit from '@/types/LogFileRotationFrequencyUnit';
 
 let forceConsole = false;
-let datePattern = 'YYYY-MM-DD_HH';
+
+const DATE_PATTERNS: Record<LogFileRotationFrequencyUnit, string> = {
+  d: 'YYYY-MM-DD',
+  h: 'YYYY-MM-DD_HH',
+  m: 'YYYY-MM-DD_HH-mm',
+  s: 'YYYY-MM-DD_HH-mm-ss'
+};
 
 class Logger {
   private readonly sourcePath: string;
@@ -15,6 +22,7 @@ class Logger {
   private readonly errorLogFile: string;
   private readonly errorFileLoggingEnabled: boolean;
   private readonly rotationEnabled: boolean;
+  private readonly rotationFrequencyUnit: LogFileRotationFrequencyUnit;
   private readonly rotationMaxFiles: string;
   private readonly errorFileLoggingCompressionEnabled: boolean;
 
@@ -25,7 +33,8 @@ class Logger {
     this.errorLogFile = config.logging?.errorLogFile ?? 'error.log';
     this.errorFileLoggingEnabled = config.logging?.enableErrorFileLogging ?? true;
     this.rotationEnabled = config.logging?.enableLogFileRotation ?? true;
-    this.rotationMaxFiles = config.logging?.logFileRotationMaxFiles ?? '3d';
+    this.rotationFrequencyUnit = config.logging?.logFileRotationFrequencyUnit ?? 'd';
+    this.rotationMaxFiles = config.logging?.logFileRotationMaxFiles ?? '14d';
     this.errorFileLoggingCompressionEnabled = config.logging?.logFileRotationEnableCompression ?? true;
     this.sourcePath = getSourcePath();
     this.ttyLogger = createLogger({
@@ -35,7 +44,7 @@ class Logger {
     });
     const rotationTransportOptions = {
       filename: this.errorLogFile,
-      datePattern,
+      datePattern: DATE_PATTERNS[this.rotationFrequencyUnit],
       zippedArchive: this.errorFileLoggingCompressionEnabled,
       maxFiles: this.rotationMaxFiles
     };
@@ -80,12 +89,4 @@ const unsetConsoleTest = function () {
   forceConsole = false;
 };
 
-const setPatternTest = function () {
-  datePattern = 'YYYY-MM-DD_HH-mm-ss';
-};
-
-const unsetPatternTest = function () {
-  datePattern = 'YYYY-MM-DD_HH';
-};
-
-export { Logger, setConsoleTest, unsetConsoleTest, setPatternTest, unsetPatternTest };
+export { Logger, setConsoleTest, unsetConsoleTest };
