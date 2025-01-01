@@ -11,11 +11,9 @@ Written in Typescript
 * Supported Databases (for user accounts)
   * mongoDB
   * postgresql
-  * DynamoDB*
+  * DynamoDB
   * in-memory (for testing purposes)
 * Uses CRUD-based permissions, specified for different directories
-
-*Requires you to create the used tables forehand.
 
 ## Features
 * create, override, read, delete files

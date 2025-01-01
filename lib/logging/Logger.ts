@@ -20,6 +20,15 @@ const DATE_PATTERNS: Record<LogFileRotationFrequencyUnit, string> = {
   s: 'YYYY-MM-DD_HH-mm-ss'
 };
 
+/**
+ * Used to log access, errors and other events.
+ *
+ * It logs all events except for access to tty.
+ * It optionally also logs errors log file and webserver access to access log file.
+ *
+ * TTY logging and file logging use different formats, specified via config, defaulting to `humanReadableLine` and `json`.
+ * When stdout or stderr is redirected to file, file logging format is used.
+ */
 class Logger {
   private readonly sourcePath: string;
   private readonly ttyLoggingFormat: LoggingFormat;
@@ -144,26 +153,66 @@ class Logger {
     return this.accessFileLogger;
   }
 
-  public debug(message: string, meta?: Record<string, unknown>): void {
+  /**
+   * logs in debug level
+   * @param message The message to log
+   * @param meta The optional metadata to append to the `message`
+   *
+   * @returns This logger instance
+   */
+  public debug(message: string, meta?: Record<string, unknown>): Logger {
     this.ttyLogger?.debug(message, { sourcePath: this.sourcePath, meta });
+    return this;
   }
 
-  public info(message: string, meta?: Record<string, unknown>): void {
+  /**
+   * logs in info level
+   * @param message The message to log
+   * @param meta The optional metadata to append to the `message`
+   *
+   * @returns This logger instance
+   */
+  public info(message: string, meta?: Record<string, unknown>): Logger {
     this.ttyLogger?.info(message, { sourcePath: this.sourcePath, meta });
+    return this;
   }
 
-  public warn(message: string, meta?: Record<string, unknown>): void {
+  /**
+   * logs in warn level
+   * @param message The message to log
+   * @param meta The optional metadata to append to the `message`
+   *
+   * @returns This logger instance
+   */
+  public warn(message: string, meta?: Record<string, unknown>): Logger {
     this.ttyLogger?.warn(message, { sourcePath: this.sourcePath, meta });
+    return this;
   }
 
-  public error(message: string, error?: Error, meta?: Record<string, unknown>): void {
+  /**
+   * logs in error level
+   * @param message The message to log
+   * @param error The optional error. `error.message` will be appended to the `message`.
+   * @param meta The optional metadata to append to the `message`
+   *
+   * @returns This logger instance
+   */
+  public error(message: string, error?: Error, meta?: Record<string, unknown>): Logger {
     const metaObject = { sourcePath: this.sourcePath, error, meta };
     this.ttyLogger?.error(message, metaObject);
     this.errorFileLogger?.error(message, metaObject);
+    return this;
   }
 
-  public access(entry: Omit<AccessLogEntry, 'timestamp'>): void {
+  /**
+   * logs access event
+   * @param entry The Entry containing the access properties (ip, method, path, etc.)
+   *
+   * @returns This logger instance
+   */
+  public access(entry: Omit<AccessLogEntry, 'timestamp'>): Logger {
     this.accessFileLogger?.info('', entry);
+    return this;
   }
 }
 
