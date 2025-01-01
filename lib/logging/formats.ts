@@ -7,32 +7,38 @@ import AccessLogEntry from '@/types/AccessLogEntry';
 const { colorize } = format;
 const BOTTOM_LINE = '\u2500'.repeat(process.stdout.columns || 80);
 
-const humanReadableLine = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
-  const errorPad = error ? ` - ${(error as Error).message}` : '';
-  return `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`;
+const buildMetaPadAndErrorPad = function (meta?: unknown, error?: unknown, delimiter = ' - '): [string, string] {
+  const metaPad = meta ? `${delimiter}${JSON.stringify(meta)}` : '';
+  const errorPad = error ? `${delimiter}${(error as Error).message}` : '';
+  return [metaPad, errorPad];
 };
 
-const humanReadableBlock = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
-  const errorPad = error ? `\n${(error as Error).message}` : '';
-  return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}${errorPad}\n${BOTTOM_LINE}\n`;
+const humanReadableLine = function ({ level, message, timestamp, sourcePath, meta, error }: LogEntry): string {
+  const [metaPad, errorPad] = buildMetaPadAndErrorPad(meta, error);
+  return `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}${metaPad}`;
 };
 
-const coloredHumanReadableLine = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
-  const errorPad = error ? ` - ${(error as Error).message}` : '';
-  return colorize().colorize(level, `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`);
+const humanReadableBlock = function ({ level, message, timestamp, sourcePath, meta, error }: LogEntry): string {
+  const [metaPad, errorPad] = buildMetaPadAndErrorPad(meta, error, '\n');
+  return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}${errorPad}${metaPad}\n${BOTTOM_LINE}\n`;
 };
 
-const coloredHumanReadableBlock = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
-  const errorPad = error ? ` - ${(error as Error).message}` : '';
+const coloredHumanReadableLine = function ({ level, message, timestamp, sourcePath, meta, error }: LogEntry): string {
+  const [metaPad, errorPad] = buildMetaPadAndErrorPad(meta, error);
+  return colorize().colorize(level, `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}${metaPad}`);
+};
+
+const coloredHumanReadableBlock = function ({ level, message, timestamp, sourcePath, meta, error }: LogEntry): string {
+  const [metaPad, errorPad] = buildMetaPadAndErrorPad(meta, error);
   const block = colorize()
-    .colorize(level, `${timestamp} - [${sourcePath}] - ${level.toUpperCase()}: - ${message}${errorPad}`)
+    .colorize(level, `${timestamp} - [${sourcePath}] - ${level.toUpperCase()}: - ${message}${errorPad}${metaPad}`)
     .split(' - ')
     .join('\n');
   return `${block}\n${BOTTOM_LINE}\n`;
 };
 
-const json = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
-  const logObject = { timestamp, level, source: sourcePath, message, errorMessage: (error as Error)?.message ?? undefined };
+const json = function ({ level, message, timestamp, sourcePath, meta, error }: LogEntry): string {
+  const logObject = { timestamp, level, source: sourcePath, message, meta, errorMessage: (error as Error)?.message ?? undefined };
   return JSON.stringify(logObject);
 };
 

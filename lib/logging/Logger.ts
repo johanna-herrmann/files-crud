@@ -55,11 +55,11 @@ class Logger {
       level: process.env.LOG_LEVEL || 'info',
       format: combine(
         timestamp(),
-        printf(({ level, message, timestamp, sourcePath, error }) => {
+        printf(({ level, message, timestamp, sourcePath, error, meta }) => {
           const outLoggingFormat = stdoutIsTTY ? this.ttyLoggingFormat : this.fileLoggingFormat;
           const errLoggingFormat = stderrIsTTY ? this.ttyLoggingFormat : this.fileLoggingFormat;
           const loggingFormat = level === 'error' ? errLoggingFormat : outLoggingFormat;
-          return logFormats[loggingFormat]({ level, message, timestamp, sourcePath, error });
+          return logFormats[loggingFormat]({ level, message, timestamp, sourcePath, error, meta });
         })
       ),
       transports: [new transports.Console({ forceConsole: forceConsole, stderrLevels: ['error'] })]
@@ -73,8 +73,8 @@ class Logger {
         level: 'error',
         format: combine(
           timestamp(),
-          printf(({ level, message, timestamp, sourcePath, error }) => {
-            return logFormats[this.fileLoggingFormat]({ level, message, timestamp, sourcePath, error });
+          printf(({ level, message, timestamp, sourcePath, error, meta }) => {
+            return logFormats[this.fileLoggingFormat]({ level, message, timestamp, sourcePath, error, meta });
           })
         ),
         transports: [
@@ -144,22 +144,22 @@ class Logger {
     return this.accessFileLogger;
   }
 
-  public debug(message: string): void {
-    this.ttyLogger?.debug(message, { sourcePath: this.sourcePath });
+  public debug(message: string, meta?: Record<string, unknown>): void {
+    this.ttyLogger?.debug(message, { sourcePath: this.sourcePath, meta });
   }
 
-  public info(message: string): void {
-    this.ttyLogger?.info(message, { sourcePath: this.sourcePath });
+  public info(message: string, meta?: Record<string, unknown>): void {
+    this.ttyLogger?.info(message, { sourcePath: this.sourcePath, meta });
   }
 
-  public warn(message: string): void {
-    this.ttyLogger?.warn(message, { sourcePath: this.sourcePath });
+  public warn(message: string, meta?: Record<string, unknown>): void {
+    this.ttyLogger?.warn(message, { sourcePath: this.sourcePath, meta });
   }
 
-  public error(message: string, error?: Error): void {
-    const meta = { sourcePath: this.sourcePath, error };
-    this.ttyLogger?.error(message, meta);
-    this.errorFileLogger?.error(message, meta);
+  public error(message: string, error?: Error, meta?: Record<string, unknown>): void {
+    const metaObject = { sourcePath: this.sourcePath, error, meta };
+    this.ttyLogger?.error(message, metaObject);
+    this.errorFileLogger?.error(message, metaObject);
   }
 
   public access(entry: Omit<AccessLogEntry, 'timestamp'>): void {
