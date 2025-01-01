@@ -1,13 +1,13 @@
 interface AccessLogEntry {
-  ip: string;
-  timestamp: string;
-  method: string;
-  path: string;
-  httpVersion: string;
-  statusCode: string;
-  contentLength: string;
-  referer: string;
-  userAgent: string;
+  ip: unknown;
+  timestamp: unknown;
+  method: unknown;
+  path: unknown;
+  httpVersion: unknown;
+  statusCode: unknown;
+  contentLength: unknown;
+  referer: unknown;
+  userAgent: unknown;
 }
 
 export default AccessLogEntry;
