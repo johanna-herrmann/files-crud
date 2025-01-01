@@ -1,10 +1,12 @@
-import { createLogger, transports, Logger as WinstonLogger } from 'winston';
+import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import process from 'process';
 import { getConfig } from '@/config';
-import { formats } from '@/logging/formats';
+import { logFormats } from '@/logging/formats';
 import { getSourcePath } from '@/logging/getSourcePath';
 import LogFileRotationFrequencyUnit from '@/types/LogFileRotationFrequencyUnit';
+
+const { combine, timestamp, printf } = format;
 
 let forceConsole = false;
 
@@ -18,7 +20,7 @@ const DATE_PATTERNS: Record<LogFileRotationFrequencyUnit, string> = {
 class Logger {
   private readonly sourcePath: string;
   private readonly ttyLogger: WinstonLogger;
-  private readonly fileLogger: WinstonLogger;
+  private readonly errorFileLogger: WinstonLogger | null = null;
   private readonly errorLogFile: string;
   private readonly errorFileLoggingEnabled: boolean;
   private readonly rotationEnabled: boolean;
@@ -30,6 +32,8 @@ class Logger {
     const config = getConfig();
     const ttyLoggingFormat = config.logging?.ttyLoggingFormat ?? 'coloredHumanReadableLine';
     const fileLoggingFormat = config.logging?.fileLoggingFormat ?? 'json';
+    const stdoutIsTTY = process.stdout.isTTY ?? false;
+    const stderrIsTTY = process.stderr.isTTY ?? false;
     this.errorLogFile = config.logging?.errorLogFile ?? 'error.log';
     this.errorFileLoggingEnabled = config.logging?.enableErrorFileLogging ?? true;
     this.rotationEnabled = config.logging?.enableLogFileRotation ?? true;
@@ -39,8 +43,16 @@ class Logger {
     this.sourcePath = getSourcePath();
     this.ttyLogger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
-      format: formats[ttyLoggingFormat],
-      transports: [new transports.Console({ forceConsole: forceConsole })]
+      format: combine(
+        timestamp(),
+        printf(({ level, message, timestamp, sourcePath, error }) => {
+          const outLoggingFormat = stdoutIsTTY ? ttyLoggingFormat : fileLoggingFormat;
+          const errLoggingFormat = stderrIsTTY ? ttyLoggingFormat : fileLoggingFormat;
+          const loggingFormat = level === 'error' ? errLoggingFormat : outLoggingFormat;
+          return logFormats[loggingFormat]({ level, message, timestamp, sourcePath, error });
+        })
+      ),
+      transports: [new transports.Console({ forceConsole: forceConsole, stderrLevels: ['error'] })]
     });
     const rotationTransportOptions = {
       datePattern: DATE_PATTERNS[this.rotationFrequencyUnit],
@@ -51,16 +63,23 @@ class Logger {
       symlinkName: this.errorLogFile
     };
     const noneRotationTransportOptions = { filename: this.errorLogFile };
-    this.fileLogger = createLogger({
-      exitOnError: false,
-      level: 'error',
-      format: formats[fileLoggingFormat],
-      transports: [this.rotationEnabled ? new DailyRotateFile(rotationTransportOptions) : new transports.File(noneRotationTransportOptions)]
-    });
+    if (this.errorFileLoggingEnabled) {
+      this.errorFileLogger = createLogger({
+        exitOnError: false,
+        level: 'error',
+        format: combine(
+          timestamp(),
+          printf(({ level, message, timestamp, sourcePath, error }) => {
+            return logFormats[fileLoggingFormat]({ level, message, timestamp, sourcePath, error });
+          })
+        ),
+        transports: [this.rotationEnabled ? new DailyRotateFile(rotationTransportOptions) : new transports.File(noneRotationTransportOptions)]
+      });
+    }
   }
 
-  public getErrorLogger(): WinstonLogger {
-    return this.fileLogger;
+  public getErrorLogger(): WinstonLogger | null {
+    return this.errorFileLogger;
   }
 
   public debug(message: string): void {
@@ -76,10 +95,9 @@ class Logger {
   }
 
   public error(message: string, error?: Error): void {
-    this.ttyLogger.error(message, { sourcePath: this.sourcePath, error });
-    if (this.errorFileLoggingEnabled) {
-      this.fileLogger.error(message, { sourcePath: this.sourcePath, error });
-    }
+    const meta = { sourcePath: this.sourcePath, error };
+    this.ttyLogger.error(message, meta);
+    this.errorFileLogger?.error(message, meta);
   }
 }
 

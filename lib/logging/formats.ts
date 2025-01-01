@@ -1,69 +1,50 @@
 import { format } from 'winston';
 import LoggingFormat from '@/types/LoggingFormat';
+import AccessLoggingFormat from '@/types/AccessLoggingFormat';
+import LogEntry from '@/types/LogEntry';
+import AccessLogEntry from '@/types/AccessLogEntry';
 
-const { combine, timestamp, printf, colorize } = format;
-
+const { colorize } = format;
 const BOTTOM_LINE = '\u2500'.repeat(process.stdout.columns || 80);
 
-const humanReadableLine = combine(
-  timestamp(),
-  printf(({ level, message, timestamp, sourcePath, error }) => {
-    const errorPad = error ? ` - ${(error as Error).message}` : '';
-    return `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`;
-  })
-);
+const humanReadableLine = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
+  const errorPad = error ? ` - ${(error as Error).message}` : '';
+  return `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`;
+};
 
-const humanReadableBlock = combine(
-  timestamp(),
-  printf(({ level, message, timestamp, sourcePath, error }) => {
-    const errorPad = error ? `\n${(error as Error).message}` : '';
-    return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}${errorPad}\n${BOTTOM_LINE}\n`;
-  })
-);
+const humanReadableBlock = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
+  const errorPad = error ? `\n${(error as Error).message}` : '';
+  return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}${errorPad}\n${BOTTOM_LINE}\n`;
+};
 
-const coloredHumanReadableLine = combine(
-  timestamp(),
-  printf(({ level, message, timestamp, sourcePath, error }) => {
-    const errorPad = error ? ` - ${(error as Error).message}` : '';
-    return colorize().colorize(level, `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`);
-  })
-);
+const coloredHumanReadableLine = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
+  const errorPad = error ? ` - ${(error as Error).message}` : '';
+  return colorize().colorize(level, `${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}${errorPad}`);
+};
 
-const coloredHumanReadableBlock = combine(
-  timestamp(),
-  printf(({ level, message, timestamp, sourcePath, error }) => {
-    const errorPad = error ? ` - ${(error as Error).message}` : '';
-    const block = colorize()
-      .colorize(level, `${timestamp} - [${sourcePath}] - ${level.toUpperCase()}: - ${message}${errorPad}`)
-      .split(' - ')
-      .join('\n');
-    return `${block}\n${BOTTOM_LINE}\n`;
-  })
-);
+const coloredHumanReadableBlock = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
+  const errorPad = error ? ` - ${(error as Error).message}` : '';
+  const block = colorize()
+    .colorize(level, `${timestamp} - [${sourcePath}] - ${level.toUpperCase()}: - ${message}${errorPad}`)
+    .split(' - ')
+    .join('\n');
+  return `${block}\n${BOTTOM_LINE}\n`;
+};
 
-const json = combine(
-  timestamp(),
-  printf(({ level, message, timestamp, sourcePath, error }) => {
-    const logEntry = { timestamp, level, source: sourcePath, message, errorMessage: (error as Error)?.message ?? undefined };
-    return JSON.stringify(logEntry);
-  })
-);
+const json = function ({ level, message, timestamp, sourcePath, error }: LogEntry): string {
+  const logObject = { timestamp, level, source: sourcePath, message, errorMessage: (error as Error)?.message ?? undefined };
+  return JSON.stringify(logObject);
+};
 
-const accessClassic = combine(
-  timestamp(),
-  printf(({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent }) => {
-    return `${ip} - [${timestamp}] "${method} ${path} ${httpVersion}" ${statusCode} ${contentLength} "${referer}" "${userAgent}"`;
-  })
-);
+const accessClassic = function ({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent }: AccessLogEntry): string {
+  return `${ip} - [${timestamp}] "${method} ${path} ${httpVersion}" ${statusCode} ${contentLength} "${referer}" "${userAgent}"`;
+};
 
-const accessJson = combine(
-  timestamp(),
-  printf(({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent }) => {
-    return JSON.stringify({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent });
-  })
-);
+const accessJson = function (accessLogEntry: AccessLogEntry): string {
+  return JSON.stringify(accessLogEntry);
+};
 
-const formats: Record<LoggingFormat, typeof humanReadableLine> = {
+const logFormats: Record<LoggingFormat, (entry: LogEntry) => string> = {
   humanReadableLine,
   humanReadableBlock,
   coloredHumanReadableLine,
@@ -71,4 +52,9 @@ const formats: Record<LoggingFormat, typeof humanReadableLine> = {
   json
 };
 
-export { formats, BOTTOM_LINE };
+const accessLogFormats: Record<AccessLoggingFormat, (entry: AccessLogEntry) => string> = {
+  classic: accessClassic,
+  json: accessJson
+};
+
+export { logFormats, accessLogFormats, BOTTOM_LINE };
