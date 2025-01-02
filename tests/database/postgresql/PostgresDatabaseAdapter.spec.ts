@@ -1,10 +1,10 @@
 import { Client, QueryResult, QueryResultRow } from 'pg';
-import PgDbConf from '@/types/PgDbConf';
-import PgDbValue from '@/types/PgDbValue';
+import PgDbConf from '@/types/database/PgDbConf';
+import PgDbValue from '@/types/database/PgDbValue';
 import { testUser } from '#/testItems';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { loadConfig } from '@/config';
-import User from '@/types/User';
+import User from '@/types/user/User';
 
 interface WhenThen {
   queryRegex: RegExp;

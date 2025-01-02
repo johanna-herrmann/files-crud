@@ -1,4 +1,4 @@
-import Request from '@/types/Request';
+import Request from '@/types/server/Request';
 import express from 'express';
 
 let lastMessage = '{}';

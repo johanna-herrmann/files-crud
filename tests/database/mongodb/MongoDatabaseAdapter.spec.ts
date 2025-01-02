@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { MongoDatabaseAdapter, schemata } from '@/database/mongodb/MongoDatabaseAdapter';
 import { loadConfig } from '@/config';
 import { testUser } from '#/testItems';
-import User from '@/types/User';
+import User from '@/types/user/User';
 
 let db: MongoDatabaseAdapter | null = null;
 let mongod: null | MongoMemoryServer;

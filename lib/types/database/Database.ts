@@ -1,7 +1,7 @@
-import User from './User';
-import FailedLoginAttempts from './FailedLoginAttempts';
-import UserListItem from './UserListItem';
-import JwtKey from './JwtKey';
+import User from '../user/User';
+import FailedLoginAttempts from '../user/FailedLoginAttempts';
+import UserListItem from '../user/UserListItem';
+import JwtKey from '../user/JwtKey';
 
 interface Database {
   /**

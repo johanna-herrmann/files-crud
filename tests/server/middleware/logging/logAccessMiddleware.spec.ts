@@ -3,7 +3,7 @@ import { loadConfig } from '@/config';
 import { logAccessMiddleware } from '@/server/middleware/access';
 // @ts-expect-error we feel safe to be type-less here
 import MockExpressResponse from 'mock-express-response';
-import AccessLogEntry from '@/types/AccessLogEntry';
+import AccessLogEntry from '@/types/logging/AccessLogEntry';
 
 const ip = '127.0.0.1';
 const method = 'GET';

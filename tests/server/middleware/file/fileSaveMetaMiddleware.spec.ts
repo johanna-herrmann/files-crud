@@ -3,7 +3,7 @@ import { loadConfig } from '@/config';
 import { assertError, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { fileSaveMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import User from '@/types/User';
+import User from '@/types/user/User';
 import { testUser } from '#/testItems';
 
 let mocked_token: string | null;

@@ -1,4 +1,4 @@
-import Request from '@/types/Request';
+import Request from '@/types/server/Request';
 import express from 'express';
 import { fileDeleteMiddleware, fileSaveMiddleware, loadMiddleware } from '@/server/middleware/file/file';
 type Body = Record<string, string>;

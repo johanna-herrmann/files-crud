@@ -1,10 +1,10 @@
 import { getPermissions } from '@/server/middleware/file/permissions';
 import { testUser } from '#/testItems';
 import { loadConfig } from '@/config';
-import Config from '@/types/Config';
-import User from '@/types/User';
-import FileData from '@/types/FileData';
-import Permissions from '@/types/Permissions';
+import Config from '@/types/config/Config';
+import User from '@/types/user/User';
+import FileData from '@/types/storage/FileData';
+import Permissions from '@/types/config/Permissions';
 
 const ownerPath = `user_${testUser.ownerId}/file`;
 const ownerData = { owner: testUser.ownerId, meta: {}, contentType: '' };

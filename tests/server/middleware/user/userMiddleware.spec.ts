@@ -1,4 +1,4 @@
-import User from '@/types/User';
+import User from '@/types/user/User';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
 import { assertError, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';

@@ -1,4 +1,4 @@
-import Permissions from '@/types/Permissions';
+import Permissions from '@/types/config/Permissions';
 
 interface PermissionConfig {
   admin?: Permissions;

@@ -1,5 +1,5 @@
 import fs from 'fs';
-import Config from './types/Config';
+import Config from './types/config/Config';
 
 const config: Config = {};
 

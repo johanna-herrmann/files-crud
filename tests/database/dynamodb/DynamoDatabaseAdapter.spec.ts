@@ -3,10 +3,10 @@ import { NativeAttributeValue } from '@aws-sdk/lib-dynamodb';
 import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
 import { loadConfig } from '@/config';
 import { testUser } from '#/testItems';
-import User from '@/types/User';
-import JwtKey from '@/types/JwtKey';
-import DbItem from '@/types/DbItem';
-import DbValue from '@/types/DbValue';
+import User from '@/types/user/User';
+import JwtKey from '@/types/user/JwtKey';
+import DbItem from '@/types/database/DbItem';
+import DbValue from '@/types/database/DbValue';
 
 type Tables = Record<string, DbItem[]>;
 interface Credentials {

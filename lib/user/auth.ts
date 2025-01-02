@@ -1,9 +1,9 @@
 import { loadDb, closeDb } from '@/database';
 import { versions, current } from './passwordHashing/versions';
-import Database from '@/types/Database';
+import Database from '@/types/database/Database';
 import { extractUsername, issueToken, verifyToken } from './jwt';
 import { countAttempt, handleLocking, resetAttempts } from './locking';
-import User from '@/types/User';
+import User from '@/types/user/User';
 
 const invalidCredentials = 'INVALID_CREDENTIALS';
 const attemptsExceeded = 'ATTEMPTS_EXCEEDED';

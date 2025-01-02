@@ -1,5 +1,5 @@
 import express from 'express';
-import Request from '@/types/Request';
+import Request from '@/types/server/Request';
 import { assertError, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { fileCopyMoveMiddleware } from '@/server/middleware/file/copyMove';
 import { sendUnauthorized } from '@/server/util';

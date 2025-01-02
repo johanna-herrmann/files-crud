@@ -2,8 +2,8 @@ import { login, invalidCredentials, attemptsExceeded, authorize, changePassword,
 import { issueToken } from '@/user/jwt';
 import { current } from '@/user/passwordHashing/versions';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import Database from '@/types/Database';
-import User from '@/types/User';
+import Database from '@/types/database/Database';
+import User from '@/types/user/User';
 
 const username = 'testUser';
 const password = 'testPwd';

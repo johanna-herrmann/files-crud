@@ -1,5 +1,5 @@
 import { closeDb, loadDb } from '@/database';
-import Database from '@/types/Database';
+import Database from '@/types/database/Database';
 import { v4 } from 'uuid';
 import { current } from '@/user/passwordHashing/versions';
 

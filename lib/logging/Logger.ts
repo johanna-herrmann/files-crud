@@ -4,10 +4,10 @@ import process from 'process';
 import { getConfig } from '@/config';
 import { accessLogFormats, logFormats } from '@/logging/formats';
 import { getSourcePath } from '@/logging/getSourcePath';
-import LogFileRotationFrequencyUnit from '@/types/LogFileRotationFrequencyUnit';
-import LoggingFormat from '@/types/LoggingFormat';
-import AccessLoggingFormat from '@/types/AccessLoggingFormat';
-import AccessLogEntry from '@/types/AccessLogEntry';
+import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequencyUnit';
+import LoggingFormat from '@/types/config/LoggingFormat';
+import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
+import AccessLogEntry from '@/types/logging/AccessLogEntry';
 
 const { combine, timestamp, printf } = format;
 

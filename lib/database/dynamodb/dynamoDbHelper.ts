@@ -1,4 +1,4 @@
-import DbItem from '@/types/DbItem';
+import DbItem from '@/types/database/DbItem';
 import { DynamoDBClient, ListTablesCommand, CreateTableCommand, CreateTableCommandInput } from '@aws-sdk/client-dynamodb';
 import {
   PutCommand,

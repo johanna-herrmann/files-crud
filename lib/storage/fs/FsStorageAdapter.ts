@@ -1,7 +1,7 @@
 import fse from 'fs-extra';
 import fs from 'fs/promises';
 import paths from 'path';
-import StorageAdapter from '@/types/StorageAdapter';
+import StorageAdapter from '@/types/storage/StorageAdapter';
 import { sanitizePath } from '@/storage/sanitizePath';
 
 /**

@@ -1,7 +1,7 @@
 import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
-import DatabaseAdapter from '@/types/DatabaseAdapter';
-import DbItem from '@/types/DbItem';
-import DbValue from '@/types/DbValue';
+import DatabaseAdapter from '@/types/database/DatabaseAdapter';
+import DbItem from '@/types/database/DbItem';
+import DbValue from '@/types/database/DbValue';
 import { getConfig } from '@/config';
 import { createTable, deleteItem, itemExists, listTables, loadItem, loadItems, putItem, updateItem } from '@/database/dynamodb/dynamoDbHelper';
 

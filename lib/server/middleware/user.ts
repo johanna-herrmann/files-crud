@@ -1,8 +1,8 @@
 import express from 'express';
 import { authorize, checkPassword } from '@/user';
-import User from '@/types/User';
-import Request from '@/types/Request';
-import UserActionParams from '@/types/UserActionParams';
+import User from '@/types/user/User';
+import Request from '@/types/server/Request';
+import UserActionParams from '@/types/user/UserActionParams';
 import { getToken, sendUnauthorized } from '@/server/util';
 import { getConfig } from '@/config';
 

@@ -1,10 +1,10 @@
-import Request from '@/types/Request';
+import Request from '@/types/server/Request';
 import express from 'express';
 import { authorize } from '@/user';
 import { getToken, sendUnauthorized } from '@/server/util';
-import User from '@/types/User';
-import Permissions from '@/types/Permissions';
-import Right from '@/types/Right';
+import User from '@/types/user/User';
+import Permissions from '@/types/config/Permissions';
+import Right from '@/types/config/Right';
 import { loadStorage } from '@/storage';
 import { Storage } from '@/storage/Storage';
 import { getPermissions } from '@/server/middleware/file/permissions';

@@ -1,10 +1,10 @@
 import { getConfig } from '@/config';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
-import FileData from '@/types/FileData';
+import FileData from '@/types/storage/FileData';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import StorageType from '@/types/StorageType';
+import StorageType from '@/types/storage/StorageType';
 import { sanitizePath } from '@/storage/sanitizePath';
 import paths from 'path';
 

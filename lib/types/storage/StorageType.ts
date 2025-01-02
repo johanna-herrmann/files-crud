@@ -1,4 +1,4 @@
-import FileData from '@/types/FileData';
+import FileData from '@/types/storage/FileData';
 
 /**
  * Handles all actions to save, load and manage files and their data.

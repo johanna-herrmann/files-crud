@@ -1,7 +1,7 @@
 import DatabaseConfig from './DatabaseConfig';
-import StorageConfig from '@/types/StorageConfig';
-import PermissionConfig from '@/types/PermissionConfig';
-import LoggingConfig from '@/types/LoggingConfig';
+import StorageConfig from '@/types/storage/StorageConfig';
+import PermissionConfig from '@/types/config/PermissionConfig';
+import LoggingConfig from '@/types/config/LoggingConfig';
 
 interface Config {
   database?: DatabaseConfig;

@@ -1,4 +1,4 @@
-import Database from '@/types/Database';
+import Database from '@/types/database/Database';
 
 const THRESHOLD = 5;
 const TTL_MIN = 15 * 1000; // 15 seconds

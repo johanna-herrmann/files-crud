@@ -1,6 +1,6 @@
-import LoggingFormat from '@/types/LoggingFormat';
-import LogFileRotationFrequencyUnit from '@/types/LogFileRotationFrequencyUnit';
-import AccessLoggingFormat from '@/types/AccessLoggingFormat';
+import LoggingFormat from '@/types/config/LoggingFormat';
+import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequencyUnit';
+import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
 
 interface LoggingConfig {
   accessLogFile?: string;

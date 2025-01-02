@@ -1,4 +1,4 @@
-import JwtKey from '@/types/JwtKey';
+import JwtKey from '@/types/user/JwtKey';
 
 const expectKeys = function (keys: JwtKey[], mockedId: string): void {
   expect(keys.length).toBe(3);

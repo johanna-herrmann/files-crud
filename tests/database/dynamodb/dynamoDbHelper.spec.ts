@@ -2,7 +2,7 @@ import { putItem, updateItem, deleteItem, loadItem, loadItems, itemExists, listT
 import { mockClient } from 'aws-sdk-client-mock';
 import { CreateTableCommand, DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
 import { PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import User from '@/types/User';
+import User from '@/types/user/User';
 import { testUser } from '#/testItems';
 
 const dynamoMock = mockClient(DynamoDBClient);

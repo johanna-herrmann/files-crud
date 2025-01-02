@@ -1,9 +1,9 @@
 import { Client } from 'pg';
-import DatabaseAdapter from '@/types/DatabaseAdapter';
-import DbItem from '@/types/DbItem';
-import PgDbConf from '@/types/PgDbConf';
-import DbValue from '@/types/DbValue';
-import PgDbValue from '@/types/PgDbValue';
+import DatabaseAdapter from '@/types/database/DatabaseAdapter';
+import DbItem from '@/types/database/DbItem';
+import PgDbConf from '@/types/database/PgDbConf';
+import DbValue from '@/types/database/DbValue';
+import PgDbValue from '@/types/database/PgDbValue';
 import { connect, definingQuery, end, getNewClient, readingQuery, writingQuery } from '@/database/postgresql/pgWrapper';
 import { getConfig } from '@/config';
 

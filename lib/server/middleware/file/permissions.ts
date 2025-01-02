@@ -1,10 +1,10 @@
-import PermissionConfig from '@/types/PermissionConfig';
-import User from '@/types/User';
-import FileData from '@/types/FileData';
-import Permissions from '@/types/Permissions';
+import PermissionConfig from '@/types/config/PermissionConfig';
+import User from '@/types/user/User';
+import FileData from '@/types/storage/FileData';
+import Permissions from '@/types/config/Permissions';
 import { getConfig } from '@/config';
 import paths from 'path';
-import Config from '@/types/Config';
+import Config from '@/types/config/Config';
 
 const allPermissions: Permissions = {
   create: true,

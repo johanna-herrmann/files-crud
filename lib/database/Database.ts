@@ -1,15 +1,15 @@
-import DatabaseType from '@/types/Database';
-import DatabaseAdapter from '@/types/DatabaseAdapter';
+import DatabaseType from '@/types/database/Database';
+import DatabaseAdapter from '@/types/database/DatabaseAdapter';
 import { getConfig } from '@/config';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
 import { MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
-import User from '@/types/User';
-import UserListItem from '@/types/UserListItem';
+import User from '@/types/user/User';
+import UserListItem from '@/types/user/UserListItem';
 import { v4 } from 'uuid';
-import JwtKey from '@/types/JwtKey';
-import FailedLoginAttempts from '@/types/FailedLoginAttempts';
+import JwtKey from '@/types/user/JwtKey';
+import FailedLoginAttempts from '@/types/user/FailedLoginAttempts';
 
 class Database implements DatabaseType {
   private readonly db: DatabaseAdapter;

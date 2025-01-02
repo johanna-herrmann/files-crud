@@ -1,6 +1,6 @@
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { addUser, register, changeUsername, modifyMeta, setAdminState, deleteUser, userAlreadyExists } from '@/user/user';
-import User from '@/types/User';
+import User from '@/types/user/User';
 
 const username = 'testUser';
 const password = 'testPwd';

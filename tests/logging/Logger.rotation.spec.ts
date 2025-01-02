@@ -3,7 +3,7 @@ import mockFS from 'mock-fs';
 import fs from 'fs';
 import paths from 'path';
 import { loadConfig } from '@/config';
-import LoggingConfig from '@/types/LoggingConfig';
+import LoggingConfig from '@/types/config/LoggingConfig';
 import winston from 'winston';
 
 const path = `${paths.dirname(paths.dirname(__dirname))}/node_modules/`;

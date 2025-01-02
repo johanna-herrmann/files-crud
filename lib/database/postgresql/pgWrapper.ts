@@ -1,7 +1,7 @@
 import { Client, QueryResult } from 'pg';
-import PgDbConf from '@/types/PgDbConf';
-import DbItem from '@/types/DbItem';
-import PgDbValue from '@/types/PgDbValue';
+import PgDbConf from '@/types/database/PgDbConf';
+import DbItem from '@/types/database/DbItem';
+import PgDbValue from '@/types/database/PgDbValue';
 
 const getNewClient = function (conf: PgDbConf) {
   return new Client(conf);
