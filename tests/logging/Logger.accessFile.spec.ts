@@ -15,6 +15,7 @@ const statusCode = 200;
 const contentLength = '815';
 const referer = 'http://i.am.from/here';
 const userAgent = 'testUserAgent';
+const time = 23;
 
 describe('Access logger', (): void => {
   beforeEach(async (): Promise<void> => {
@@ -34,13 +35,13 @@ describe('Access logger', (): void => {
       setTimeout(() => {
         const message = fs.readFileSync(accessLogFile, 'utf8');
         const { timestamp, ...rest } = JSON.parse(message.trim());
-        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent, time });
         expect(timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
         done();
       }, 300);
     });
 
-    logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+    logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent, time });
     accessLogger?.end();
   });
 
@@ -61,7 +62,7 @@ describe('Access logger', (): void => {
       done();
     }, 2500);
 
-    logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+    logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent, time });
     accessLogger?.end();
   });
 
@@ -74,13 +75,13 @@ describe('Access logger', (): void => {
         setTimeout(() => {
           const message = fs.readFileSync(accessLogFile, 'utf8').trim();
           expect(message).toMatch(
-            /^127\.0\.0\.1 - \[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] "GET \/image\.png HTTP\/2\.0" 200 815 "http:\/\/i\.am\.from\/here" "testUserAgent"$/u
+            /^127\.0\.0\.1 - \[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] "GET \/image\.png HTTP\/2\.0" 200 815 "http:\/\/i\.am\.from\/here" "testUserAgent" - 23$/u
           );
           done();
         }, 300);
       });
 
-      logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+      logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent, time });
       accessLogger?.end();
     });
 
@@ -92,13 +93,13 @@ describe('Access logger', (): void => {
         setTimeout(() => {
           const message = fs.readFileSync(accessLogFile, 'utf8');
           const { timestamp, ...rest } = JSON.parse(message.trim());
-          expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+          expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent, time });
           expect(timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
           done();
         }, 300);
       });
 
-      logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+      logger.access({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent, time });
       accessLogger?.end();
     });
   });

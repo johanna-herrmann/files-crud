@@ -18,6 +18,7 @@ const statusCode = 200;
 const contentLength = '815';
 const referer = 'http://i.am.from/here';
 const userAgent = 'testUserAgent';
+const time = 23;
 
 describe('logging formats', (): void => {
   describe('humanReadableLine returns human readable line', (): void => {
@@ -187,13 +188,13 @@ describe('logging formats', (): void => {
   });
 
   test('accessClassic returns string like nginx would (kinda (-ish)).', async (): Promise<void> => {
-    const result = accessLogFormats.classic({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent });
+    const result = accessLogFormats.classic({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent, time });
 
-    expect(result).toBe('127.0.0.1 - [42] "GET /image.png HTTP/2.0" 200 815 "http://i.am.from/here" "testUserAgent"');
+    expect(result).toBe('127.0.0.1 - [42] "GET /image.png HTTP/2.0" 200 815 "http://i.am.from/here" "testUserAgent" - 23');
   });
 
   test('accessJson returns json.', async (): Promise<void> => {
-    const result = accessLogFormats.json({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent });
+    const result = accessLogFormats.json({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent, time });
 
     expect(JSON.parse(result)).toEqual({
       ip,
@@ -204,7 +205,8 @@ describe('logging formats', (): void => {
       statusCode,
       contentLength,
       referer,
-      userAgent
+      userAgent,
+      time
     });
   });
 });

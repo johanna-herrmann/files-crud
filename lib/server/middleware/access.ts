@@ -40,6 +40,7 @@ const getContentLength = function (res: express.Response): number | undefined {
 };
 
 const logAccessMiddleware = function (req: Request, res: express.Response, next: express.NextFunction) {
+  const start = Date.now();
   const config = getConfig();
   const ipLogging = config.logging?.ipLogging ?? 'anonymous';
   const ip = getIp(req, ipLogging);
@@ -50,10 +51,12 @@ const logAccessMiddleware = function (req: Request, res: express.Response, next:
   const userAgent = req.headers['user-agent'] ?? '_';
 
   onFinished<OutgoingMessage>(res, (): void => {
+    const end = Date.now();
+    const time = end - start;
     const contentLength = getContentLength(res);
     const statusCode = res.statusCode;
 
-    loadLogger().access({ ip, method, path, httpVersion, statusCode, contentLength, referer, userAgent });
+    loadLogger().access({ ip, method, path, httpVersion, statusCode, contentLength, referer, userAgent, time });
   });
 
   next();

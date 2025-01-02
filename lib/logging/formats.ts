@@ -42,8 +42,19 @@ const json = function ({ level, message, timestamp, sourcePath, meta, error }: L
   return JSON.stringify(logObject);
 };
 
-const accessClassic = function ({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent }: AccessLogEntry): string {
-  return `${ip} - [${timestamp}] "${method} ${path} ${httpVersion}" ${statusCode} ${contentLength} "${referer}" "${userAgent}"`;
+const accessClassic = function ({
+  ip,
+  timestamp,
+  method,
+  path,
+  httpVersion,
+  statusCode,
+  contentLength,
+  referer,
+  userAgent,
+  time
+}: AccessLogEntry): string {
+  return `${ip} - [${timestamp}] "${method} ${path} ${httpVersion}" ${statusCode} ${contentLength} "${referer}" "${userAgent}" - ${time}`;
 };
 
 const accessJson = function (accessLogEntry: AccessLogEntry): string {

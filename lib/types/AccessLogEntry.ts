@@ -8,6 +8,7 @@ interface AccessLogEntry {
   contentLength: unknown;
   referer: unknown;
   userAgent: unknown;
+  time: unknown;
 }
 
 export default AccessLogEntry;

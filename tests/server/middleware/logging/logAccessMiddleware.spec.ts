@@ -14,7 +14,9 @@ const contentLength = 815;
 const referer = 'http://i.am.from/here';
 const userAgent = 'testUserAgent';
 
-let mocked_entry: Omit<AccessLogEntry, 'timestamp'> | null = null;
+const nullLogEntry = { ip: '-', method: '-', path: '-', httpVersion: '-', statusCode: -1, contentLength: -1, referer: '-', userAgent: '-', time: -1 };
+
+let mocked_entry: Omit<AccessLogEntry, 'timestamp'> = nullLogEntry;
 
 jest.mock('@/logging/index', () => {
   // noinspection JSUnusedGlobalSymbols - used outside
@@ -31,7 +33,7 @@ jest.mock('@/logging/index', () => {
 
 describe('logAccessMiddleware', (): void => {
   afterEach(async (): Promise<void> => {
-    mocked_entry = null;
+    mocked_entry = nullLogEntry;
   });
 
   const mockResponse = function (contentLength: string | string[] | number | undefined) {
@@ -51,8 +53,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(contentLength);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -66,8 +70,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(contentLength);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip: '127.0.0._', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip: '127.0.0._', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -81,8 +87,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(contentLength);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip: '123::abc:_', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip: '123::abc:_', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -96,8 +104,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(contentLength);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip: '_', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip: '_', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -113,8 +123,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(contentLength);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent: '_' });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent: '_' });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -128,8 +140,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(contentLength);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer: '_', userAgent });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer: '_', userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -143,8 +157,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(undefined);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength: undefined, referer, userAgent });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength: undefined, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -160,8 +176,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(contentLength);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -175,8 +193,10 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse(`${contentLength}`);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
@@ -190,13 +210,59 @@ describe('logAccessMiddleware', (): void => {
       const res = mockResponse([`${contentLength}`, 'other']);
       let next = false;
       setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
-        expect(mocked_entry).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);
 
       logAccessMiddleware(req, res, () => (next = true));
       res.send();
+    });
+  });
+
+  describe('logs access with time', (): void => {
+    test('round about 1000', (done): void => {
+      loadConfig({ logging: { ipLogging: 'full' } });
+      const req = buildRequestForAccessLogging(ip, referer, userAgent);
+      const res = mockResponse(contentLength);
+      let next = false;
+      setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
+        expect(next).toBe(true);
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(800);
+        expect(time as number).toBeLessThanOrEqual(1200);
+        done();
+      }, 2000);
+
+      logAccessMiddleware(req, res, () => (next = true));
+
+      setTimeout(() => {
+        res.send();
+      }, 1000);
+    });
+
+    test('round about 500', (done): void => {
+      loadConfig({ logging: { ipLogging: 'full' } });
+      const req = buildRequestForAccessLogging(ip, referer, userAgent);
+      const res = mockResponse(contentLength);
+      let next = false;
+      setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
+        expect(next).toBe(true);
+        expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(300);
+        expect(time as number).toBeLessThanOrEqual(700);
+        done();
+      }, 2000);
+
+      logAccessMiddleware(req, res, () => (next = true));
+
+      setTimeout(() => {
+        res.send();
+      }, 500);
     });
   });
 });

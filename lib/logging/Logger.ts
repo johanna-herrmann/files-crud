@@ -101,7 +101,7 @@ class Logger {
         level: 'info',
         format: combine(
           timestamp(),
-          printf(({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent }) => {
+          printf(({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent, time }) => {
             return accessLogFormats[this.accessLoggingFormat]({
               ip,
               timestamp,
@@ -111,7 +111,8 @@ class Logger {
               statusCode,
               contentLength,
               referer,
-              userAgent
+              userAgent,
+              time
             });
           })
         ),
@@ -203,7 +204,10 @@ class Logger {
   }
 
   /**
-   * logs access event
+   * Logs access event.
+   *
+   * LogEntry contains common properties like in nginx, plus time the request took.
+   *
    * @param entry The Entry containing the access properties (ip, method, path, etc.)
    *
    * @returns This logger instance
