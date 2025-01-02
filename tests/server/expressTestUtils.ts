@@ -24,6 +24,21 @@ const buildRequestForFileAction = function (token: string, action: string, pathP
   } as unknown as Request;
 };
 
+const buildRequestForAccessLogging = function (ip: string, referer?: string, userAgent?: string): Request {
+  return {
+    socket: {
+      remoteAddress: ip
+    },
+    method: 'GET',
+    path: '/image.png',
+    httpVersion: 'HTTP/2.0',
+    headers: {
+      referer,
+      'user-agent': userAgent
+    }
+  } as unknown as Request;
+};
+
 const buildResponse = function (): express.Response {
   return {
     statusCode: -1,
@@ -50,4 +65,12 @@ const resetLastMessage = function () {
   lastMessage = '{}';
 };
 
-export { buildRequestForUserAction, buildRequestForFileAction, buildResponse, assertPass, assertError, resetLastMessage };
+export {
+  buildRequestForUserAction,
+  buildRequestForFileAction,
+  buildRequestForAccessLogging,
+  buildResponse,
+  assertPass,
+  assertError,
+  resetLastMessage
+};

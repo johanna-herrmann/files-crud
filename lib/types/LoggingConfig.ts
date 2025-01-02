@@ -14,6 +14,7 @@ interface LoggingConfig {
   logFileRotationFrequencyUnit?: LogFileRotationFrequencyUnit;
   logFileRotationMaxFiles?: string;
   logFileRotationEnableCompression?: boolean;
+  ipLogging?: 'full' | 'anonymous' | 'none';
 }
 
 export default LoggingConfig;
