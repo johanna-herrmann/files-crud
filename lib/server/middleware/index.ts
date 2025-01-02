@@ -1,6 +1,7 @@
 import { userMiddleware, registerMiddleware } from './user';
 import { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware } from './file/file';
 import { fileCopyMoveMiddleware } from './file/copyMove';
+import { logAccessMiddleware } from './access';
 
 const fileLoadMiddleware = loadMiddleware;
 const fileLoadMetaMiddleware = loadMiddleware;
@@ -17,5 +18,6 @@ export {
   fileDeleteMiddleware,
   directoryListingMiddleware,
   fileCopyMiddleware,
-  fileMoveMiddleware
+  fileMoveMiddleware,
+  logAccessMiddleware
 };
