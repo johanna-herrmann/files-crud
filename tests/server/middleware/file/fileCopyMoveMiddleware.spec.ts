@@ -1,6 +1,6 @@
 import express from 'express';
 import Request from '@/types/server/Request';
-import { assertError, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { fileCopyMoveMiddleware } from '@/server/middleware/file/copyMove';
 import { sendUnauthorized } from '@/server/util';
 
@@ -87,7 +87,7 @@ describe('fileCopyMoveMiddleware', (): void => {
 
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('target/copy');
-      assertError(next, res, 'You are not allowed to write target/copy');
+      assertUnauthorized(next, res, 'You are not allowed to write target/copy');
     });
 
     test('rejects read source.', async (): Promise<void> => {
@@ -98,7 +98,7 @@ describe('fileCopyMoveMiddleware', (): void => {
 
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('');
-      assertError(next, res, 'You are not allowed to read src/file');
+      assertUnauthorized(next, res, 'You are not allowed to read src/file');
     });
   });
 
@@ -124,7 +124,7 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('target/copy');
       expect(mocked_deletePath).toBe('src/file');
-      assertError(next, res, 'You are not allowed to delete src/file');
+      assertUnauthorized(next, res, 'You are not allowed to delete src/file');
     });
 
     test('rejects write target.', async (): Promise<void> => {
@@ -136,7 +136,7 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('target/copy');
       expect(mocked_deletePath).toBe('');
-      assertError(next, res, 'You are not allowed to write target/copy');
+      assertUnauthorized(next, res, 'You are not allowed to write target/copy');
     });
 
     test('rejects read source.', async (): Promise<void> => {
@@ -148,7 +148,7 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('');
       expect(mocked_deletePath).toBe('');
-      assertError(next, res, 'You are not allowed to read src/file');
+      assertUnauthorized(next, res, 'You are not allowed to read src/file');
     });
   });
 });

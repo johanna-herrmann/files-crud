@@ -1,6 +1,6 @@
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config';
-import { assertError, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { fileSaveMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import User from '@/types/user/User';
@@ -100,7 +100,7 @@ describe('fileSaveMetaMiddleware', () => {
 
         await fileSaveMiddleware(req, res, () => (next = true));
 
-        assertError(next, res, `You are not allowed to update ${directory}/file`);
+        assertUnauthorized(next, res, `You are not allowed to update ${directory}/file`);
       };
 
       test('for public.', async (): Promise<void> => {

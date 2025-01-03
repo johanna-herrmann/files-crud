@@ -1,7 +1,7 @@
 import User from '@/types/user/User';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import { assertError, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertUnauthorized, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { userMiddleware } from '@/server/middleware';
 import { invalidCredentials } from '@/user';
 
@@ -70,7 +70,7 @@ const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
 
   await userMiddleware(req, res, () => (next = true));
 
-  assertError(next, res, 'You have to provide your password');
+  assertUnauthorized(next, res, 'You have to provide your password');
 };
 
 const rejectsIfForeign = async function (action: string, usernameParam: boolean): Promise<void> {
@@ -82,7 +82,7 @@ const rejectsIfForeign = async function (action: string, usernameParam: boolean)
 
   await userMiddleware(req, res, () => (next = true));
 
-  assertError(next, res, 'You have to be admin');
+  assertUnauthorized(next, res, 'You have to be admin');
 };
 
 const rejectsIfNotAdmin = async function (action: string): Promise<void> {
@@ -93,7 +93,7 @@ const rejectsIfNotAdmin = async function (action: string): Promise<void> {
 
   await userMiddleware(req, res, () => (next = true));
 
-  assertError(next, res, 'You have to be admin');
+  assertUnauthorized(next, res, 'You have to be admin');
 };
 
 const rejectsIfPublic = async function (action: string): Promise<void> {
@@ -103,7 +103,7 @@ const rejectsIfPublic = async function (action: string): Promise<void> {
 
   await userMiddleware(req, res, () => (next = true));
 
-  assertError(next, res, 'You have to be logged in');
+  assertUnauthorized(next, res, 'You have to be logged in');
 };
 
 describe('userMiddleware', (): void => {

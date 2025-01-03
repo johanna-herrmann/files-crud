@@ -1,6 +1,6 @@
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config';
-import { assertError, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { loadMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
@@ -100,7 +100,7 @@ describe('loadMiddleware', () => {
 
         await loadMiddleware(req, res, () => (next = true));
 
-        assertError(next, res, `You are not allowed to read ${directory}/file`);
+        assertUnauthorized(next, res, `You are not allowed to read ${directory}/file`);
       };
 
       test('for public.', async (): Promise<void> => {

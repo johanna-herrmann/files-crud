@@ -1,5 +1,5 @@
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import { addUser, register, changeUsername, modifyMeta, setAdminState, deleteUser, userAlreadyExists } from '@/user/user';
+import { addUser, register, changeUsername, saveMeta, setAdminState, deleteUser, userAlreadyExists, loadMeta, getUser, getUsers } from '@/user/user';
 import User from '@/types/user/User';
 
 const username = 'testUser';
@@ -115,13 +115,60 @@ describe('user', (): void => {
     expect((data.user_[0] as User)?.admin).toBe(false);
   });
 
-  test('modifyMeta modifies meta.', async (): Promise<void> => {
+  test('saveMeta saves meta.', async (): Promise<void> => {
     data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { old: 'old' } };
 
-    await modifyMeta(username, meta);
+    await saveMeta(username, meta);
 
     expect((data.user_[0] as User)?.meta?.k).toBe('v');
     expect((data.user_[0] as User)?.meta?.old).toBeUndefined();
+  });
+
+  test('loadMeta loads meta.', async (): Promise<void> => {
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { k: 'v' } };
+
+    const meta = await loadMeta(username);
+
+    expect(meta?.k).toBe('v');
+  });
+
+  test('loadMeta returns empty object if user does not exist.', async (): Promise<void> => {
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true };
+
+    const meta = await loadMeta(username);
+
+    expect(meta).toEqual({});
+  });
+
+  test('loadMeta returns empty object if user does not exist.', async (): Promise<void> => {
+    const meta = await loadMeta(username);
+
+    expect(meta).toEqual({});
+  });
+
+  test('getUser gets UserDto.', async (): Promise<void> => {
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { k: 'v' } };
+
+    const user = await getUser(username);
+
+    expect(user).toEqual({ username, ownerId, admin: true, meta: { k: 'v' } });
+  });
+
+  test('getUser gets null if user does not exist.', async (): Promise<void> => {
+    const user = await getUser(username);
+
+    expect(user).toBeNull();
+  });
+
+  test('getUsers gets UserList.', async (): Promise<void> => {
+    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { k: 'v' } };
+    data.user_[1] = { username: 'other', hashVersion, salt, hash, ownerId, admin: false, meta: { k: 'v' } };
+
+    const users = await getUsers();
+
+    expect(users.length).toBe(2);
+    expect(users[0]).toEqual({ username, admin: true });
+    expect(users[1]).toEqual({ username: 'other', admin: false });
   });
 
   test('removeUser removes user.', async (): Promise<void> => {

@@ -10,4 +10,14 @@ const sendUnauthorized = function (res: express.Response, message: string): void
   res.json({ error: `Unauthorized. ${message.replace(/\.$/, '')}.` });
 };
 
-export { getToken, sendUnauthorized };
+const sendError = function (res: express.Response, message: string): void {
+  res.statusCode = 400;
+  res.json({ error: `Error. ${message.replace(/\.$/, '')}.` });
+};
+
+const sendOK = function (res: express.Response, body?: Record<string, unknown>): void {
+  res.statusCode = 200;
+  res.json(body ?? {});
+};
+
+export { getToken, sendUnauthorized, sendError, sendOK };

@@ -1,4 +1,4 @@
-import { assertError, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertUnauthorized, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { loadConfig } from '@/config';
 import { registerMiddleware } from '@/server/middleware';
 
@@ -37,7 +37,7 @@ describe('registerMiddleware', (): void => {
 
     await registerMiddleware(req, res, () => (next = true));
 
-    assertError(next, res, 'Register is not allowed without valid register token');
+    assertUnauthorized(next, res, 'Register is not allowed without valid register token');
   });
 
   test('rejects register completely', async (): Promise<void> => {
@@ -48,6 +48,6 @@ describe('registerMiddleware', (): void => {
 
     await registerMiddleware(req, res, () => (next = true));
 
-    assertError(next, res, 'Register is disabled. Ask an admin to add you as user');
+    assertUnauthorized(next, res, 'Register is disabled. Ask an admin to add you as user');
   });
 });

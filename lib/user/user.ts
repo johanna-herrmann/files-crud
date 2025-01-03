@@ -2,6 +2,8 @@ import { closeDb, loadDb } from '@/database';
 import Database from '@/types/database/Database';
 import { v4 } from 'uuid';
 import { current } from '@/user/passwordHashing/versions';
+import UserListItem from '@/types/user/UserListItem';
+import UserDto from '@/types/user/UserDto';
 
 const userAlreadyExists = 'USER_ALREADY_EXISTS';
 
@@ -72,10 +74,44 @@ const setAdminState = async function (username: string, admin: boolean): Promise
   }
 };
 
-const modifyMeta = async function (username: string, meta: Record<string, unknown>): Promise<void> {
+const saveMeta = async function (username: string, meta: Record<string, unknown>): Promise<void> {
   try {
     const db = await loadDb();
     await db.modifyUserMeta(username, meta);
+  } finally {
+    await closeDb();
+  }
+};
+
+const loadMeta = async function (username: string): Promise<Record<string, unknown>> {
+  try {
+    const db = await loadDb();
+    const user = await db.getUser(username);
+    return user?.meta ?? {};
+  } finally {
+    await closeDb();
+  }
+};
+
+const getUser = async function (username: string): Promise<UserDto | null> {
+  try {
+    const db = await loadDb();
+    const user = await db.getUser(username);
+    if (!user) {
+      return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { hashVersion, salt, hash, ...userDto } = user;
+    return userDto;
+  } finally {
+    await closeDb();
+  }
+};
+
+const getUsers = async function (): Promise<UserListItem[]> {
+  try {
+    const db = await loadDb();
+    return await db.getUsers();
   } finally {
     await closeDb();
   }
@@ -90,4 +126,4 @@ const deleteUser = async function (username: string): Promise<void> {
   }
 };
 
-export { addUser, register, changeUsername, setAdminState, modifyMeta, deleteUser, userAlreadyExists };
+export { addUser, register, changeUsername, setAdminState, saveMeta, loadMeta, getUser, getUsers, deleteUser, userAlreadyExists };

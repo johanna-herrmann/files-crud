@@ -55,10 +55,20 @@ const assertPass = function (next: boolean, res: express.Response) {
   expect(lastMessage).toBe('{}');
 };
 
-const assertError = function (next: boolean, res: express.Response, message: string) {
+const assertUnauthorized = function (next: boolean, res: express.Response, message: string) {
   expect(next).toBe(false);
   expect(res.statusCode).toBe(401);
   expect(lastMessage).toBe(JSON.stringify({ error: `Unauthorized. ${message}.` }));
+};
+
+const assertError = function (res: express.Response, message: string) {
+  expect(res.statusCode).toBe(400);
+  expect(lastMessage).toBe(JSON.stringify({ error: `Error. ${message}.` }));
+};
+
+const assertOK = function (res: express.Response, body?: Record<string, unknown>) {
+  expect(res.statusCode).toBe(200);
+  expect(lastMessage).toBe(JSON.stringify(body ?? {}));
 };
 
 const resetLastMessage = function () {
@@ -71,6 +81,8 @@ export {
   buildRequestForAccessLogging,
   buildResponse,
   assertPass,
+  assertUnauthorized,
   assertError,
+  assertOK,
   resetLastMessage
 };
