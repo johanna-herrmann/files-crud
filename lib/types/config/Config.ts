@@ -17,6 +17,7 @@ interface Config {
   userDirectoryPermissions?: PermissionConfig;
   userFilePermissions?: PermissionConfig;
   defaultPermissions?: PermissionConfig;
+  webRoot?: string;
 }
 
 export default Config;

@@ -1,4 +1,3 @@
-import { Writable } from 'stream';
 import Request from '@/types/server/Request';
 import express from 'express';
 
@@ -19,9 +18,11 @@ const buildRequestForUserAction = function (
 
 const buildRequestForFileAction = function (token: string, action: string, pathParam: string | undefined, body: Record<string, unknown>): Request {
   const cuttingIndex = pathParam?.indexOf('/') ?? 0;
+  const path = cuttingIndex >= 0 ? pathParam?.substring(0, cuttingIndex) : pathParam;
+  const rest = cuttingIndex >= 0 ? pathParam?.substring(cuttingIndex) : '';
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
-    params: { action, path: pathParam?.substring(0, cuttingIndex), '0': pathParam?.substring(cuttingIndex + 1) },
+    params: { action, path, '0': rest },
     body
   } as unknown as Request;
 };
@@ -38,6 +39,13 @@ const buildRequestForAccessLogging = function (ip: string, referer?: string, use
       referer,
       'user-agent': userAgent
     }
+  } as unknown as Request;
+};
+
+const buildRequestFor404 = function (): Request {
+  return {
+    method: 'GET',
+    path: '/nope'
   } as unknown as Request;
 };
 
@@ -72,6 +80,11 @@ const assertUnauthorized = function (next: boolean, res: express.Response, messa
   expect(lastMessage).toBe(JSON.stringify({ error: `Unauthorized. ${message}.` }));
 };
 
+const assert404 = function (res: express.Response) {
+  expect(res.statusCode).toBe(404);
+  expect(lastMessage).toBe(JSON.stringify({ error: 'Not Found: /nope' }));
+};
+
 const assertError = function (res: express.Response, message: string) {
   expect(res.statusCode).toBe(400);
   expect(lastMessage).toBe(JSON.stringify({ error: `Error. ${message}.` }));
@@ -90,9 +103,11 @@ export {
   buildRequestForUserAction,
   buildRequestForFileAction,
   buildRequestForAccessLogging,
+  buildRequestFor404,
   buildResponse,
   assertPass,
   assertUnauthorized,
+  assert404,
   assertError,
   assertOK,
   resetLastMessage

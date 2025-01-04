@@ -5,7 +5,8 @@ import mockFS from 'mock-fs';
 import {
   copyHandler,
   deleteHandler,
-  listHandler, loadDataHandler,
+  listHandler,
+  loadDataHandler,
   loadHandler,
   loadMetaHandler,
   moveHandler,
