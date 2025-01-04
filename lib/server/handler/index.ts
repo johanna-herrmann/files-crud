@@ -13,14 +13,15 @@ import {
 } from './user';
 
 import {
-  saveHandler,
-  loadHandler,
+  saveHandler as saveFileHandler,
+  loadHandler as loadFileHandler,
   saveMetaHandler as saveFileMetaHandler,
   loadMetaHandler as loadFileMetaHandler,
-  copyHandler,
-  moveHandler,
-  deleteHandler,
-  listHandler
+  loadDataHandler as loadFileDataHandler,
+  copyHandler as copyFileHandler,
+  moveHandler as moveFileHandler,
+  deleteHandler as deleteFileHandler,
+  listHandler as listDirectoryItemsHandler
 } from './file';
 
 export {
@@ -35,12 +36,13 @@ export {
   getUsersHandler,
   deleteUserHandler,
   loginHandler,
-  saveHandler,
-  loadHandler,
+  saveFileHandler,
+  loadFileHandler,
   saveFileMetaHandler,
   loadFileMetaHandler,
-  copyHandler,
-  moveHandler,
-  deleteHandler,
-  listHandler
+  loadFileDataHandler,
+  copyFileHandler,
+  moveFileHandler,
+  deleteFileHandler,
+  listDirectoryItemsHandler
 };

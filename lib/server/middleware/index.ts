@@ -5,6 +5,7 @@ import { logAccessMiddleware } from './access';
 
 const fileLoadMiddleware = loadMiddleware;
 const fileLoadMetaMiddleware = loadMiddleware;
+const fileLoadDataMiddleware = loadMiddleware;
 const fileCopyMiddleware = fileCopyMoveMiddleware;
 const fileMoveMiddleware = fileCopyMoveMiddleware;
 
@@ -15,6 +16,7 @@ export {
   fileSaveMetaMiddleware,
   fileLoadMiddleware,
   fileLoadMetaMiddleware,
+  fileLoadDataMiddleware,
   fileDeleteMiddleware,
   directoryListingMiddleware,
   fileCopyMiddleware,

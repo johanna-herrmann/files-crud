@@ -5,7 +5,7 @@ import mockFS from 'mock-fs';
 import {
   copyHandler,
   deleteHandler,
-  listHandler,
+  listHandler, loadDataHandler,
   loadHandler,
   loadMetaHandler,
   moveHandler,
@@ -90,6 +90,7 @@ describe('file handlers', (): void => {
       expect(JSON.parse(await fs.readFile('/opt/files-crud/data/dir~file', 'utf8'))).toEqual({
         owner: testUser.username,
         contentType: 'text/plain',
+        size: 12,
         meta: {}
       });
       assertOK(res, { path: 'dir/file' });
@@ -188,6 +189,30 @@ describe('file handlers', (): void => {
       const res = buildResponse();
 
       await loadMetaHandler(req, res);
+
+      assertError(res, 'File dir/file does not exist');
+    });
+  });
+
+  describe('loadDataHandler', (): void => {
+    test('loads data', async (): Promise<void> => {
+      buildFSMock(
+        { dir: { file: 'test content' } },
+        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', size: 12, meta: { k: 'v' } }) }
+      );
+      const req = buildRequestForFileAction('', 'load-data', 'dir/file', {});
+      const res = buildResponse();
+
+      await loadDataHandler(req, res);
+
+      assertOK(res, { data: { owner: testUser.username, contentType: 'text/plain', size: 12, meta: { k: 'v' } } });
+    });
+
+    test('returns error if file does not exist', async (): Promise<void> => {
+      const req = buildRequestForFileAction('', 'load-data', 'dir/file', {});
+      const res = buildResponse();
+
+      await loadDataHandler(req, res);
 
       assertError(res, 'File dir/file does not exist');
     });

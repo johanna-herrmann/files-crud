@@ -12,6 +12,7 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
 
   await storage.save(path, data, {
     contentType: mimetype,
+    size: data.length,
     owner: req.body.username as string,
     meta: {}
   });
@@ -59,6 +60,18 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 
   const { meta } = await storage.loadData(path);
   sendOK(res, { meta });
+};
+
+const loadDataHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const storage = loadStorage();
+  const path = resolvePath(req);
+
+  if (!(await storage.exists(path))) {
+    return sendError(res, `File ${path} does not exist`);
+  }
+
+  const data = await storage.loadData(path);
+  sendOK(res, { data });
 };
 
 const copyHandler = async function (req: Request, res: express.Response): Promise<void> {
@@ -119,4 +132,4 @@ const listHandler = async function (req: Request, res: express.Response): Promis
   sendOK(res, { items });
 };
 
-export { saveHandler, loadHandler, saveMetaHandler, loadMetaHandler, copyHandler, moveHandler, deleteHandler, listHandler };
+export { saveHandler, loadHandler, saveMetaHandler, loadMetaHandler, loadDataHandler, copyHandler, moveHandler, deleteHandler, listHandler };

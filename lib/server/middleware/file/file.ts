@@ -9,7 +9,7 @@ import { loadStorage } from '@/storage';
 import { Storage } from '@/storage/Storage';
 import { getPermissions } from '@/server/middleware/file/permissions';
 
-const nullData = { owner: '', meta: {}, contentType: '' };
+const nullData = { owner: '', meta: {}, contentType: '', size: -1 };
 
 const ensureRights = function (permissions: Permissions, rights: Right[], path: string, res: express.Response): boolean {
   for (const right of rights) {

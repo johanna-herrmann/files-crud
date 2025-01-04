@@ -78,7 +78,7 @@ describe('Storage', (): void => {
   test('Storage->save saves file correctly.', async (): Promise<void> => {
     mockFS({ '/base': {} });
     const storage = new Storage();
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42 };
 
     await storage.save('sub/file', Buffer.from('content', 'utf8'), data);
 
@@ -196,7 +196,7 @@ describe('Storage', (): void => {
   });
 
   test('Storage->setData sets Data correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42 };
     mockFS({ '/base': { data: { 'a~file': JSON.stringify(data) } } });
     const storage = new Storage();
 
@@ -238,7 +238,7 @@ describe('Storage', (): void => {
   test('Storage->save does not jail break base.', async (): Promise<void> => {
     mockFS({ '/base': {} });
     const storage = new Storage();
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42 };
 
     await storage.save('../sub/file', Buffer.from('content', 'utf8'), data);
 
@@ -297,7 +297,7 @@ describe('Storage', (): void => {
   });
 
   test('Storage->setData does not jail break base.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42 };
     mockFS({ '/base': { file: JSON.stringify({ ...data, owner: 'bad' }), data: { file: JSON.stringify(data) } } });
     const storage = new Storage();
 

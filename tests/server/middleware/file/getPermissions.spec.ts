@@ -7,8 +7,8 @@ import FileData from '@/types/storage/FileData';
 import Permissions from '@/types/config/Permissions';
 
 const ownerPath = `user_${testUser.ownerId}/file`;
-const ownerData = { owner: testUser.ownerId, meta: {}, contentType: '' };
-const nullData = { owner: '', meta: {}, contentType: '' };
+const ownerData = { owner: testUser.ownerId, meta: {}, contentType: '', size: 42 };
+const nullData = { owner: '', meta: {}, contentType: '', size: -1 };
 const admin = { ...testUser, admin: true };
 
 const runTest = async function (
