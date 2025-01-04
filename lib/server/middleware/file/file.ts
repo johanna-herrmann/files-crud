@@ -1,7 +1,7 @@
 import Request from '@/types/server/Request';
 import express from 'express';
 import { authorize } from '@/user';
-import { getToken, sendUnauthorized } from '@/server/util';
+import { getToken, resolvePath, sendUnauthorized } from '@/server/util';
 import User from '@/types/user/User';
 import Permissions from '@/types/config/Permissions';
 import Right from '@/types/config/Right';
@@ -35,9 +35,10 @@ const checkForSingleFile = async function (
 };
 
 const loadMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  resolvePath(req);
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = (req.params as Record<string, string>).path ?? '-';
+  const path = resolvePath(req);
   const exists = await storage.exists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'read');
   if (allowed) {
@@ -47,11 +48,12 @@ const loadMiddleware = async function (req: Request, res: express.Response, next
 
 const fileSaveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const storage = loadStorage();
-  const user = await authorize(getToken(req));
-  const path = (req.params as Record<string, string>).path ?? '-';
+  const user = (req.body.user ?? (await authorize(getToken(req)))) as User;
+  const path = resolvePath(req);
   const exists = await storage.exists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, exists ? 'update' : 'create');
   if (allowed) {
+    req.body.username = user?.username ?? '-';
     next();
   }
 };
@@ -59,7 +61,7 @@ const fileSaveMiddleware = async function (req: Request, res: express.Response, 
 const fileDeleteMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = (req.params as Record<string, string>).path ?? '-';
+  const path = resolvePath(req);
   const exists = await storage.exists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'delete');
   if (allowed) {
@@ -70,7 +72,7 @@ const fileDeleteMiddleware = async function (req: Request, res: express.Response
 const fileSaveMetaMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = (req.params as Record<string, string>).path ?? '-';
+  const path = resolvePath(req);
   const exists = await storage.exists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'update');
   if (allowed) {
@@ -81,7 +83,7 @@ const fileSaveMetaMiddleware = async function (req: Request, res: express.Respon
 const directoryListingMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = (req.params as Record<string, string>).path ?? '-';
+  const path = resolvePath(req);
   const exists = await storage.exists(path);
   const permissions = getPermissions(user, path, nullData, exists, true);
   const allowed = ensureRights(permissions, ['read'], path, res);

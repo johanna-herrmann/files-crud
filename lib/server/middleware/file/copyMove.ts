@@ -1,14 +1,25 @@
 import Request from '@/types/server/Request';
 import express from 'express';
 import { fileDeleteMiddleware, fileSaveMiddleware, loadMiddleware } from '@/server/middleware/file/file';
-type Body = Record<string, string>;
+import { authorize } from '@/user';
+import { getToken, sendUnauthorized } from '@/server/util';
 
 const fileCopyMoveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const actualNext = next;
   const action = (req.params as Record<string, string>).action ?? 'copy';
-  const body = req.body as Body;
-  const path = body.path ?? '-';
-  const targetPath = body.targetPath ?? '--';
+  const body = req.body;
+  const path = (body.path as string) ?? '-';
+  const targetPath = (body.targetPath as string) ?? '--';
+  const keepOwner = (body.keepOwner as boolean) ?? false;
+  const user = await authorize(getToken(req));
+  if (!user?.admin && keepOwner) {
+    return sendUnauthorized(res, 'Keeping the owner is restricted to admins');
+  }
+  if (!!user) {
+    req.body.user = user;
+  }
+
+  (req.params as Record<string, string>)['0'] = '';
 
   // check for source read permission
   (req.params as Record<string, string>).path = path;

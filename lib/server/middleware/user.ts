@@ -6,8 +6,6 @@ import UserActionParams from '@/types/user/UserActionParams';
 import { getToken, sendUnauthorized } from '@/server/util';
 import { getConfig } from '@/config';
 
-type Body = Record<string, string>;
-
 const config = getConfig();
 
 const isSelfAction = function (user: User, username: string): boolean {
@@ -45,12 +43,12 @@ const userMiddleware = async function (req: Request, res: express.Response, next
   }
 
   const { action, username } = req.params as UserActionParams;
-  const body = req.body as Body;
-  if (isAdminAction(user, action, username ?? body.username ?? '[]')) {
+  const body = req.body;
+  if (isAdminAction(user, action, username ?? (body.username as string) ?? '[]')) {
     return handleAdminAction(user.admin, res, next);
   }
-  if (isSelfPasswordChange(user, action, username ?? body.username ?? '')) {
-    return await handleSelfPasswordChange(user.username, body.oldPassword ?? '', res, next);
+  if (isSelfPasswordChange(user, action, username ?? (body.username as string) ?? '')) {
+    return await handleSelfPasswordChange(user.username, (body.oldPassword as string) ?? '', res, next);
   }
 
   next();
@@ -62,8 +60,8 @@ const registerMiddleware = async function (req: Request, res: express.Response, 
   }
 
   if (config.register === 'token') {
-    const body = req.body as Body;
-    const token = body.token ?? '[]';
+    const body = req.body;
+    const token = (body.token ?? '[]') as string;
     return config.tokens?.includes(token) ? next() : sendUnauthorized(res, 'Register is not allowed without valid register token');
   }
 

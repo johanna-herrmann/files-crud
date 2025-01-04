@@ -1,5 +1,16 @@
 import Request from '@/types/server/Request';
 import express from 'express';
+import paths from 'path';
+
+const resolvePath = function (req: Request): string {
+  const params = req.params as Record<string, string>;
+  const pathFirstPart = params.path ?? '-';
+  const pathFurtherParts = params['0'].trim();
+  if (pathFurtherParts.length === 0) {
+    return pathFirstPart;
+  }
+  return paths.join(pathFirstPart, pathFurtherParts);
+};
 
 const getToken = function (req: Request): string {
   return req.headers.authorization?.replace(/^bearer /iu, '') ?? '';
@@ -20,4 +31,4 @@ const sendOK = function (res: express.Response, body?: Record<string, unknown>):
   res.json(body ?? {});
 };
 
-export { getToken, sendUnauthorized, sendError, sendOK };
+export { resolvePath, getToken, sendUnauthorized, sendError, sendOK };

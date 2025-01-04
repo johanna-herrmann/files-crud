@@ -19,7 +19,7 @@ import {
 } from '@/user';
 
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
-  const body = req.body as Record<string, unknown>;
+  const body = req.body;
   const { username, password, meta } = body;
 
   const result = await register(username as string, password as string, (meta ?? {}) as Record<string, unknown>);
@@ -32,7 +32,7 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const addUserHandler = async function (req: Request, res: express.Response): Promise<void> {
-  const body = req.body as Record<string, unknown>;
+  const body = req.body;
   const { username, password, meta, admin } = body;
 
   const added = await addUser(username as string, password as string, admin as boolean, (meta ?? {}) as Record<string, unknown>);
@@ -45,7 +45,7 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
 };
 
 const changeUsernameHandler = async function (req: Request, res: express.Response): Promise<void> {
-  const body = req.body as Record<string, unknown>;
+  const body = req.body;
   const { username, newUsername } = body;
 
   const result = await changeUsername(username as string, newUsername as string);
@@ -58,7 +58,7 @@ const changeUsernameHandler = async function (req: Request, res: express.Respons
 };
 
 const setAdminStateHandler = async function (req: Request, res: express.Response): Promise<void> {
-  const body = req.body as Record<string, unknown>;
+  const body = req.body;
   const { username, admin } = body;
 
   await setAdminState(username as string, admin as boolean);
@@ -67,7 +67,7 @@ const setAdminStateHandler = async function (req: Request, res: express.Response
 };
 
 const saveMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
-  const body = req.body as Record<string, unknown>;
+  const body = req.body;
   const username = (req.params as Record<string, unknown>).username;
   const { meta } = body;
 
@@ -77,7 +77,7 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const changePasswordHandler = async function (req: Request, res: express.Response): Promise<void> {
-  const body = req.body as Record<string, unknown>;
+  const body = req.body;
   const { username, newPassword } = body;
 
   await changePassword(username as string, newPassword as string);
@@ -116,7 +116,7 @@ const getUsersHandler = async function (_: Request, res: express.Response): Prom
 };
 
 const loginHandler = async function (req: Request, res: express.Response): Promise<void> {
-  const body = req.body as Record<string, unknown>;
+  const body = req.body;
   const { username, password } = body;
 
   const tokenOrError = await login(username as string, password as string);

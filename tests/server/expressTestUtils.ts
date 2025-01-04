@@ -1,3 +1,4 @@
+import { Writable } from 'stream';
 import Request from '@/types/server/Request';
 import express from 'express';
 
@@ -17,9 +18,10 @@ const buildRequestForUserAction = function (
 };
 
 const buildRequestForFileAction = function (token: string, action: string, pathParam: string | undefined, body: Record<string, unknown>): Request {
+  const cuttingIndex = pathParam?.indexOf('/') ?? 0;
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
-    params: { action, path: pathParam },
+    params: { action, path: pathParam?.substring(0, cuttingIndex), '0': pathParam?.substring(cuttingIndex + 1) },
     body
   } as unknown as Request;
 };
@@ -40,13 +42,22 @@ const buildRequestForAccessLogging = function (ip: string, referer?: string, use
 };
 
 const buildResponse = function (): express.Response {
-  return {
+  const res = {
     statusCode: -1,
     json(obj: unknown) {
       lastMessage = JSON.stringify(obj);
       return this;
     }
   } as unknown as express.Response;
+  (res as express.Response & { headers: Record<string, unknown> }).headers = {};
+  res.setHeader = (name: string, value: unknown) => {
+    (res as express.Response & { headers: Record<string, unknown> }).headers[name.toLowerCase()] = value;
+    return res;
+  };
+  res.getHeader = (name: string) => {
+    return (res as express.Response & { headers: Record<string, unknown> }).headers[name] as string | number | string[] | undefined;
+  };
+  return res;
 };
 
 const assertPass = function (next: boolean, res: express.Response) {

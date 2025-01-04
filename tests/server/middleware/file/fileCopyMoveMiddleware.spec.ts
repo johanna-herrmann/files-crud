@@ -3,6 +3,8 @@ import Request from '@/types/server/Request';
 import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { fileCopyMoveMiddleware } from '@/server/middleware/file/copyMove';
 import { sendUnauthorized } from '@/server/util';
+import User from '@/types/user/User';
+import { testUser } from '#/testItems';
 
 let mocked_passRead = false;
 let mocked_passWrite = false;
@@ -44,6 +46,21 @@ jest.mock('@/server/middleware/file/file', () => {
   };
 });
 
+let mocked_user: User | null = null;
+
+jest.mock('@/user/auth', () => {
+  const actual = jest.requireActual('@/user/auth');
+  return {
+    ...actual,
+    async authorize(jwt: string | undefined): Promise<User | null> {
+      if (jwt === '') {
+        return mocked_user;
+      }
+      return null;
+    }
+  };
+});
+
 describe('fileCopyMoveMiddleware', (): void => {
   beforeEach(async (): Promise<void> => {
     mocked_passRead = false;
@@ -52,23 +69,30 @@ describe('fileCopyMoveMiddleware', (): void => {
     mocked_readPath = '';
     mocked_writePath = '';
     mocked_deletePath = '';
+    mocked_user = null;
   });
 
   afterEach(async (): Promise<void> => {
     resetLastMessage();
   });
 
-  const arrange = function (action: string, passRead: boolean, passWrite: boolean, passDelete: boolean): [req: Request, res: express.Response] {
+  const arrange = function (
+    action: string,
+    passRead: boolean,
+    passWrite: boolean,
+    passDelete: boolean,
+    keepOwner?: boolean
+  ): [req: Request, res: express.Response] {
     mocked_passRead = passRead;
     mocked_passWrite = passWrite;
     mocked_passDelete = passDelete;
-    const req = buildRequestForFileAction('', action, undefined, { path: 'src/file', targetPath: 'target/copy' });
+    const req = buildRequestForFileAction('', action, undefined, { path: 'src/file', targetPath: 'target/copy', keepOwner: keepOwner ?? false });
     const res = buildResponse();
     return [req, res];
   };
 
   describe('copy', (): void => {
-    test('passes.', async (): Promise<void> => {
+    test('passes, change owner.', async (): Promise<void> => {
       let next = false;
       const [req, res] = arrange('copy', true, true, false);
 
@@ -77,6 +101,20 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('target/copy');
       assertPass(next, res);
+      expect(req.body.user).toBeUndefined();
+    });
+
+    test('passes, keep owner.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange('copy', true, true, false, true);
+      mocked_user = { ...testUser, admin: true };
+
+      await fileCopyMoveMiddleware(req, res, () => (next = true));
+
+      expect(mocked_readPath).toBe('src/file');
+      expect(mocked_writePath).toBe('target/copy');
+      assertPass(next, res);
+      expect(req.body.user).toEqual({ ...testUser, admin: true });
     });
 
     test('rejects write target.', async (): Promise<void> => {
@@ -100,10 +138,29 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_writePath).toBe('');
       assertUnauthorized(next, res, 'You are not allowed to read src/file');
     });
+
+    test('rejects keep owner for normal user.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange('copy', true, false, false, true);
+      mocked_user = { ...testUser };
+
+      await fileCopyMoveMiddleware(req, res, () => (next = true));
+
+      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
+    });
+
+    test('rejects keep owner for public.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange('copy', true, false, false, true);
+
+      await fileCopyMoveMiddleware(req, res, () => (next = true));
+
+      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
+    });
   });
 
   describe('move', (): void => {
-    test('passes.', async (): Promise<void> => {
+    test('passes, change owner.', async (): Promise<void> => {
       let next = false;
       const [req, res] = arrange('move', true, true, true);
 
@@ -113,6 +170,21 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_writePath).toBe('target/copy');
       expect(mocked_deletePath).toBe('src/file');
       assertPass(next, res);
+      expect(req.body.user).toBeUndefined();
+    });
+
+    test('passes, keep owner.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange('move', true, true, true, true);
+      mocked_user = { ...testUser, admin: true };
+
+      await fileCopyMoveMiddleware(req, res, () => (next = true));
+
+      expect(mocked_readPath).toBe('src/file');
+      expect(mocked_writePath).toBe('target/copy');
+      expect(mocked_deletePath).toBe('src/file');
+      assertPass(next, res);
+      expect(req.body.user).toEqual({ ...testUser, admin: true });
     });
 
     test('rejects delete source.', async (): Promise<void> => {
@@ -149,6 +221,25 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_writePath).toBe('');
       expect(mocked_deletePath).toBe('');
       assertUnauthorized(next, res, 'You are not allowed to read src/file');
+    });
+
+    test('rejects keep owner for normal user.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange('move', true, false, false, true);
+      mocked_user = { ...testUser };
+
+      await fileCopyMoveMiddleware(req, res, () => (next = true));
+
+      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
+    });
+
+    test('rejects keep owner for public.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange('move', true, false, false, true);
+
+      await fileCopyMoveMiddleware(req, res, () => (next = true));
+
+      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
     });
   });
 });

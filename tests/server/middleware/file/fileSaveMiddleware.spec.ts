@@ -52,6 +52,7 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
+        expect(req.body.username).toBe(mocked_user?.username ?? '-');
       };
 
       test('for public.', async (): Promise<void> => {
@@ -99,6 +100,7 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
+        expect(req.body.username).toBe(mocked_user?.username ?? '-');
       };
 
       test('for public.', async (): Promise<void> => {

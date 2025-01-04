@@ -55,7 +55,7 @@ jest.mock('@/user/auth', () => {
   };
 });
 
-describe('handler user', (): void => {
+describe('user handlers', (): void => {
   afterEach(async () => {
     data.user_ = [];
     resetLastMessage();
