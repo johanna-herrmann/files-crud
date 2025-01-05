@@ -42,10 +42,10 @@ const buildRequestForAccessLogging = function (ip: string, referer?: string, use
   } as unknown as Request;
 };
 
-const buildRequestFor404 = function (): Request {
+const buildSimpleRequest = function (): Request {
   return {
     method: 'GET',
-    path: '/nope'
+    path: '/test'
   } as unknown as Request;
 };
 
@@ -103,7 +103,7 @@ export {
   buildRequestForUserAction,
   buildRequestForFileAction,
   buildRequestForAccessLogging,
-  buildRequestFor404,
+  buildSimpleRequest,
   buildResponse,
   assertPass,
   assertUnauthorized,

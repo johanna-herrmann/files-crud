@@ -1,5 +1,8 @@
-import express, { Express } from 'express';
+import express from 'express';
+import http2Express from 'http2-express-bridge';
+import autoPush from 'http2-express-autopush';
 import fileUpload from 'express-fileupload';
+import cors from 'cors';
 import {
   registerMiddleware,
   userMiddleware,
@@ -13,6 +16,7 @@ import {
   fileLoadDataMiddleware,
   directoryListingMiddleware,
   logAccessMiddleware,
+  headerMiddleware,
   notFoundMiddleware
 } from '@/server/middleware';
 import {
@@ -43,11 +47,16 @@ import Config from '@/types/config/Config';
 const FILE_SIZE_LIMIT = 1024 * 1024 * 100; // 100 MiB;
 const TIMEOUT = 15 * 1000; // 15 seconds;
 
-const addCommonMiddlewares = function (app: Express, config: Config): Express {
+const addCommonMiddlewares = function (app: express.Application, config: Config) {
+  app.use(headerMiddleware);
+  if (!!config.server?.cors) {
+    app.use(cors(config.server.cors));
+  }
   app.use(express.json());
   app.use('/', logAccessMiddleware);
   if (!!config.webRoot) {
-    app.use('/', express.static(config.webRoot));
+    const staticHandler = config.server?.useHttp2 ? autoPush : express.static;
+    app.use(staticHandler(config.webRoot));
   }
   app.use(
     fileUpload({
@@ -60,7 +69,7 @@ const addCommonMiddlewares = function (app: Express, config: Config): Express {
   return app;
 };
 
-const addUserHandling = function (app: Express): void {
+const addUserHandling = function (app: express.Application): void {
   app.use('/user', userMiddleware);
   app.post('/register', registerMiddleware, registerHandler);
   app.post('/login', loginHandler);
@@ -75,7 +84,7 @@ const addUserHandling = function (app: Express): void {
   app.get('/user/list', getUsersHandler);
 };
 
-const addFileHandling = function (app: Express): void {
+const addFileHandling = function (app: express.Application): void {
   app.post('/file/save/:path*', fileSaveMiddleware, saveFileHandler);
   app.post('/file/save-meta/:path*', fileSaveMetaMiddleware, saveFileMetaHandler);
   app.post('/file/copy', fileCopyMiddleware, copyFileHandler);
@@ -87,13 +96,13 @@ const addFileHandling = function (app: Express): void {
   app.get('/file/list/:path*', directoryListingMiddleware, listDirectoryItemsHandler);
 };
 
-const add404Handling = function (app: Express): void {
+const add404Handling = function (app: express.Application): void {
   app.use(notFoundMiddleware);
 };
 
-const buildApp = function (no404Fallback?: boolean): Express {
-  const app = express();
+const buildApp = function (no404Fallback?: boolean): express.Application {
   const config = getConfig();
+  const app = config.server?.useHttp2 ? http2Express(express) : express();
   addCommonMiddlewares(app, config);
   addUserHandling(app);
   addFileHandling(app);

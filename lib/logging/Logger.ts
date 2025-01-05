@@ -20,6 +20,23 @@ const DATE_PATTERNS: Record<LogFileRotationFrequencyUnit, string> = {
   s: 'YYYY-MM-DD_HH-mm-ss'
 };
 
+const formatNumber = function (value: number, digits: number): string {
+  const padded = `${'0'.repeat(digits)}${value}`;
+  return padded.substring(padded.length - digits);
+};
+
+const dateFormatter = function (): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = formatNumber(date.getMonth() + 1, 2);
+  const day = formatNumber(date.getDate(), 2);
+  const hour = formatNumber(date.getHours(), 2);
+  const minute = formatNumber(date.getMinutes(), 2);
+  const second = formatNumber(date.getSeconds(), 2);
+  const milli = formatNumber(date.getMilliseconds(), 3);
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milli}`;
+};
+
 /**
  * Used to log access, errors and other events.
  *
@@ -62,7 +79,7 @@ class Logger {
     this.ttyLogger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
       format: combine(
-        timestamp(),
+        timestamp({ format: dateFormatter }),
         printf(({ level, message, timestamp, sourcePath, error, meta }) => {
           const outLoggingFormat = stdoutIsTTY ? this.ttyLoggingFormat : this.fileLoggingFormat;
           const errLoggingFormat = stderrIsTTY ? this.ttyLoggingFormat : this.fileLoggingFormat;
@@ -80,7 +97,7 @@ class Logger {
         exitOnError: false,
         level: 'error',
         format: combine(
-          timestamp(),
+          timestamp({ format: dateFormatter }),
           printf(({ level, message, timestamp, sourcePath, error, meta }) => {
             return logFormats[this.fileLoggingFormat]({ level, message, timestamp, sourcePath, error, meta });
           })
@@ -100,7 +117,7 @@ class Logger {
         exitOnError: false,
         level: 'info',
         format: combine(
-          timestamp(),
+          timestamp({ format: dateFormatter }),
           printf(({ ip, timestamp, method, path, httpVersion, statusCode, contentLength, referer, userAgent, time }) => {
             return accessLogFormats[this.accessLoggingFormat]({
               ip,

@@ -2,6 +2,7 @@ import DatabaseConfig from './DatabaseConfig';
 import StorageConfig from '@/types/storage/StorageConfig';
 import PermissionConfig from '@/types/config/PermissionConfig';
 import LoggingConfig from '@/types/config/LoggingConfig';
+import ServerConfig from '@/types/config/ServerConfig';
 
 interface Config {
   database?: DatabaseConfig;
@@ -17,6 +18,7 @@ interface Config {
   userDirectoryPermissions?: PermissionConfig;
   userFilePermissions?: PermissionConfig;
   defaultPermissions?: PermissionConfig;
+  server?: ServerConfig;
   webRoot?: string;
 }
 

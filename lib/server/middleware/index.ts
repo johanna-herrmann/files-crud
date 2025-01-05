@@ -2,6 +2,7 @@ import { userMiddleware, registerMiddleware } from './user';
 import { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware } from './file/file';
 import { fileCopyMoveMiddleware } from './file/copyMove';
 import { logAccessMiddleware } from './access';
+import { headerMiddleware } from '@/server/middleware/header';
 import { notFoundMiddleware } from '@/server/middleware/404';
 
 const fileLoadMiddleware = loadMiddleware;
@@ -23,5 +24,6 @@ export {
   fileCopyMiddleware,
   fileMoveMiddleware,
   logAccessMiddleware,
+  headerMiddleware,
   notFoundMiddleware
 };
