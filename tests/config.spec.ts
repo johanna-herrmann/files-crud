@@ -30,8 +30,24 @@ describe('config', (): void => {
     expect(getConfig()).toEqual({});
   });
 
-  test('loads simple in-memory-db conf correctly', async (): Promise<void> => {
+  test('loads simple in-memory-db conf correctly, json', async (): Promise<void> => {
     mockFS({ './config.json': '{"database":{"name":"in-memory"}}' });
+
+    loadConfig();
+
+    expect(getConfig()).toEqual({ database: { name: 'in-memory' } });
+  });
+
+  test('loads simple in-memory-db conf correctly, yaml', async (): Promise<void> => {
+    mockFS({ './config.yaml': 'database:\n  name: in-memory' });
+
+    loadConfig();
+
+    expect(getConfig()).toEqual({ database: { name: 'in-memory' } });
+  });
+
+  test('loads simple in-memory-db conf correctly, yml', async (): Promise<void> => {
+    mockFS({ './config.yml': 'database:\n  name: in-memory' });
 
     loadConfig();
 

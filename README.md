@@ -56,7 +56,7 @@ Permissions are given for:
   * In any other definition of directory permissions: The permissions for files, created by the logged-in user
 
 ## Config
-Configuration is done via `config.json` file in the application directory (outside the storage-root), read-in during application startup.
+Configuration is done via `config.json`, `config.yaml` or `config.yml` file in the application directory (outside the storage-root), read-in during application startup.
 
 ### Properties
 * `directories` &minus; defines permissions for directories

@@ -1,26 +1,32 @@
 import fs from 'fs';
+import yaml from 'yaml';
 import Config from './types/config/Config';
 
 const config: Config = {};
 
 const getConfigString = function () {
-  try {
+  if (fs.existsSync('./config.json')) {
     return fs.readFileSync('./config.json', 'utf-8') || '{}';
-  } catch (error: unknown) {
-    const errorToCheck = error as Error & { code?: string };
-    if (errorToCheck.code === 'ENOENT') {
-      return '{}';
-    }
-    throw error;
   }
+  if (fs.existsSync('./config.yaml')) {
+    return JSON.stringify(yaml.parse(fs.readFileSync('./config.yaml', 'utf-8'))) || '{}';
+  }
+  if (fs.existsSync('./config.yml')) {
+    return JSON.stringify(yaml.parse(fs.readFileSync('./config.yml', 'utf-8'))) || '{}';
+  }
+  return '{}';
+};
+
+const getConfigFromFile = function (): Record<string, unknown> {
+  const configString = getConfigString();
+  return JSON.parse(configString) as Record<string, unknown>;
 };
 
 const getNewConfig = function (config_?: Config): Record<string, unknown> {
   if (config_) {
     return config_ as Record<string, unknown>;
   }
-  const configString = getConfigString();
-  return JSON.parse(configString) as Record<string, unknown>;
+  return getConfigFromFile();
 };
 
 const loadConfig = function (config_?: Config) {

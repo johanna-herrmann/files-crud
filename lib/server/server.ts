@@ -24,7 +24,7 @@ const getFormattedTime = function (time: number): string {
 };
 
 const logStartedServer = function (
-  serverType: 'http' | 'https',
+  serverType: 'http' | 'https' | 'https (http2)',
   host: string,
   port: number,
   webRoot: string | undefined,
@@ -62,7 +62,7 @@ const startHttpsServer = function (host: string, port: number, webRoot: string |
   const app = buildApp();
   const server = config.server?.useHttp2 ? http2.createSecureServer({ key, cert, allowHTTP1: true }, app) : https.createServer({ key, cert }, app);
   server.listen({ host, port }, () => {
-    logStartedServer('https', host, port, webRoot, start, Date.now());
+    logStartedServer(config.server?.useHttp2 ? 'https (http2)' : 'https', host, port, webRoot, start, Date.now());
   });
 };
 
