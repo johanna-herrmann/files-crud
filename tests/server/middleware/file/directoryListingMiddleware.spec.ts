@@ -5,6 +5,7 @@ import { directoryListingMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
 import User from '@/types/user/User';
+import { Logger } from '@/logging/Logger';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;
@@ -18,6 +19,29 @@ jest.mock('@/user/auth', () => {
         return mocked_user;
       }
       return await actual.authorize(token);
+    }
+  };
+});
+
+jest.mock('@/logging/index', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    resetLogger() {},
+    loadLogger(): Logger {
+      return {
+        debug() {
+          return this;
+        },
+        info() {
+          return this;
+        },
+        warn() {
+          return this;
+        },
+        error() {
+          return this;
+        }
+      } as unknown as Logger;
     }
   };
 });

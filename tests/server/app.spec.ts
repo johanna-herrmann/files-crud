@@ -9,6 +9,10 @@ import { Logger } from '@/logging/Logger';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
 import UploadRequest from '@/types/server/UploadRequest';
 
+type Middleware = (_: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
+type ErrorMiddleware = (err: Error, _: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
+type Handler = (req: Request, res: express.Response) => void | Promise<void>;
+
 let mocked_lastLogEntry: Omit<AccessLogEntry, 'timestamp'> | null = null;
 
 const mocked_lastChain: string[] = [];
@@ -30,13 +34,24 @@ jest.mock('@/logging/index', () => {
 
 jest.mock('@/server/middleware', () => {
   const actual = jest.requireActual('@/server/middleware');
-  const mock: Record<string, (_: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>> = {};
+  const mock: Record<string, Middleware | ErrorMiddleware> = {};
   Object.keys(actual).forEach((key) => {
+    if (key === 'errorMiddleware') {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      return (mock[key] = (_: Error, __: Request, res: express.Response, ___: express.NextFunction) => {
+        mocked_lastChain.push(key);
+        res.status(500).send();
+      });
+    }
     mock[key] = (req: Request, res: express.Response, next: express.NextFunction) => {
       mocked_lastChain.push(key);
 
       if (key === 'logAccessMiddleware') {
         return actual[key](req, res, next);
+      }
+
+      if (key === 'notFoundMiddleware') {
+        return res.status(404).send();
       }
 
       next();
@@ -47,10 +62,24 @@ jest.mock('@/server/middleware', () => {
 
 jest.mock('@/server/handler', () => {
   const actual = jest.requireActual('@/server/handler');
-  const mock: Record<string, (req: Request, res: express.Response) => void | Promise<void>> = {};
+  const mock: Record<string, Handler> = {};
   Object.keys(actual).forEach((key) => {
+    if (key === 'registerHandler') {
+      return (mock[key] = async (req: Request, res: express.Response) => {
+        mocked_lastChain.push(key);
+        if (!!req.body?.error) {
+          throw req.body.error as Error;
+        }
+        res.json({ params: req.params });
+      });
+    }
     mock[key] = (req: Request, res: express.Response) => {
       mocked_lastChain.push(key);
+
+      if (key === 'loginHandler' && !!req.body?.error) {
+        throw req.body.error as Error;
+      }
+
       res.json({ params: req.params });
     };
   });
@@ -119,7 +148,7 @@ describe('app', (): void => {
         path: '/test',
         httpVersion: '1.1',
         statusCode: 200,
-        contentLength: 2,
+        contentLength: undefined,
         referer: '_',
         userAgent: '_'
       });
@@ -279,7 +308,7 @@ describe('app', (): void => {
       const response = await request(app).post('/file/save/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileSaveMiddleware', 'saveFileHandler']);
-      expect(response.body.params).toEqual({ path: 'dir', '0': '/file' });
+      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
     test('saveFileMeta', async (): Promise<void> => {
@@ -288,7 +317,7 @@ describe('app', (): void => {
       const response = await request(app).post('/file/save-meta/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileSaveMetaMiddleware', 'saveFileMetaHandler']);
-      expect(response.body.params).toEqual({ path: 'dir', '0': '/file' });
+      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
     test('copyFile', async (): Promise<void> => {
@@ -313,7 +342,7 @@ describe('app', (): void => {
       const response = await request(app).delete('/file/delete/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileDeleteMiddleware', 'deleteFileHandler']);
-      expect(response.body.params).toEqual({ path: 'dir', '0': '/file' });
+      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
     test('loadFileMeta', async (): Promise<void> => {
@@ -322,7 +351,7 @@ describe('app', (): void => {
       const response = await request(app).get('/file/load-meta/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadMetaMiddleware', 'loadFileMetaHandler']);
-      expect(response.body.params).toEqual({ path: 'dir', '0': '/file' });
+      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
     test('loadFileData', async (): Promise<void> => {
@@ -331,7 +360,7 @@ describe('app', (): void => {
       const response = await request(app).get('/file/load-data/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadDataMiddleware', 'loadFileDataHandler']);
-      expect(response.body.params).toEqual({ path: 'dir', '0': '/file' });
+      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
     test('loadFile', async (): Promise<void> => {
@@ -340,7 +369,7 @@ describe('app', (): void => {
       const response = await request(app).get('/file/one/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadMiddleware', 'loadFileHandler']);
-      expect(response.body.params).toEqual({ path: 'dir', '0': '/file' });
+      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
     test('listDirectory', async (): Promise<void> => {
@@ -349,7 +378,7 @@ describe('app', (): void => {
       const response = await request(app).get('/file/list/dir/sub');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'directoryListingMiddleware', 'listDirectoryItemsHandler']);
-      expect(response.body.params).toEqual({ path: 'dir', '0': '/sub' });
+      expect(response.body.params).toEqual({ path: ['dir', 'sub'] });
     });
   });
 
@@ -361,6 +390,28 @@ describe('app', (): void => {
 
       expect(response.statusCode).toBe(404);
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'notFoundMiddleware']);
+    });
+  });
+
+  describe('handles unexpected error correctly', (): void => {
+    test('on synchronous handler', async (): Promise<void> => {
+      const error = new Error('test error');
+      const app = buildApp();
+
+      const response = await request(app).post('/login').send({ error });
+
+      expect(response.statusCode).toBe(500);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'loginHandler', 'errorMiddleware']);
+    });
+
+    test('on asynchronous handler', async (): Promise<void> => {
+      const error = new Error('test error');
+      const app = buildApp();
+
+      const response = await request(app).post('/register').send({ error });
+
+      expect(response.statusCode).toBe(500);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler', 'errorMiddleware']);
     });
   });
 });

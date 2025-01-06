@@ -17,6 +17,7 @@ import { DirectoryItem } from 'mock-fs/lib/filesystem';
 import fs from 'fs/promises';
 import UploadRequest from '@/types/server/UploadRequest';
 import { Readable, Writable } from 'stream';
+import { Logger } from '@/logging/Logger';
 
 let mocked_user: User | null = null;
 
@@ -29,6 +30,29 @@ jest.mock('@/user/auth', () => {
         return mocked_user;
       }
       return null;
+    }
+  };
+});
+
+jest.mock('@/logging/index', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    resetLogger() {},
+    loadLogger(): Logger {
+      return {
+        debug() {
+          return this;
+        },
+        info() {
+          return this;
+        },
+        warn() {
+          return this;
+        },
+        error() {
+          return this;
+        }
+      } as unknown as Logger;
     }
   };
 });
@@ -80,6 +104,12 @@ describe('file handlers', (): void => {
 
   describe('saveHandler', (): void => {
     test('saves file', async (): Promise<void> => {
+      const data = {
+        owner: testUser.username,
+        contentType: 'text/plain',
+        size: 12,
+        meta: {}
+      };
       const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
       const res = buildResponse();
 
@@ -88,12 +118,7 @@ describe('file handlers', (): void => {
       expect(await exists('/opt/files-crud/files/dir/file')).toBe(true);
       expect(await exists('/opt/files-crud/data/dir~file')).toBe(true);
       expect(await fs.readFile('/opt/files-crud/files/dir/file', 'utf8')).toBe('test content');
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/dir~file', 'utf8'))).toEqual({
-        owner: testUser.username,
-        contentType: 'text/plain',
-        size: 12,
-        meta: {}
-      });
+      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/dir~file', 'utf8'))).toEqual(data);
       assertOK(res, { path: 'dir/file' });
     });
   });
@@ -150,17 +175,18 @@ describe('file handlers', (): void => {
 
   describe('saveMetaHandler', (): void => {
     test('saves meta', async (): Promise<void> => {
+      const data = {
+        owner: testUser.username,
+        contentType: 'text/plain',
+        meta: { k: 'v' }
+      };
       buildFSMock({ dir: { file: '' } }, { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: {} }) });
       const req = buildRequestForFileAction('', 'save-meta', 'dir/file', { meta: { k: 'v' } });
       const res = buildResponse();
 
       await saveMetaHandler(req, res);
 
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/dir~file', 'utf8'))).toEqual({
-        owner: testUser.username,
-        contentType: 'text/plain',
-        meta: { k: 'v' }
-      });
+      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/dir~file', 'utf8'))).toEqual(data);
       assertOK(res);
     });
 
@@ -197,16 +223,14 @@ describe('file handlers', (): void => {
 
   describe('loadDataHandler', (): void => {
     test('loads data', async (): Promise<void> => {
-      buildFSMock(
-        { dir: { file: 'test content' } },
-        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', size: 12, meta: { k: 'v' } }) }
-      );
+      const data = { owner: testUser.username, contentType: 'text/plain', size: 12, meta: { k: 'v' } };
+      buildFSMock({ dir: { file: 'test content' } }, { 'dir~file': JSON.stringify(data) });
       const req = buildRequestForFileAction('', 'load-data', 'dir/file', {});
       const res = buildResponse();
 
       await loadDataHandler(req, res);
 
-      assertOK(res, { data: { owner: testUser.username, contentType: 'text/plain', size: 12, meta: { k: 'v' } } });
+      assertOK(res, { data });
     });
 
     test('returns error if file does not exist', async (): Promise<void> => {

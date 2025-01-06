@@ -17,12 +17,9 @@ const buildRequestForUserAction = function (
 };
 
 const buildRequestForFileAction = function (token: string, action: string, pathParam: string | undefined, body: Record<string, unknown>): Request {
-  const cuttingIndex = pathParam?.indexOf('/') ?? 0;
-  const path = cuttingIndex >= 0 ? pathParam?.substring(0, cuttingIndex) : pathParam;
-  const rest = cuttingIndex >= 0 ? pathParam?.substring(cuttingIndex) : '';
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
-    params: { action, path, '0': rest },
+    params: { action, path: pathParam?.split('/') },
     body
   } as unknown as Request;
 };
@@ -74,8 +71,10 @@ const assertPass = function (next: boolean, res: express.Response) {
   expect(lastMessage).toBe('{}');
 };
 
-const assertUnauthorized = function (next: boolean, res: express.Response, message: string) {
-  expect(next).toBe(false);
+const assertUnauthorized = function (next: boolean | undefined, res: express.Response, message: string) {
+  if (typeof next === 'boolean') {
+    expect(next).toBe(false);
+  }
   expect(res.statusCode).toBe(401);
   expect(lastMessage).toBe(JSON.stringify({ error: `Unauthorized. ${message}.` }));
 };
@@ -85,8 +84,8 @@ const assert404 = function (res: express.Response) {
   expect(lastMessage).toBe(JSON.stringify({ error: 'Not Found: /test' }));
 };
 
-const assertError = function (res: express.Response, message: string) {
-  expect(res.statusCode).toBe(400);
+const assertError = function (res: express.Response, message: string, errorGiven?: boolean) {
+  expect(res.statusCode).toBe(errorGiven ? 500 : 400);
   expect(lastMessage).toBe(JSON.stringify({ error: `Error. ${message}.` }));
 };
 

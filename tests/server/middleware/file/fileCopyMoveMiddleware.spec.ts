@@ -5,6 +5,7 @@ import { fileCopyMoveMiddleware } from '@/server/middleware/file/copyMove';
 import { sendUnauthorized } from '@/server/util';
 import User from '@/types/user/User';
 import { testUser } from '#/testItems';
+import { Logger } from '@/logging/Logger';
 
 let mocked_passRead = false;
 let mocked_passWrite = false;
@@ -42,6 +43,29 @@ jest.mock('@/server/middleware/file/file', () => {
       } else {
         sendUnauthorized(res, `You are not allowed to delete ${path}`);
       }
+    }
+  };
+});
+
+jest.mock('@/logging/index', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    resetLogger() {},
+    loadLogger(): Logger {
+      return {
+        debug() {
+          return this;
+        },
+        info() {
+          return this;
+        },
+        warn() {
+          return this;
+        },
+        error() {
+          return this;
+        }
+      } as unknown as Logger;
     }
   };
 });

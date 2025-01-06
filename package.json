@@ -13,6 +13,7 @@
   "types": "built/lib/index.d.ts",
   "author": "Johanna Herrmann",
   "scripts": {
+    "mtest": "cd built && export FILES_CRUD_SERVER__USE_HTTPS=false && node ./lib/index.js",
     "inst": "npm install",
     "audit": "better-npm-audit audit",
     "lint": "eslint **/*.ts",
@@ -69,7 +70,7 @@
     "@aws-sdk/client-s3": "3.678.0",
     "@aws-sdk/lib-dynamodb": "^3.699.0",
     "cors": "^2.8.5",
-    "express": "^4.21.2",
+    "express": "^5.0.1",
     "express-fileupload": "^1.5.1",
     "fs-extra": "^11.2.0",
     "http2-express-autopush": "^1.0.5",

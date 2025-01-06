@@ -17,7 +17,8 @@ import {
   directoryListingMiddleware,
   logAccessMiddleware,
   headerMiddleware,
-  notFoundMiddleware
+  notFoundMiddleware,
+  errorMiddleware
 } from '@/server/middleware';
 import {
   addUserHandler,
@@ -85,33 +86,34 @@ const addUserHandling = function (app: express.Application): void {
 };
 
 const addFileHandling = function (app: express.Application): void {
-  app.post('/file/save/:path*', fileSaveMiddleware, saveFileHandler);
-  app.post('/file/save-meta/:path*', fileSaveMetaMiddleware, saveFileMetaHandler);
+  app.post('/file/save/*path', fileSaveMiddleware, saveFileHandler);
+  app.post('/file/save-meta/*path', fileSaveMetaMiddleware, saveFileMetaHandler);
   app.post('/file/copy', fileCopyMiddleware, copyFileHandler);
   app.post('/file/move', fileMoveMiddleware, moveFileHandler);
-  app.delete('/file/delete/:path*', fileDeleteMiddleware, deleteFileHandler);
-  app.get('/file/load-meta/:path*', fileLoadMetaMiddleware, loadFileMetaHandler);
-  app.get('/file/load-data/:path*', fileLoadDataMiddleware, loadFileDataHandler);
-  app.get('/file/one/:path*', fileLoadMiddleware, loadFileHandler);
-  app.get('/file/list/:path*', directoryListingMiddleware, listDirectoryItemsHandler);
+  app.delete('/file/delete/*path', fileDeleteMiddleware, deleteFileHandler);
+  app.get('/file/load-meta/*path', fileLoadMetaMiddleware, loadFileMetaHandler);
+  app.get('/file/load-data/*path', fileLoadDataMiddleware, loadFileDataHandler);
+  app.get('/file/one/*path', fileLoadMiddleware, loadFileHandler);
+  app.get('/file/list/*path', directoryListingMiddleware, listDirectoryItemsHandler);
 };
 
-const add404Handling = function (app: express.Application): void {
+const addFallbacks = function (app: express.Application): void {
   app.use(notFoundMiddleware);
+  app.use(errorMiddleware);
 };
 
-const buildApp = function (no404Fallback?: boolean): express.Application {
+const buildApp = function (noFallbacks?: boolean): express.Application {
   const config = getConfig();
   const app = config.server?.useHttp2 ? http2Express(express) : express();
   addCommonMiddlewares(app, config);
   addUserHandling(app);
   addFileHandling(app);
 
-  if (no404Fallback) {
+  if (noFallbacks) {
     return app;
   }
 
-  add404Handling(app);
+  addFallbacks(app);
   return app;
 };
 

@@ -1,6 +1,6 @@
 import Request from '@/types/server/Request';
 import express from 'express';
-import { sendError, sendOK } from '@/server/util';
+import { sendError, sendOK, sendUnauthorized } from '@/server/util';
 import {
   addUser,
   changePassword,
@@ -17,6 +17,9 @@ import {
   attemptsExceeded,
   invalidCredentials
 } from '@/user';
+import { loadLogger } from '@/logging';
+
+const logger = loadLogger();
 
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
   const body = req.body;
@@ -28,6 +31,7 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
     return sendError(res, `User ${username} exists already`);
   }
 
+  logger.info('Successfully registered user.', { username });
   sendOK(res, { username });
 };
 
@@ -41,6 +45,7 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
     return sendError(res, `User ${username} exists already`);
   }
 
+  logger.info('Successfully added user.', { username, admin });
   sendOK(res, { username });
 };
 
@@ -54,6 +59,7 @@ const changeUsernameHandler = async function (req: Request, res: express.Respons
     return sendError(res, `There is always a user with name ${newUsername}`);
   }
 
+  logger.info('Successfully changed username.', { username, newUsername });
   sendOK(res, { username: newUsername });
 };
 
@@ -63,6 +69,7 @@ const setAdminStateHandler = async function (req: Request, res: express.Response
 
   await setAdminState(username as string, admin as boolean);
 
+  logger.info('Successfully set admin state.', { username, admin });
   sendOK(res);
 };
 
@@ -73,6 +80,7 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
 
   await saveMeta(username as string, (meta ?? {}) as Record<string, unknown>);
 
+  logger.info('Successfully saved user meta data.', { username, meta });
   sendOK(res);
 };
 
@@ -82,6 +90,7 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
 
   await changePassword(username as string, newPassword as string);
 
+  logger.info('Successfully changed password.', { username });
   sendOK(res);
 };
 
@@ -90,6 +99,7 @@ const deleteUserHandler = async function (req: Request, res: express.Response): 
 
   await deleteUser(username as string);
 
+  logger.info('Successfully removed user.', { username });
   sendOK(res);
 };
 
@@ -98,6 +108,7 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 
   const meta = await loadMeta(username as string);
 
+  logger.info('Successfully loaded user meta data.', { username, meta });
   sendOK(res, { meta });
 };
 
@@ -106,12 +117,15 @@ const getUserHandler = async function (req: Request, res: express.Response): Pro
 
   const user = await getUser(username as string);
 
+  logger.info('Successfully loaded user.', { username });
   sendOK(res, { user });
 };
 
 const getUsersHandler = async function (_: Request, res: express.Response): Promise<void> {
   const users = await getUsers();
 
+  logger.info('Successfully loaded list of users.');
+  logger.debug('Loaded following users.', { users });
   sendOK(res, { users });
 };
 
@@ -122,13 +136,14 @@ const loginHandler = async function (req: Request, res: express.Response): Promi
   const tokenOrError = await login(username as string, password as string);
 
   if (tokenOrError === attemptsExceeded) {
-    return sendError(res, `Login attempts exceeded for username ${username}`);
+    return sendUnauthorized(res, `Login attempts exceeded for username ${username}`);
   }
 
   if (tokenOrError === invalidCredentials) {
-    return sendError(res, 'invalid credentials provided');
+    return sendUnauthorized(res, 'invalid credentials provided');
   }
 
+  logger.info('Successfully logged in user.', { username });
   sendOK(res, { token: tokenOrError });
 };
 

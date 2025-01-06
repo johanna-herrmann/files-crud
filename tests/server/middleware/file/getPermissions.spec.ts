@@ -5,11 +5,35 @@ import Config from '@/types/config/Config';
 import User from '@/types/user/User';
 import FileData from '@/types/storage/FileData';
 import Permissions from '@/types/config/Permissions';
+import { Logger } from '@/logging/Logger';
 
 const ownerPath = `user_${testUser.ownerId}/file`;
 const ownerData = { owner: testUser.ownerId, meta: {}, contentType: '', size: 42 };
 const nullData = { owner: '', meta: {}, contentType: '', size: -1 };
 const admin = { ...testUser, admin: true };
+
+jest.mock('@/logging/index', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    resetLogger() {},
+    loadLogger(): Logger {
+      return {
+        debug() {
+          return this;
+        },
+        info() {
+          return this;
+        },
+        warn() {
+          return this;
+        },
+        error() {
+          return this;
+        }
+      } as unknown as Logger;
+    }
+  };
+});
 
 const runTest = async function (
   config: Config,

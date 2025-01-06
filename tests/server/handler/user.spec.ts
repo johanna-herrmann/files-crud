@@ -1,5 +1,5 @@
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import { assertError, assertOK, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import { assertError, assertOK, assertUnauthorized, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import {
   addUserHandler,
   changePasswordHandler,
@@ -16,6 +16,7 @@ import {
 import { testUser } from '#/testItems';
 import User from '@/types/user/User';
 import { attemptsExceeded, invalidCredentials } from '@/user';
+import { Logger } from '@/logging/Logger';
 
 const username = 'testUser';
 const newUsername = 'newUsername';
@@ -51,6 +52,29 @@ jest.mock('@/user/auth', () => {
         return `token.${username}.${password}`;
       }
       return invalidCredentials;
+    }
+  };
+});
+
+jest.mock('@/logging/index', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    resetLogger() {},
+    loadLogger(): Logger {
+      return {
+        debug() {
+          return this;
+        },
+        info() {
+          return this;
+        },
+        warn() {
+          return this;
+        },
+        error() {
+          return this;
+        }
+      } as unknown as Logger;
     }
   };
 });
@@ -259,7 +283,7 @@ describe('user handlers', (): void => {
 
       await loginHandler(req, res);
 
-      assertError(res, 'invalid credentials provided');
+      assertUnauthorized(undefined, res, 'invalid credentials provided');
     });
 
     test('rejects if attempts exceeded', async (): Promise<void> => {
@@ -268,7 +292,7 @@ describe('user handlers', (): void => {
 
       await loginHandler(req, res);
 
-      assertError(res, 'Login attempts exceeded for username locked');
+      assertUnauthorized(undefined, res, 'Login attempts exceeded for username locked');
     });
   });
 });

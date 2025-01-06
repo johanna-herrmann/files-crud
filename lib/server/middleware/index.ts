@@ -4,6 +4,7 @@ import { fileCopyMoveMiddleware } from './file/copyMove';
 import { logAccessMiddleware } from './access';
 import { headerMiddleware } from '@/server/middleware/header';
 import { notFoundMiddleware } from '@/server/middleware/404';
+import { errorMiddleware } from '@/server/middleware/error';
 
 const fileLoadMiddleware = loadMiddleware;
 const fileLoadMetaMiddleware = loadMiddleware;
@@ -25,5 +26,6 @@ export {
   fileMoveMiddleware,
   logAccessMiddleware,
   headerMiddleware,
-  notFoundMiddleware
+  notFoundMiddleware,
+  errorMiddleware
 };

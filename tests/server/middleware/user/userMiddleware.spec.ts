@@ -4,6 +4,7 @@ import { testUser } from '#/testItems';
 import { assertUnauthorized, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { userMiddleware } from '@/server/middleware';
 import { invalidCredentials } from '@/user';
+import { Logger } from '@/logging/Logger';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;
@@ -23,6 +24,29 @@ jest.mock('@/user/auth', () => {
         return '';
       }
       return invalidCredentials;
+    }
+  };
+});
+
+jest.mock('@/logging/index', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    resetLogger() {},
+    loadLogger(): Logger {
+      return {
+        debug() {
+          return this;
+        },
+        info() {
+          return this;
+        },
+        warn() {
+          return this;
+        },
+        error() {
+          return this;
+        }
+      } as unknown as Logger;
     }
   };
 });
