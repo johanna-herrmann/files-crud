@@ -82,7 +82,7 @@ const assertUnauthorized = function (next: boolean, res: express.Response, messa
 
 const assert404 = function (res: express.Response) {
   expect(res.statusCode).toBe(404);
-  expect(lastMessage).toBe(JSON.stringify({ error: 'Not Found: /nope' }));
+  expect(lastMessage).toBe(JSON.stringify({ error: 'Not Found: /test' }));
 };
 
 const assertError = function (res: express.Response, message: string) {

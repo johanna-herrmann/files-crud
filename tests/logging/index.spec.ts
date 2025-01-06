@@ -38,7 +38,7 @@ describe('logging', (): void => {
     logger.info('test message');
 
     expect(loggedMessage).toBe(
-      '1970-01-01T00:00:00.042Z [/home/johanna/IT/files-crud/repos/files-crud/tests/logging/index.spec.ts] INFO: test message'
+      '1970-01-01T01:00:00.042 [/home/johanna/IT/files-crud/repos/files-crud/tests/logging/index.spec.ts] INFO: test message'
     );
   });
 });

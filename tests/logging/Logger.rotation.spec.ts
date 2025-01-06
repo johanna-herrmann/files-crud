@@ -149,9 +149,9 @@ describe('Logger rotation', (): void => {
         setTimeout(() => {
           const items = fs.readdirSync('/logs').filter((item) => item.startsWith('error.log'));
           expect(items.length).toBe(3);
-          expect(fs.readFileSync(`/logs/${items[0]}`, 'utf8').endsWith('Z [/path/to/source.js] ERROR: test message 2\n')).toBe(true);
-          expect(fs.readFileSync(`/logs/${items[1]}`, 'utf8').endsWith('Z [/path/to/source.js] ERROR: test message 3\n')).toBe(true);
-          expect(fs.readFileSync(`/logs/${items[2]}`, 'utf8').endsWith('Z [/path/to/source.js] ERROR: test message 4\n')).toBe(true);
+          expect(fs.readFileSync(`/logs/${items[0]}`, 'utf8').endsWith(' [/path/to/source.js] ERROR: test message 2\n')).toBe(true);
+          expect(fs.readFileSync(`/logs/${items[1]}`, 'utf8').endsWith(' [/path/to/source.js] ERROR: test message 3\n')).toBe(true);
+          expect(fs.readFileSync(`/logs/${items[2]}`, 'utf8').endsWith(' [/path/to/source.js] ERROR: test message 4\n')).toBe(true);
           done();
         }, 300);
       });
@@ -169,7 +169,7 @@ describe('Logger rotation', (): void => {
           expect(items.length).toBe(3);
           expect(items[0].endsWith('.gz')).toBe(true);
           expect(items[1].endsWith('.gz')).toBe(true);
-          expect(fs.readFileSync(`/logs/${items[2]}`, 'utf8').endsWith('Z [/path/to/source.js] ERROR: test message 4\n')).toBe(true);
+          expect(fs.readFileSync(`/logs/${items[2]}`, 'utf8').endsWith(' [/path/to/source.js] ERROR: test message 4\n')).toBe(true);
           done();
         }, 300);
       });

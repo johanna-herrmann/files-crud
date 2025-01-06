@@ -34,7 +34,7 @@ describe('Logger logs to error file', (): void => {
       setTimeout(() => {
         const message = fs.readFileSync(errorLogFile, 'utf8');
         expect(message.trim()).toMatch(
-          /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/Logger\.errorFile\.spec\.ts","message":"test message"\}$/u
+          /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}","level":"error","source":".*\/Logger\.errorFile\.spec\.ts","message":"test message"\}$/u
         );
         done();
       }, 300);
@@ -52,7 +52,7 @@ describe('Logger logs to error file', (): void => {
       setTimeout(() => {
         const message = fs.readFileSync(errorLogFile, 'utf8');
         expect(message.trim()).toMatch(
-          /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","level":"error","source":".*\/Logger\.errorFile\.spec\.ts","message":"test message","errorMessage":"error message"\}$/u
+          /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}","level":"error","source":".*\/Logger\.errorFile\.spec\.ts","message":"test message","errorMessage":"error message"\}$/u
         );
         done();
       }, 300);

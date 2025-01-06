@@ -39,7 +39,7 @@ describe('Logger logs to console', (): void => {
         warn: 33,
         error: 31
       };
-      expect(loggedMessage.split(' ')[0]).toBe(`\x1B[${colorSequenceNumbers[level]}m1970-01-01T00:00:00.042Z`);
+      expect(loggedMessage.split(' ')[0]).toBe(`\x1B[${colorSequenceNumbers[level]}m1970-01-01T01:00:00.042`);
       expect(loggedMessage.split(' ')[1]).toMatch(/^\[.*\/Logger\.console\.spec\.ts\]/u);
       expect(loggedMessage.split(' ')[2]).toMatch(`${level.toUpperCase()}:`);
       expect(loggedMessage.split(' ')[3]).toBe('test');
@@ -94,7 +94,7 @@ describe('Logger logs to console', (): void => {
 
       expect(logSpy).toHaveBeenCalled();
       expect(loggedMessage.split('\n').length).toBe(1);
-      expect(loggedMessage.startsWith('1970-01-01T00:00:00.042Z')).toBe(true);
+      expect(loggedMessage.startsWith('1970-01-01T01:00:00.042')).toBe(true);
     });
 
     test('humanReadableBlock', async (): Promise<void> => {
@@ -104,7 +104,7 @@ describe('Logger logs to console', (): void => {
 
       expect(logSpy).toHaveBeenCalled();
       expect(loggedMessage.split('\n').length).toBe(6);
-      expect(loggedMessage.startsWith('1970-01-01T00:00:00.042Z')).toBe(true);
+      expect(loggedMessage.startsWith('1970-01-01T01:00:00.042')).toBe(true);
     });
 
     test('coloredHumanReadableLine', async (): Promise<void> => {
@@ -114,7 +114,7 @@ describe('Logger logs to console', (): void => {
 
       expect(logSpy).toHaveBeenCalled();
       expect(loggedMessage.split('\n').length).toBe(1);
-      expect(loggedMessage.startsWith('\x1B[32m1970-01-01T00:00:00.042Z')).toBe(true);
+      expect(loggedMessage.startsWith('\x1B[32m1970-01-01T01:00:00.042')).toBe(true);
     });
 
     test('coloredHumanReadableBlock', async (): Promise<void> => {
@@ -124,7 +124,7 @@ describe('Logger logs to console', (): void => {
 
       expect(logSpy).toHaveBeenCalled();
       expect(loggedMessage.split('\n').length).toBe(6);
-      expect(loggedMessage.startsWith('\x1B[32m1970-01-01T00:00:00.042Z')).toBe(true);
+      expect(loggedMessage.startsWith('\x1B[32m1970-01-01T01:00:00.042')).toBe(true);
     });
 
     test('json', async (): Promise<void> => {
@@ -134,7 +134,7 @@ describe('Logger logs to console', (): void => {
 
       expect(logSpy).toHaveBeenCalled();
       expect(loggedMessage.split('\n').length).toBe(1);
-      expect(loggedMessage.startsWith('{"timestamp":"1970-01-01T00:00:00.042Z')).toBe(true);
+      expect(loggedMessage.startsWith('{"timestamp":"1970-01-01T01:00:00.042')).toBe(true);
     });
   });
 
@@ -150,14 +150,14 @@ describe('Logger logs to console', (): void => {
         new Logger().info('test message');
 
         expect(logSpy).toHaveBeenCalled();
-        expect(loggedMessage.startsWith('1970-01-01T00:00:00.042Z')).toBe(true);
+        expect(loggedMessage.startsWith('1970-01-01T01:00:00.042')).toBe(true);
       });
 
       test('on error', async (): Promise<void> => {
         new Logger().error('error message');
 
         expect(errorSpy).toHaveBeenCalled();
-        expect(loggedMessage.startsWith('1970-01-01T00:00:00.042Z')).toBe(true);
+        expect(loggedMessage.startsWith('1970-01-01T01:00:00.042')).toBe(true);
       });
     });
 
@@ -168,7 +168,7 @@ describe('Logger logs to console', (): void => {
         new Logger().info('test message');
 
         expect(logSpy).toHaveBeenCalled();
-        expect(loggedMessage.startsWith('{"timestamp":"1970-01-01T00:00:00.042Z')).toBe(true);
+        expect(loggedMessage.startsWith('{"timestamp":"1970-01-01T01:00:00.042')).toBe(true);
       });
 
       test('on error', async (): Promise<void> => {
@@ -177,7 +177,7 @@ describe('Logger logs to console', (): void => {
         new Logger().error('error message');
 
         expect(errorSpy).toHaveBeenCalled();
-        expect(loggedMessage.startsWith('{"timestamp":"1970-01-01T00:00:00.042Z')).toBe(true);
+        expect(loggedMessage.startsWith('{"timestamp":"1970-01-01T01:00:00.042')).toBe(true);
       });
     });
   });

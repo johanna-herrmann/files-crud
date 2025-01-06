@@ -1,5 +1,6 @@
 import fs from 'fs';
 import yaml from 'yaml';
+import { readEnv } from 'read-env';
 import Config from './types/config/Config';
 
 const config: Config = {};
@@ -22,11 +23,30 @@ const getConfigFromFile = function (): Record<string, unknown> {
   return JSON.parse(configString) as Record<string, unknown>;
 };
 
+const getConfigFromEnv = function (): Record<string, unknown> {
+  return readEnv('FILES_CRUD');
+};
+
+const mergeConfigs = function (fileConfig: Record<string, unknown>, envConfig: Record<string, unknown>): void {
+  Object.entries(envConfig).forEach(([key, value]) => {
+    if (!!value && typeof value === 'object' && !('push' in value)) {
+      if (!fileConfig[key]) {
+        fileConfig[key] = {};
+      }
+      return mergeConfigs(fileConfig[key] as Record<string, unknown>, envConfig[key] as Record<string, unknown>);
+    }
+    fileConfig[key] = value;
+  });
+};
+
 const getNewConfig = function (config_?: Config): Record<string, unknown> {
   if (config_) {
     return config_ as Record<string, unknown>;
   }
-  return getConfigFromFile();
+  const config = getConfigFromFile();
+  const envConfig = getConfigFromEnv();
+  mergeConfigs(config, envConfig);
+  return config;
 };
 
 const loadConfig = function (config_?: Config) {
