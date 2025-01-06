@@ -67,7 +67,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.699.0",
     "@aws-sdk/client-s3": "3.678.0",
-    "@aws-sdk/lib-dynamodb": "^3.699.0",
+    "@aws-sdk/lib-dynamodb": "^3.721.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "express-fileupload": "^1.5.1",
