@@ -2,14 +2,15 @@ import Request from '@/types/server/Request';
 import express from 'express';
 import { authorize } from '@/user';
 import { getToken, resolvePath, sendUnauthorized } from '@/server/util';
-import User from '@/types/user/User';
-import Permissions from '@/types/config/Permissions';
-import Right from '@/types/config/Right';
 import { loadStorage } from '@/storage';
 import { Storage } from '@/storage/Storage';
 import { getPermissions } from '@/server/middleware/file/permissions';
+import User from '@/types/user/User';
+import Permissions from '@/types/config/Permissions';
+import Right from '@/types/config/Right';
+import FileData from '@/types/storage/FileData';
 
-const nullData = { owner: '', meta: {}, contentType: '', size: -1 };
+const nullData: FileData = { owner: '', meta: {}, contentType: '', size: -1, md5: '0'.repeat(32) };
 
 const ensureRights = function (permissions: Permissions, rights: Right[], path: string, res: express.Response): boolean {
   for (const right of rights) {

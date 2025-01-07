@@ -11,10 +11,11 @@ const logger = loadLogger();
 const saveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const storage = loadStorage();
   const path = resolvePath(req);
-  const { data, mimetype } = (req as UploadRequest).files.file;
+  const { data, mimetype, md5 } = (req as UploadRequest).files.file;
   const fileData = {
     contentType: mimetype,
     size: data.length,
+    md5,
     owner: req.body.username as string,
     meta: {}
   };

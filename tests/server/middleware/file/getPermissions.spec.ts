@@ -8,8 +8,8 @@ import Permissions from '@/types/config/Permissions';
 import { Logger } from '@/logging/Logger';
 
 const ownerPath = `user_${testUser.ownerId}/file`;
-const ownerData = { owner: testUser.ownerId, meta: {}, contentType: '', size: 42 };
-const nullData = { owner: '', meta: {}, contentType: '', size: -1 };
+const ownerData = { owner: testUser.ownerId, meta: {}, contentType: '', size: 42, md5: '0'.repeat(32) };
+const nullData: FileData = { owner: '', meta: {}, contentType: '', size: -1, md5: '' };
 const admin = { ...testUser, admin: true };
 
 jest.mock('@/logging/index', () => {

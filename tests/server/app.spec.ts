@@ -1,13 +1,14 @@
-import Request from '@/types/server/Request';
 import express from 'express';
 import request from 'supertest';
 import paths from 'path';
 import fs from 'fs/promises';
+import crypto from 'crypto';
 import { buildApp } from '@/server/app';
 import { loadConfig } from '@/config';
 import { Logger } from '@/logging/Logger';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
 import UploadRequest from '@/types/server/UploadRequest';
+import Request from '@/types/server/Request';
 
 type Middleware = (_: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
 type ErrorMiddleware = (err: Error, _: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
@@ -193,8 +194,8 @@ describe('app', (): void => {
     test('handles file upload correctly', async (): Promise<void> => {
       const app = buildApp(true);
       app.post('/upload', (req: Request, res: express.Response) => {
-        const { data, mimetype } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
-        res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64') });
+        const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
+        res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
       });
       const content = (await fs.readFile(__filename)).subarray(0, 16).toString('base64');
 
@@ -203,6 +204,13 @@ describe('app', (): void => {
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
       expect(response.body.content).toBe(content);
+      expect(response.body.md5).toBe(
+        crypto
+          .createHash('md5')
+          .update(await fs.readFile(__filename))
+          .digest()
+          .toString('hex')
+      );
       expect(response.body.mimetype).toBe('video/mp2t');
     });
   });
