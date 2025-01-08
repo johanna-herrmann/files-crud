@@ -1,4 +1,4 @@
-import { Logger } from '@/logging/Logger';
+import { Logger, setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import mockFS from 'mock-fs';
 import fs from 'fs';
 import paths from 'path';
@@ -17,15 +17,21 @@ const referer = 'http://i.am.from/here';
 const userAgent = 'testUserAgent';
 const time = 23;
 
+let logSpy: jest.Spied<typeof console.log>;
+
 describe('Access logger', (): void => {
   beforeEach(async (): Promise<void> => {
     loadConfig({ logging: { enableErrorFileLogging: false, accessLogFile, enableLogFileRotation: false } });
     mockFS({ [path]: mockFS.load(path, { recursive: true }), '/logs': {} });
+    setConsoleTest();
+    logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(async (): Promise<void> => {
     loadConfig();
     mockFS.restore();
+    unsetConsoleTest();
+    logSpy?.mockRestore();
   });
 
   test('with default format', (done): void => {

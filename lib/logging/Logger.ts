@@ -8,6 +8,7 @@ import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequenc
 import LoggingFormat from '@/types/config/LoggingFormat';
 import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
+import paths from 'path';
 
 const { combine, timestamp, printf } = format;
 
@@ -68,7 +69,8 @@ class Logger {
       maxFiles: this.rotationMaxFiles,
       createSymlink: true,
       filename: `${path}.%DATE%`,
-      symlinkName: path
+      symlinkName: path,
+      auditFile: paths.join(paths.dirname(path), `.${paths.basename(path)}-audit.json`)
     };
   }
 

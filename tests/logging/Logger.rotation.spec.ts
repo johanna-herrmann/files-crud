@@ -170,6 +170,7 @@ describe('Logger rotation', (): void => {
           expect(items[0].endsWith('.gz')).toBe(true);
           expect(items[1].endsWith('.gz')).toBe(true);
           expect(fs.readFileSync(`/logs/${items[2]}`, 'utf8').endsWith(' [/path/to/source.js] ERROR: test message 4\n')).toBe(true);
+          expect(fs.existsSync('/logs/.error.log-audit.json')).toBe(true);
           done();
         }, 300);
       });
