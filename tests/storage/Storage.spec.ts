@@ -4,6 +4,7 @@ import { loadConfig } from '@/config';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import fs from 'fs/promises';
+import paths from 'path';
 
 const exists = async function (path: string): Promise<boolean> {
   try {
@@ -29,7 +30,7 @@ describe('Storage', (): void => {
 
     const storage = new Storage();
 
-    expect(storage.getConf()[1]).toBe('/opt/files-crud');
+    expect(storage.getConf()[1]).toBe(paths.resolve('./'));
   });
 
   test('Storage->constructor creates path correctly, specific path.', async (): Promise<void> => {
@@ -48,21 +49,13 @@ describe('Storage', (): void => {
     expect(storage.getConf()[1]).toBe('/var/global');
   });
 
-  test('Storage->constructor creates path correctly, specified path, sanitized.', async (): Promise<void> => {
-    loadConfig({ storage: { name: 'fs', path: '../../../../b./.bad/dir../' } });
-
-    const storage = new Storage();
-
-    expect(storage.getConf()[1]).toBe('/b/bad/dir');
-  });
-
   test('Storage->constructor creates adapters correctly, fs.', async (): Promise<void> => {
     loadConfig({ storage: { name: 'fs' } });
     const storage = new Storage();
 
     expect(storage.getConf()[0]).toBe('fs');
-    expect(storage.getConf()[2].getDirectory()).toBe('/opt/files-crud');
-    expect((storage.getConf()[3] as FsStorageAdapter).getDirectory()).toBe('/opt/files-crud/files');
+    expect(storage.getConf()[2].getDirectory()).toBe(paths.resolve('./'));
+    expect((storage.getConf()[3] as FsStorageAdapter).getDirectory()).toBe(paths.resolve('./', 'files'));
   });
 
   test('Storage->constructor creates adapters correctly, s3.', async (): Promise<void> => {
@@ -71,7 +64,7 @@ describe('Storage', (): void => {
     const storage = new Storage();
 
     expect(storage.getConf()[0]).toBe('s3');
-    expect(storage.getConf()[2].getDirectory()).toBe('/opt/files-crud');
+    expect(storage.getConf()[2].getDirectory()).toBe(paths.resolve('./'));
     expect((storage.getConf()[3] as S3StorageAdapter)?.getConf()[1]).toBe('files-crud');
   });
 

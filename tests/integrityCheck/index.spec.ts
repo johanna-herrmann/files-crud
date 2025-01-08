@@ -41,10 +41,8 @@ describe('integrityCheck', (): void => {
     const dataFile2: FileData = { md5: 'ad0234829205b9033196ba818f7a872b', owner: '', contentType: '', size: 0, meta: {} };
     const dataFileSub: FileData = { md5: '0'.repeat(32), owner: '', contentType: '', size: 0, meta: {} };
     mockFS({
-      '/opt/files-crud/': {
-        files: { dir: { file: 'test', file2: 'test2', subDir: { subFile: 'subTest', error: '' } } },
-        data: { 'dir~file': JSON.stringify(dataFile), 'dir~file2': JSON.stringify(dataFile2), 'dir~subDir~subFile': JSON.stringify(dataFileSub) }
-      }
+      './files': { dir: { file: 'test', file2: 'test2', subDir: { subFile: 'subTest', error: '' } } },
+      './data': { 'dir~file': JSON.stringify(dataFile), 'dir~file2': JSON.stringify(dataFile2), 'dir~subDir~subFile': JSON.stringify(dataFileSub) }
     });
     outSpy = jest.spyOn(stdout, 'write').mockImplementation((message: string | Uint8Array): boolean => {
       printings.push(message);

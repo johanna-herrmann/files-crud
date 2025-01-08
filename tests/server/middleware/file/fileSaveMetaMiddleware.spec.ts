@@ -64,10 +64,8 @@ describe('fileSaveMetaMiddleware', () => {
       const passesIfUpdatePermissionIsGiven = async function (level: string, token: string, owner: string, directory: string) {
         loadConfig({ defaultPermissions: { [level]: { update: true } } });
         mockFS({
-          '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
-          }
+          './files': { [directory]: { file: '' } },
+          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
         let next = false;
         const req = buildRequestForFileAction(token, 'save-meta', `${directory}/file`, {});
@@ -116,10 +114,8 @@ describe('fileSaveMetaMiddleware', () => {
         const req = buildRequestForFileAction(token, 'save-meta', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
-          '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
-          }
+          './files': { [directory]: { file: '' } },
+          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
 
         await fileSaveMiddleware(req, res, () => (next = true));

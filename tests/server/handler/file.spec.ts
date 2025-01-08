@@ -59,10 +59,8 @@ jest.mock('@/logging/index', () => {
 
 const buildFSMock = function (files: DirectoryItem, data: DirectoryItem): void {
   mockFS({
-    '/opt/files-crud': {
-      files,
-      data
-    }
+    './files': files,
+    './data': data
   });
 };
 
@@ -115,10 +113,10 @@ describe('file handlers', (): void => {
 
       await saveHandler(req, res);
 
-      expect(await exists('/opt/files-crud/files/dir/file')).toBe(true);
-      expect(await exists('/opt/files-crud/data/dir~file')).toBe(true);
-      expect(await fs.readFile('/opt/files-crud/files/dir/file', 'utf8')).toBe('test content');
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/dir~file', 'utf8'))).toEqual(data);
+      expect(await exists('./files/dir/file')).toBe(true);
+      expect(await exists('./data/dir~file')).toBe(true);
+      expect(await fs.readFile('./files/dir/file', 'utf8')).toBe('test content');
+      expect(JSON.parse(await fs.readFile('./data/dir~file', 'utf8'))).toEqual(data);
       assertOK(res, { path: 'dir/file' });
     });
   });
@@ -186,7 +184,7 @@ describe('file handlers', (): void => {
 
       await saveMetaHandler(req, res);
 
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/dir~file', 'utf8'))).toEqual(data);
+      expect(JSON.parse(await fs.readFile('./data/dir~file', 'utf8'))).toEqual(data);
       assertOK(res);
     });
 
@@ -254,12 +252,12 @@ describe('file handlers', (): void => {
 
       await copyHandler(req, res);
 
-      expect(await exists('/opt/files-crud/files/dir/file')).toBe(true);
-      expect(await exists('/opt/files-crud/data/dir~file')).toBe(true);
-      expect(await exists('/opt/files-crud/files/c/copy')).toBe(true);
-      expect(await exists('/opt/files-crud/data/c~copy')).toBe(true);
-      expect(await fs.readFile('/opt/files-crud/files/c/copy', 'utf8')).toBe('test content');
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/c~copy', 'utf8'))).toEqual({
+      expect(await exists('./files/dir/file')).toBe(true);
+      expect(await exists('./data/dir~file')).toBe(true);
+      expect(await exists('./files/c/copy')).toBe(true);
+      expect(await exists('./data/c~copy')).toBe(true);
+      expect(await fs.readFile('./files/c/copy', 'utf8')).toBe('test content');
+      expect(JSON.parse(await fs.readFile('./data/c~copy', 'utf8'))).toEqual({
         owner: 'new',
         contentType: 'text/plain',
         meta: { k: 'v' }
@@ -277,7 +275,7 @@ describe('file handlers', (): void => {
 
       await copyHandler(req, res);
 
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/c~copy', 'utf8'))).toEqual({
+      expect(JSON.parse(await fs.readFile('./data/c~copy', 'utf8'))).toEqual({
         owner: testUser.username,
         contentType: 'text/plain',
         meta: { k: 'v' }
@@ -306,12 +304,12 @@ describe('file handlers', (): void => {
 
       await moveHandler(req, res);
 
-      expect(await exists('/opt/files-crud/files/dir/file')).toBe(false);
-      expect(await exists('/opt/files-crud/data/dir~file')).toBe(false);
-      expect(await exists('/opt/files-crud/files/m/move')).toBe(true);
-      expect(await exists('/opt/files-crud/data/m~move')).toBe(true);
-      expect(await fs.readFile('/opt/files-crud/files/m/move', 'utf8')).toBe('test content');
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/m~move', 'utf8'))).toEqual({
+      expect(await exists('./files/dir/file')).toBe(false);
+      expect(await exists('./data/dir~file')).toBe(false);
+      expect(await exists('./files/m/move')).toBe(true);
+      expect(await exists('./data/m~move')).toBe(true);
+      expect(await fs.readFile('./files/m/move', 'utf8')).toBe('test content');
+      expect(JSON.parse(await fs.readFile('./data/m~move', 'utf8'))).toEqual({
         owner: 'new',
         contentType: 'text/plain',
         meta: { k: 'v' }
@@ -329,7 +327,7 @@ describe('file handlers', (): void => {
 
       await moveHandler(req, res);
 
-      expect(JSON.parse(await fs.readFile('/opt/files-crud/data/m~move', 'utf8'))).toEqual({
+      expect(JSON.parse(await fs.readFile('./data/m~move', 'utf8'))).toEqual({
         owner: testUser.username,
         contentType: 'text/plain',
         meta: { k: 'v' }
@@ -358,8 +356,8 @@ describe('file handlers', (): void => {
 
       await deleteHandler(req, res);
 
-      expect(await exists('/opt/files-crud/files/dir/file')).toBe(false);
-      expect(await exists('/opt/files-crud/data/dir~file')).toBe(false);
+      expect(await exists('./files/dir/file')).toBe(false);
+      expect(await exists('./data/dir~file')).toBe(false);
       assertOK(res);
     });
 

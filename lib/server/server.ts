@@ -55,8 +55,8 @@ const startHttpServer = function (host: string, port: number, webRoot: string | 
 const startHttpsServer = function (host: string, port: number, webRoot: string | undefined, start: number): void {
   startRedirectingServer(host, port);
   const config = getConfig();
-  const sslKeyPath = config.server?.sslKeyPath ?? '/opt/files-crud/privateKey.pem';
-  const sslCertPath = config.server?.sslCertPath ?? '/opt/files-crud/certificate.pem';
+  const sslKeyPath = config.server?.sslKeyPath ?? './privateKey.pem';
+  const sslCertPath = config.server?.sslCertPath ?? './certificate.pem';
   const key = fs.readFileSync(sslKeyPath, 'utf8');
   const cert = fs.readFileSync(sslCertPath, 'utf8');
   const app = buildApp();

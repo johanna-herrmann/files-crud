@@ -123,7 +123,8 @@ describe('startServer', (): void => {
 
     beforeEach(async (): Promise<void> => {
       mockFS({
-        '/opt/files-crud': { 'privateKey.pem': key, 'certificate.pem': cert },
+        './privateKey.pem': key,
+        './certificate.pem': cert,
         '/etc/ssl-conf/files-crud': { 'key.pem': key, 'cert.pem': cert }
       });
       httpsSpy = jest.spyOn(https, 'createServer').mockImplementation(
@@ -198,7 +199,8 @@ describe('startServer', (): void => {
 
     beforeEach(async (): Promise<void> => {
       mockFS({
-        '/opt/files-crud': { 'privateKey.pem': key, 'certificate.pem': cert },
+        './privateKey.pem': key,
+        './certificate.pem': cert,
         '/etc/ssl-conf/files-crud': { 'key.pem': key, 'cert.pem': cert }
       });
       http2Spy = jest.spyOn(http2, 'createSecureServer').mockImplementation(

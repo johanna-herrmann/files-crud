@@ -1,6 +1,7 @@
 import { loadStorage, resetStorage } from '@/storage';
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config';
+import paths from 'path';
 
 describe('storage', (): void => {
   afterEach(async (): Promise<void> => {
@@ -13,6 +14,6 @@ describe('storage', (): void => {
 
     const storage = loadStorage();
 
-    expect(storage.getConf()[1]).toBe('/opt/files-crud');
+    expect(storage.getConf()[1]).toBe(paths.resolve('./'));
   });
 });

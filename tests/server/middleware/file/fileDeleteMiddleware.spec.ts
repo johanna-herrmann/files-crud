@@ -64,10 +64,8 @@ describe('fileDeleteMiddleware', () => {
       const passesIfDeletePermissionIsGiven = async function (level: string, token: string, owner: string, directory: string) {
         loadConfig({ defaultPermissions: { [level]: { delete: true } } });
         mockFS({
-          '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
-          }
+          './files': { [directory]: { file: '' } },
+          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
         let next = false;
         const req = buildRequestForFileAction(token, 'delete', `${directory}/file`, {});

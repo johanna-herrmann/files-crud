@@ -116,10 +116,8 @@ describe('loadMiddleware', () => {
         const req = buildRequestForFileAction(token, 'load', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
-          '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
-          }
+          './files': { [directory]: { file: '' } },
+          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
 
         await loadMiddleware(req, res, () => (next = true));
