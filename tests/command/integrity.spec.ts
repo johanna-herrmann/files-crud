@@ -1,6 +1,6 @@
 import mockFS from 'mock-fs';
 import FileData from '@/types/storage/FileData';
-import { checkIntegrity } from '@/integrityCheck';
+import { checkIntegrity } from '@/command/integrity';
 
 const RED_START = '\x1B[31m';
 const GREEN_START = '\x1B[32m';
@@ -105,7 +105,7 @@ describe('integrityCheck', (): void => {
         .split('\n')
         .map((line) => `${RED_START}${line}${END}`)
         .join('\n') + '\n',
-      `${RED_START}Check failed due to error${END}\n`
+      `${RED_START}Failed due to error${END}\n`
     ]);
     expect(channels).toEqual(['out', 'err', 'out']);
   });

@@ -1,5 +1,5 @@
 import { Logger } from '@/logging/Logger';
-import { start } from '@/start';
+import { start } from '@/command/start';
 
 let mocked_startTime = 0;
 let mocked_configLoaded = false;
@@ -21,7 +21,7 @@ jest.mock('@/config', () => {
   };
 });
 
-jest.mock('@/logging/index', () => {
+jest.mock('@/logging', () => {
   // noinspection JSUnusedGlobalSymbols
   return {
     resetLogger() {},

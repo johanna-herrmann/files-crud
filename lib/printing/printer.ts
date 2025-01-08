@@ -51,7 +51,7 @@ class Printer {
   }
 
   public printFailed(): Printer {
-    process.stdout.write(`${red('Check failed due to error')}\n`);
+    process.stdout.write(`${red('Failed due to error')}\n`);
     return this;
   }
 }
