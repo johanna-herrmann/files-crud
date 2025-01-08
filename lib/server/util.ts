@@ -35,7 +35,7 @@ const sendError = function (res: express.Response, message: string, error?: Erro
   const fullMessage = `Error. ${message.replace(/\.$/, '')}.`;
   logger.error(fullMessage, error, { statusCode });
   if (!!error) {
-    logger.debug('Details about previous error.', { stack: error.stack });
+    logger.debug(`Details about previous error:\n${JSON.stringify(error.stack).replace(/"/g, '').replace(/\\n/g, '\n')}`);
   }
   res.json({ error: fullMessage });
 };
