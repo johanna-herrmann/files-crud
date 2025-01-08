@@ -48,6 +48,19 @@ import Config from '@/types/config/Config';
 const FILE_SIZE_LIMIT = 1024 * 1024 * 100; // 100 MiB;
 const TIMEOUT = 15 * 1000; // 15 seconds;
 
+const parseSizeLimit = function (input: string | number): number {
+  if (typeof input === 'number') {
+    return input;
+  }
+  const lastChar = input.charAt(input.length - 1);
+  if (/\d/.test(lastChar)) {
+    return Number(input);
+  }
+  const number = Number(input.substring(0, input.length - 1));
+  const units = ['k', 'm', 'g', 't', 'p', 'e'];
+  return number * 1024 ** (units.indexOf(lastChar.toLowerCase()) + 1);
+};
+
 const addCommonMiddlewares = function (app: express.Application, config: Config) {
   app.use(headerMiddleware);
   if (!!config.server?.cors) {
@@ -63,7 +76,7 @@ const addCommonMiddlewares = function (app: express.Application, config: Config)
     fileUpload({
       abortOnLimit: true,
       responseOnLimit: `uploaded file is to big. Limit: 100 MiB`,
-      limits: { fileSize: FILE_SIZE_LIMIT },
+      limits: { fileSize: parseSizeLimit(config.server?.fileSiteLimit ?? FILE_SIZE_LIMIT) },
       uploadTimeout: TIMEOUT
     })
   );
@@ -117,4 +130,4 @@ const buildApp = function (noFallbacks?: boolean): express.Application {
   return app;
 };
 
-export { buildApp };
+export { buildApp, parseSizeLimit };

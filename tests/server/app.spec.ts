@@ -3,7 +3,7 @@ import request from 'supertest';
 import paths from 'path';
 import fs from 'fs/promises';
 import crypto from 'crypto';
-import { buildApp } from '@/server/app';
+import { buildApp, parseSizeLimit } from '@/server/app';
 import { loadConfig } from '@/config';
 import { Logger } from '@/logging/Logger';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
@@ -87,7 +87,7 @@ jest.mock('@/server/handler', () => {
   return mock;
 });
 
-describe('app', (): void => {
+describe('app->buildApp', (): void => {
   afterEach(async (): Promise<void> => {
     loadConfig();
     mocked_lastLogEntry = null;
@@ -191,7 +191,7 @@ describe('app', (): void => {
       expect(response.statusCode).toEqual(404);
     });
 
-    test('handles file upload correctly', async (): Promise<void> => {
+    test('handles file upload correctly, limit not exceeded', async (): Promise<void> => {
       const app = buildApp(true);
       app.post('/upload', (req: Request, res: express.Response) => {
         const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
@@ -212,6 +212,32 @@ describe('app', (): void => {
           .toString('hex')
       );
       expect(response.body.mimetype).toBe('video/mp2t');
+    });
+
+    test('handles file upload correctly, limit exceeded, 10 bytes', async (): Promise<void> => {
+      loadConfig({ server: { fileSiteLimit: 10 } });
+      const app = buildApp(true);
+      app.post('/upload', (req: Request, res: express.Response) => {
+        const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
+        res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
+      });
+
+      const response = await request(app).post('/upload').attach('file', __filename);
+
+      expect(response.statusCode).toBe(413);
+    });
+
+    test('handles file upload correctly, limit exceeded, 1k', async (): Promise<void> => {
+      loadConfig({ server: { fileSiteLimit: 10 } });
+      const app = buildApp(true);
+      app.post('/upload', (req: Request, res: express.Response) => {
+        const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
+        res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
+      });
+
+      const response = await request(app).post('/upload').attach('file', __filename);
+
+      expect(response.statusCode).toBe(413);
     });
   });
 
@@ -421,5 +447,61 @@ describe('app', (): void => {
       expect(response.statusCode).toBe(500);
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler', 'errorMiddleware']);
     });
+  });
+});
+
+describe('app->parseSizeLimit', (): void => {
+  test('parses real number correctly', async (): Promise<void> => {
+    const result = parseSizeLimit(42);
+
+    expect(result).toBe(42);
+  });
+
+  test('parses string-number correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('1234');
+
+    expect(result).toBe(1234);
+  });
+
+  test('parses ...k correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('12k');
+
+    expect(result).toBe(12 * 1024);
+  });
+
+  test('parses ...m correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('12m');
+
+    expect(result).toBe(12 * 1024 * 1024);
+  });
+
+  test('parses ...g correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('12g');
+
+    expect(result).toBe(12 * 1024 * 1024 * 1024);
+  });
+
+  test('parses ...t correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('12t');
+
+    expect(result).toBe(12 * 1024 * 1024 * 1024 * 1024);
+  });
+
+  test('parses ...p correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('12p');
+
+    expect(result).toBe(12 * 1024 * 1024 * 1024 * 1024 * 1024);
+  });
+
+  test('parses ...e correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('12e');
+
+    expect(result).toBe(12 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024);
+  });
+
+  test('parses ...G (uppercase) correctly', async (): Promise<void> => {
+    const result = parseSizeLimit('12G');
+
+    expect(result).toBe(12 * 1024 * 1024 * 1024);
   });
 });

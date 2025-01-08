@@ -21,8 +21,7 @@ const DATE_PATTERNS: Record<LogFileRotationFrequencyUnit, string> = {
 };
 
 const formatNumber = function (value: number, digits: number): string {
-  const padded = `${'0'.repeat(digits)}${value}`;
-  return padded.substring(padded.length - digits);
+  return (value + '').padStart(digits, '0');
 };
 
 const dateFormatter = function (): string {

@@ -10,6 +10,7 @@ interface ServerConfig {
   hsts?: boolean;
   noRobots?: boolean;
   cors?: CorsConfig;
+  fileSiteLimit?: string | number;
 }
 
 export default ServerConfig;
