@@ -6,10 +6,9 @@ let logSpy: jest.Spied<typeof console.log>;
 let errorSpy: jest.Spied<typeof console.error>;
 let loggedMessage = '';
 
-const error = new Error('test error message');
 const meta = { k: 'v' };
 
-describe('Logger, error and meta', (): void => {
+describe('Logger, meta', (): void => {
   beforeEach(async (): Promise<void> => {
     loadConfig({ logging: { enableErrorFileLogging: false, enableAccessLogging: false, ttyLoggingFormat: 'json' } });
     setConsoleTest();
@@ -50,7 +49,7 @@ describe('Logger, error and meta', (): void => {
     expect((JSON.parse(loggedMessage) as Record<string, string>).meta).toEqual(meta);
   });
 
-  test('logs on error, without error, without meta', async (): Promise<void> => {
+  test('logs on error, without meta', async (): Promise<void> => {
     new Logger().error('testMessage');
 
     expect(errorSpy).toHaveBeenCalled();
@@ -58,27 +57,11 @@ describe('Logger, error and meta', (): void => {
     expect((JSON.parse(loggedMessage) as Record<string, string>).meta).toBeUndefined();
   });
 
-  test('logs on error, without error, with meta', async (): Promise<void> => {
-    new Logger().error('testMessage', undefined, meta);
+  test('logs on error, with meta', async (): Promise<void> => {
+    new Logger().error('testMessage', meta);
 
     expect(errorSpy).toHaveBeenCalled();
     expect((JSON.parse(loggedMessage) as Record<string, string>).errorMessage).toBeUndefined();
-    expect((JSON.parse(loggedMessage) as Record<string, string>).meta).toEqual(meta);
-  });
-
-  test('logs on error, with error, without meta', async (): Promise<void> => {
-    new Logger().error('testMessage', error);
-
-    expect(errorSpy).toHaveBeenCalled();
-    expect((JSON.parse(loggedMessage) as Record<string, string>).errorMessage).toBe(error.message);
-    expect((JSON.parse(loggedMessage) as Record<string, string>).meta).toBeUndefined();
-  });
-
-  test('logs on error, with error, with meta', async (): Promise<void> => {
-    new Logger().error('testMessage', error, meta);
-
-    expect(errorSpy).toHaveBeenCalled();
-    expect((JSON.parse(loggedMessage) as Record<string, string>).errorMessage).toBe(error.message);
     expect((JSON.parse(loggedMessage) as Record<string, string>).meta).toEqual(meta);
   });
 });

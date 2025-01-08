@@ -26,7 +26,7 @@ describe('Logger logs to error file', (): void => {
     mockFS.restore();
   });
 
-  test('with default format, without error message', (done): void => {
+  test('with default format', (done): void => {
     loadConfig({ logging: { enableAccessLogging: false, errorLogFile, enableLogFileRotation: false } });
     const logger = new Logger();
     const errorLogger = logger.getErrorLogger();
@@ -41,24 +41,6 @@ describe('Logger logs to error file', (): void => {
     });
 
     logger.error('test message');
-    errorLogger?.end();
-  });
-
-  test('with default format, with error message', (done): void => {
-    loadConfig({ logging: { enableAccessLogging: false, errorLogFile, enableLogFileRotation: false } });
-    const logger = new Logger();
-    const errorLogger = logger.getErrorLogger();
-    errorLogger?.on('finish', () => {
-      setTimeout(() => {
-        const message = fs.readFileSync(errorLogFile, 'utf8');
-        expect(message.trim()).toMatch(
-          /^\{"timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}","level":"error","source":".*\/Logger\.errorFile\.spec\.ts","message":"test message","errorMessage":"error message"\}$/u
-        );
-        done();
-      }, 300);
-    });
-
-    logger.error('test message', new Error('error message'));
     errorLogger?.end();
   });
 

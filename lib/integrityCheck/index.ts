@@ -2,7 +2,7 @@ import paths from 'path';
 import crypto from 'crypto';
 import { loadStorage } from '@/storage';
 import { loadConfig } from '@/config';
-import { printer } from './printer';
+import { printer } from '@/printing/printer';
 
 loadConfig();
 const storage = loadStorage();
@@ -50,9 +50,9 @@ const checkIntegrity = async function () {
     printer.printLine('Finished check');
     printer.printSummary(valid, invalid, errors);
   } catch (err: unknown) {
-    printer.printError(`Error: Check not finished. Error message: ${(err as Error)?.message ?? '-none-'}`);
+    const error = err as Error;
     printer.printError(
-      JSON.stringify((err as Error).stack ?? '-no stacktrace available-')
+      JSON.stringify(error.stack ?? `Error: ${error.message ?? 'Unknown error'}`)
         .replace(/"/g, '')
         .replace(/\\n/g, '\n')
     );

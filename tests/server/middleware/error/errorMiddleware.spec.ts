@@ -3,9 +3,7 @@ import { Logger } from '@/logging/Logger';
 import { errorMiddleware } from '@/server/middleware/error';
 
 let mock_loggedErrorMessage = '';
-let mock_loggedErrorError: Error | undefined;
 let mock_loggedErrorMeta: Record<string, unknown> | undefined;
-let mock_loggedDebugMessage = '';
 
 jest.mock('@/logging/index', () => {
   // noinspection JSUnusedGlobalSymbols
@@ -13,13 +11,8 @@ jest.mock('@/logging/index', () => {
     resetLogger() {},
     loadLogger(): Logger {
       return {
-        debug(message: string, meta?: Record<string, unknown>) {
-          mock_loggedDebugMessage = message;
-          return this;
-        },
-        error(message: string, error?: Error, meta?: Record<string, unknown>) {
+        error(message: string, meta?: Record<string, unknown>) {
           mock_loggedErrorMessage = message;
-          mock_loggedErrorError = error;
           mock_loggedErrorMeta = meta;
           return this;
         }
@@ -31,9 +24,7 @@ jest.mock('@/logging/index', () => {
 describe('errorMiddleware', (): void => {
   afterEach(async (): Promise<void> => {
     mock_loggedErrorMessage = '';
-    mock_loggedErrorError = undefined;
     mock_loggedErrorMeta = undefined;
-    mock_loggedDebugMessage = '';
   });
 
   test('response with 500', async (): Promise<void> => {
@@ -44,9 +35,7 @@ describe('errorMiddleware', (): void => {
     errorMiddleware(error, req, res, () => {});
 
     assertError(res, 'Unexpected Error', true);
-    expect(mock_loggedErrorMessage).toBe('Error. Unexpected Error.');
-    expect(mock_loggedErrorError).toEqual(error);
+    expect(mock_loggedErrorMessage).toBe(`Unexpected Error: ${JSON.stringify(error.stack).replace(/"/g, '').replace(/\\n/g, '\n')}`);
     expect(mock_loggedErrorMeta).toEqual({ statusCode: 500 });
-    expect(mock_loggedDebugMessage).toBe(`Details about previous error:\n${JSON.stringify(error.stack).replace(/"/g, '').replace(/\\n/g, '\n')}`);
   });
 });

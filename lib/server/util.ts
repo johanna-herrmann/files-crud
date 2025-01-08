@@ -17,7 +17,7 @@ const sendUnauthorized = function (res: express.Response, message: string): void
   const statusCode = 401;
   res.statusCode = statusCode;
   const fullMessage = `Unauthorized. ${message.replace(/\.$/, '')}.`;
-  logger.error(fullMessage, undefined, { statusCode });
+  logger.error(fullMessage, { statusCode });
   res.json({ error: fullMessage });
 };
 
@@ -25,19 +25,24 @@ const sendNotFound = function (res: express.Response, path: string): void {
   const statusCode = 404;
   res.statusCode = statusCode;
   const message = `Not Found: ${path}`;
-  logger.error(message, undefined, { statusCode });
+  logger.error(message, { statusCode });
   res.json({ error: message });
 };
 
 const sendError = function (res: express.Response, message: string, error?: Error): void {
   const statusCode = error ? 500 : 400;
   res.statusCode = statusCode;
-  const fullMessage = `Error. ${message.replace(/\.$/, '')}.`;
-  logger.error(fullMessage, error, { statusCode });
+  const messageWithoutDetails = `Error. ${message.replace(/\.$/, '')}.`;
   if (!!error) {
-    logger.debug(`Details about previous error:\n${JSON.stringify(error.stack).replace(/"/g, '').replace(/\\n/g, '\n')}`);
+    const errorDetails = JSON.stringify(error.stack ?? error.message ?? '-no details-')
+      .replace(/"/g, '')
+      .replace(/\\n/g, '\n');
+    const messageWithDetails = `${message.replace(/\.$/, '')}: ${errorDetails}`;
+    logger.error(messageWithDetails, { statusCode });
+  } else {
+    logger.error(messageWithoutDetails, { statusCode });
   }
-  res.json({ error: fullMessage });
+  res.json({ error: messageWithoutDetails });
 };
 
 const sendOK = function (res: express.Response, body?: Record<string, unknown>): void {

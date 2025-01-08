@@ -79,11 +79,11 @@ class Logger {
       level: process.env.LOG_LEVEL || 'info',
       format: combine(
         timestamp({ format: dateFormatter }),
-        printf(({ level, message, timestamp, sourcePath, error, meta }) => {
+        printf(({ level, message, timestamp, sourcePath, meta }) => {
           const outLoggingFormat = stdoutIsTTY ? this.ttyLoggingFormat : this.fileLoggingFormat;
           const errLoggingFormat = stderrIsTTY ? this.ttyLoggingFormat : this.fileLoggingFormat;
           const loggingFormat = level === 'error' ? errLoggingFormat : outLoggingFormat;
-          return logFormats[loggingFormat]({ level, message, timestamp, sourcePath, error, meta });
+          return logFormats[loggingFormat]({ level, message, timestamp, sourcePath, meta });
         })
       ),
       transports: [new transports.Console({ forceConsole: forceConsole, stderrLevels: ['error'] })]
@@ -97,8 +97,8 @@ class Logger {
         level: 'error',
         format: combine(
           timestamp({ format: dateFormatter }),
-          printf(({ level, message, timestamp, sourcePath, error, meta }) => {
-            return logFormats[this.fileLoggingFormat]({ level, message, timestamp, sourcePath, error, meta });
+          printf(({ level, message, timestamp, sourcePath, meta }) => {
+            return logFormats[this.fileLoggingFormat]({ level, message, timestamp, sourcePath, meta });
           })
         ),
         transports: [
@@ -207,13 +207,12 @@ class Logger {
   /**
    * logs in error level
    * @param message The message to log
-   * @param error The optional error. `error.message` will be appended to the `message`.
    * @param meta The optional metadata to append to the `message`
    *
    * @returns This logger instance
    */
-  public error(message: string, error?: Error, meta?: Record<string, unknown>): Logger {
-    const metaObject = { sourcePath: getSourcePath(), error, meta };
+  public error(message: string, meta?: Record<string, unknown>): Logger {
+    const metaObject = { sourcePath: getSourcePath(), meta };
     this.ttyLogger?.error(message, metaObject);
     this.errorFileLogger?.error(message, metaObject);
     return this;
@@ -228,8 +227,15 @@ class Logger {
    *
    * @returns This logger instance
    */
-  public access(entry: Omit<AccessLogEntry, 'timestamp'>): Logger {
-    this.accessFileLogger?.info('', entry);
+  public access({ method, path, statusCode, contentLength, ...rest }: Omit<AccessLogEntry, 'timestamp'>): Logger {
+    this.accessFileLogger?.info('', { method, path, statusCode, contentLength, ...rest });
+    const isApiRequest = /^\/(?:file|login|register|user)(?:[\/?].*)?/.test(path as string);
+    if (!isApiRequest) {
+      this.ttyLogger?.info(`Access: statusCode ${statusCode} on ${method} ${path}`, {
+        sourcePath: getSourcePath(),
+        meta: { method, path, statusCode, contentLength }
+      });
+    }
     return this;
   }
 }

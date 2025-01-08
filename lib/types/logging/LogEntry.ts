@@ -4,7 +4,6 @@ interface LogEntry {
   timestamp: unknown;
   sourcePath: unknown;
   meta?: unknown;
-  error?: unknown;
 }
 
 export default LogEntry;

@@ -6,7 +6,6 @@ const timestamp = '42';
 const level = 'testLevel';
 const message = 'testMessage';
 const sourcePath = '/path/to/file';
-const error = new Error('test error message');
 const meta = { k: 'v' };
 const metaJson = JSON.stringify({ k: 'v' });
 
@@ -22,168 +21,114 @@ const time = 23;
 
 describe('logging formats', (): void => {
   describe('humanReadableLine returns human readable line', (): void => {
-    test('without errorMessage, without meta.', async (): Promise<void> => {
+    test('without meta.', async (): Promise<void> => {
       const result = logFormats.humanReadableLine({ timestamp, level, message, sourcePath });
 
       expect(result).toBe(`${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message}`);
     });
 
-    test('without errorMessage, with meta.', async (): Promise<void> => {
+    test('with meta.', async (): Promise<void> => {
       const result = logFormats.humanReadableLine({ timestamp, level, message, sourcePath, meta });
 
       expect(result).toBe(`${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message} - ${metaJson}`);
     });
-
-    test('with errorMessage, without meta.', async (): Promise<void> => {
-      const result = logFormats.humanReadableLine({ timestamp, level, message, sourcePath, error });
-
-      expect(result).toBe(`${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message} - ${error.message}`);
-    });
-
-    test('with errorMessage, with meta.', async (): Promise<void> => {
-      const result = logFormats.humanReadableLine({ timestamp, level, message, sourcePath, error, meta });
-
-      expect(result).toBe(`${timestamp} [${sourcePath}] ${level.toUpperCase()}: ${message} - ${error.message} - ${metaJson}`);
-    });
   });
 
   describe('humanReadableBlock returns human readable block', (): void => {
-    test('without errorMessage, without meta.', async (): Promise<void> => {
+    test('without meta.', async (): Promise<void> => {
       const result = logFormats.humanReadableBlock({ timestamp, level, message, sourcePath });
 
       expect(result).toBe(`${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}\n${BOTTOM_LINE}\n`);
     });
 
-    test('without errorMessage, with meta.', async (): Promise<void> => {
+    test('with meta.', async (): Promise<void> => {
       const result = logFormats.humanReadableBlock({ timestamp, level, message, sourcePath, meta });
 
       expect(result).toBe(`${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}\n${metaJson}\n${BOTTOM_LINE}\n`);
     });
-
-    test('with errorMessage, without meta.', async (): Promise<void> => {
-      const result = logFormats.humanReadableBlock({ timestamp, level, message, sourcePath, error });
-
-      expect(result).toBe(`${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}\n${error.message}\n${BOTTOM_LINE}\n`);
-    });
-
-    test('with errorMessage, with meta.', async (): Promise<void> => {
-      const result = logFormats.humanReadableBlock({ timestamp, level, message, sourcePath, error, meta });
-
-      expect(result).toBe(`${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}\n${error.message}\n${metaJson}\n${BOTTOM_LINE}\n`);
-    });
   });
 
   describe('coloredHumanReadableLine returns colored human readable line', (): void => {
-    test('without errorMessage, without meta, on debug.', async (): Promise<void> => {
+    test('without meta, on debug.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableLine({ timestamp, level: 'debug', message, sourcePath });
 
       expect(result).toBe(`\x1B[34m${timestamp} [${sourcePath}] DEBUG: ${message}\x1B[39m`);
     });
 
-    test('without errorMessage, without meta, on info.', async (): Promise<void> => {
+    test('without meta, on info.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableLine({ timestamp, level: 'info', message, sourcePath });
 
       expect(result).toBe(`\x1B[32m${timestamp} [${sourcePath}] INFO: ${message}\x1B[39m`);
     });
 
-    test('without errorMessage, without meta, on warn.', async (): Promise<void> => {
+    test('without meta, on warn.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableLine({ timestamp, level: 'warn', message, sourcePath });
 
       expect(result).toBe(`\x1B[33m${timestamp} [${sourcePath}] WARN: ${message}\x1B[39m`);
     });
 
-    test('without errorMessage, without meta, on error.', async (): Promise<void> => {
+    test('without meta, on error.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableLine({ timestamp, level: 'error', message, sourcePath });
 
       expect(result).toBe(`\x1B[31m${timestamp} [${sourcePath}] ERROR: ${message}\x1B[39m`);
     });
 
-    test('without errorMessage, with meta.', async (): Promise<void> => {
+    test('with meta.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableLine({ timestamp, level: 'info', message, sourcePath, meta });
 
       expect(result).toBe(`\x1B[32m${timestamp} [${sourcePath}] INFO: ${message} - ${metaJson}\x1B[39m`);
     });
-
-    test('with errorMessage, without meta.', async (): Promise<void> => {
-      const result = logFormats.coloredHumanReadableLine({ timestamp, level: 'info', message, sourcePath, error });
-
-      expect(result).toBe(`\x1B[32m${timestamp} [${sourcePath}] INFO: ${message} - ${error.message}\x1B[39m`);
-    });
-
-    test('with errorMessage, with meta.', async (): Promise<void> => {
-      const result = logFormats.coloredHumanReadableLine({ timestamp, level: 'info', message, sourcePath, error, meta });
-
-      expect(result).toBe(`\x1B[32m${timestamp} [${sourcePath}] INFO: ${message} - ${error.message} - ${metaJson}\x1B[39m`);
-    });
   });
 
   describe('coloredHumanReadableBlock returns colored human readable block', (): void => {
-    test('without errorMessage, without meta, on debug.', async (): Promise<void> => {
+    test('without meta, on debug.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableBlock({ timestamp, level: 'debug', message, sourcePath });
 
       expect(result).toBe(`\x1B[34m${timestamp}\n[${sourcePath}]\nDEBUG:\n${message}\x1B[39m\n${BOTTOM_LINE}\n`);
     });
 
-    test('without errorMessage, without meta, on info.', async (): Promise<void> => {
+    test('without meta, on info.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableBlock({ timestamp, level: 'info', message, sourcePath });
 
       expect(result).toBe(`\x1B[32m${timestamp}\n[${sourcePath}]\nINFO:\n${message}\x1B[39m\n${BOTTOM_LINE}\n`);
     });
 
-    test('without errorMessage, without meta, on warn.', async (): Promise<void> => {
+    test('without meta, on warn.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableBlock({ timestamp, level: 'warn', message, sourcePath });
 
       expect(result).toBe(`\x1B[33m${timestamp}\n[${sourcePath}]\nWARN:\n${message}\x1B[39m\n${BOTTOM_LINE}\n`);
     });
 
-    test('without errorMessage, without meta, on error.', async (): Promise<void> => {
+    test('without meta, on error.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableBlock({ timestamp, level: 'error', message, sourcePath });
 
       expect(result).toBe(`\x1B[31m${timestamp}\n[${sourcePath}]\nERROR:\n${message}\x1B[39m\n${BOTTOM_LINE}\n`);
     });
 
-    test('without errorMessage, with meta.', async (): Promise<void> => {
+    test('with meta.', async (): Promise<void> => {
       const result = logFormats.coloredHumanReadableBlock({ timestamp, level: 'info', message, sourcePath, meta });
 
       expect(result).toBe(`\x1B[32m${timestamp}\n[${sourcePath}]\nINFO:\n${message}\n${metaJson}\x1B[39m\n${BOTTOM_LINE}\n`);
     });
-
-    test('with errorMessage, without meta.', async (): Promise<void> => {
-      const result = logFormats.coloredHumanReadableBlock({ timestamp, level: 'info', message, sourcePath, error });
-
-      expect(result).toBe(`\x1B[32m${timestamp}\n[${sourcePath}]\nINFO:\n${message}\n${error.message}\x1B[39m\n${BOTTOM_LINE}\n`);
-    });
-
-    test('with errorMessage, with meta.', async (): Promise<void> => {
-      const result = logFormats.coloredHumanReadableBlock({ timestamp, level: 'info', message, sourcePath, error, meta });
-
-      expect(result).toBe(`\x1B[32m${timestamp}\n[${sourcePath}]\nINFO:\n${message}\n${error.message}\n${metaJson}\x1B[39m\n${BOTTOM_LINE}\n`);
-    });
   });
 
   describe('json returns json', (): void => {
-    test('without errorMessage, without meta.', async (): Promise<void> => {
+    test('one-line, without meta.', async (): Promise<void> => {
       const result = logFormats.json({ timestamp, level, message, sourcePath });
 
       expect(JSON.parse(result)).toEqual({ timestamp, source: sourcePath, level, message });
     });
 
-    test('without errorMessage, with meta.', async (): Promise<void> => {
+    test('one-line, with meta.', async (): Promise<void> => {
       const result = logFormats.json({ timestamp, level, message, sourcePath, meta });
 
       expect(JSON.parse(result)).toEqual({ timestamp, source: sourcePath, level, message, meta });
     });
 
-    test('with errorMessage, without meta.', async (): Promise<void> => {
-      const result = logFormats.json({ timestamp, level, message, sourcePath, error });
+    test('multiple-lines.', async (): Promise<void> => {
+      const result = logFormats.json({ timestamp, level: 'error', message: 'line1\nline2\nline3', sourcePath, meta });
 
-      expect(JSON.parse(result)).toEqual({ timestamp, source: sourcePath, level, message, errorMessage: error.message });
-    });
-
-    test('with errorMessage, with meta.', async (): Promise<void> => {
-      const result = logFormats.json({ timestamp, level, message, sourcePath, error, meta });
-
-      expect(JSON.parse(result)).toEqual({ timestamp, source: sourcePath, level, message, errorMessage: error.message, meta });
+      expect(JSON.parse(result)).toEqual({ timestamp, source: sourcePath, level: 'error', message: ['line1', 'line2', 'line3'], meta });
     });
   });
 

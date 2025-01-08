@@ -25,6 +25,9 @@ const admin = false;
 const meta = { k: 'v' };
 const newMeta = { abc: 123 };
 
+let mock_loggedErrorMessage = '';
+let mock_loggedErrorMeta: Record<string, unknown> | undefined;
+
 jest.mock('@/user/passwordHashing/versions', () => {
   return {
     versions: {},
@@ -71,7 +74,9 @@ jest.mock('@/logging/index', () => {
         warn() {
           return this;
         },
-        error() {
+        error(message: string, meta?: Record<string, unknown>) {
+          mock_loggedErrorMessage = message;
+          mock_loggedErrorMeta = meta;
           return this;
         }
       } as unknown as Logger;
@@ -83,6 +88,8 @@ describe('user handlers', (): void => {
   afterEach(async () => {
     data.user_ = [];
     resetLastMessage();
+    mock_loggedErrorMessage = '';
+    mock_loggedErrorMeta = undefined;
   });
 
   describe('registerHandler', (): void => {
@@ -105,6 +112,8 @@ describe('user handlers', (): void => {
 
       assertError(res, 'User testUser exists already');
       expect(data.user_?.length).toBe(1);
+      expect(mock_loggedErrorMessage).toBe('Error. User testUser exists already.');
+      expect(mock_loggedErrorMeta).toEqual({ statusCode: 400 });
     });
   });
 

@@ -101,15 +101,14 @@ describe('integrityCheck', (): void => {
 
     expect(printings).toEqual([
       'Starting check...\n',
-      `${RED_START}Error: Check not finished. Error message: ${error.message}${END}\n`,
-      `${JSON.stringify(error.stack)
+      JSON.stringify(error.stack)
         .replace(/"/g, '')
         .replace(/\\n/g, '\n')
         .split('\n')
         .map((line) => `${RED_START}${line}${END}`)
-        .join('\n')}\n`,
+        .join('\n') + '\n',
       `${RED_START}Check failed due to error${END}\n`
     ]);
-    expect(channels).toEqual(['out', 'err', 'err', 'out']);
+    expect(channels).toEqual(['out', 'err', 'out']);
   });
 });

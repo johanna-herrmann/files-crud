@@ -37,15 +37,6 @@ class Printer {
   }
 
   public printError(message: string): Printer {
-    if (message.includes('\n')) {
-      process.stderr.write(
-        `${message
-          .split('\n')
-          .map((line) => red(line))
-          .join('\n')}\n`
-      );
-      return this;
-    }
     process.stderr.write(`${red(message)}\n`);
     return this;
   }

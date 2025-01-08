@@ -76,6 +76,42 @@ describe('Logger logs to console', (): void => {
       assertMessage(loggedMessage, 'error');
     });
 
+    test('on none-api access', async (): Promise<void> => {
+      new Logger().access({
+        method: 'GET',
+        path: '/index.html',
+        statusCode: '200',
+        contentLength: 123,
+        time: 0,
+        ip: '',
+        httpVersion: '',
+        referer: '',
+        userAgent: ''
+      });
+
+      expect(logSpy).toHaveBeenCalled();
+      expect(loggedMessage).toBe(
+        `\x1B[32m1970-01-01T01:00:00.042 [${__filename}] INFO: Access: statusCode 200 on GET /index.html - {"method":"GET","path":"/index.html","statusCode":"200","contentLength":123}\x1B[39m`
+      );
+    });
+
+    test('not on api access', async (): Promise<void> => {
+      new Logger().access({
+        method: 'POST',
+        path: '/register',
+        statusCode: '200',
+        contentLength: 123,
+        time: 0,
+        ip: '',
+        httpVersion: '',
+        referer: '',
+        userAgent: ''
+      });
+
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(loggedMessage).toBe('');
+    });
+
     test('not on level debug, if log level is info', async (): Promise<void> => {
       process.env.LOG_LEVEL = 'info';
 
