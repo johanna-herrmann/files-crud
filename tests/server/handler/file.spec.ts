@@ -73,6 +73,19 @@ const buildUploadRequest = function (data: Buffer, mimetype: string): UploadRequ
         data,
         mimetype
       }
+    },
+    header(name: string) {
+      return this.headers[name];
+    }
+  } as UploadRequest;
+};
+
+const buildDownloadRequest = function (): UploadRequest {
+  const req = buildRequestForFileAction('', 'one', 'dir/file', { username: testUser.username });
+  return {
+    ...req,
+    header(name: string) {
+      return this.headers[name];
     }
   } as UploadRequest;
 };
@@ -101,7 +114,7 @@ describe('file handlers', (): void => {
   });
 
   describe('saveHandler', (): void => {
-    test('saves file', async (): Promise<void> => {
+    test('saves file, mimetype from files attribute', async (): Promise<void> => {
       const data = {
         owner: testUser.username,
         contentType: 'text/plain',
@@ -110,6 +123,26 @@ describe('file handlers', (): void => {
       };
       const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
       const res = buildResponse();
+
+      await saveHandler(req, res);
+
+      expect(await exists('./files/dir/file')).toBe(true);
+      expect(await exists('./data/dir~file')).toBe(true);
+      expect(await fs.readFile('./files/dir/file', 'utf8')).toBe('test content');
+      expect(JSON.parse(await fs.readFile('./data/dir~file', 'utf8'))).toEqual(data);
+      assertOK(res, { path: 'dir/file' });
+    });
+
+    test('saves file, mimetype from header', async (): Promise<void> => {
+      const data = {
+        owner: testUser.username,
+        contentType: 'image/png',
+        size: 12,
+        meta: {}
+      };
+      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
+      const res = buildResponse();
+      req.headers['X-Mimetype'] = 'image/png';
 
       await saveHandler(req, res);
 
@@ -132,12 +165,12 @@ describe('file handlers', (): void => {
       streamSpy?.mockRestore();
     });
 
-    test('loads file if it exists', (done): void => {
+    test('loads file if it exists, mimetype from fileData', (done): void => {
       buildFSMock(
         { dir: { file: contentBuffer } },
-        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
+        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' }, size: 12 }) }
       );
-      const req = buildRequestForFileAction('', 'one', 'dir/file', {});
+      const req = buildDownloadRequest();
       const res = buildResponse();
       let piped: Writable | null = null;
       let buffer: Buffer | null = null;
@@ -155,7 +188,39 @@ describe('file handlers', (): void => {
       setTimeout(() => {
         expect(buffer).toEqual(contentBuffer);
         expect(piped).toEqual(res);
+        expect(res.getHeader('content-length')).toBe(12);
         expect(res.getHeader('content-type')).toBe('text/plain');
+        expect(res.getHeader('content-disposition')).toBe('attachment; filename=file');
+        done();
+      }, 1000);
+    });
+
+    test('loads file if it exists, mimetype from header', (done): void => {
+      buildFSMock(
+        { dir: { file: contentBuffer } },
+        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' }, size: 12 }) }
+      );
+      const req = buildDownloadRequest();
+      const res = buildResponse();
+      req.headers['X-Mimetype'] = 'image/png';
+      let piped: Writable | null = null;
+      let buffer: Buffer | null = null;
+      readableSpy = jest.spyOn(Readable, 'from').mockImplementation((iterable: Iterable<unknown> | AsyncIterable<unknown>) => {
+        buffer = iterable as Buffer;
+        streamSpy = jest.spyOn(stream, 'pipe').mockImplementation((destination) => {
+          piped = destination as typeof res;
+          return destination;
+        });
+        return stream;
+      });
+
+      loadHandler(req, res);
+
+      setTimeout(() => {
+        expect(buffer).toEqual(contentBuffer);
+        expect(piped).toEqual(res);
+        expect(res.getHeader('content-length')).toBe(12);
+        expect(res.getHeader('content-type')).toBe('image/png');
         expect(res.getHeader('content-disposition')).toBe('attachment; filename=file');
         done();
       }, 1000);

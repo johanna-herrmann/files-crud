@@ -12,17 +12,26 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
   const storage = loadStorage();
   const path = resolvePath(req);
   const { data, mimetype, md5 } = (req as UploadRequest).files.file;
+  const headerMimetype = req.header('X-Mimetype');
+  const actualMimetype = headerMimetype ?? mimetype;
+  const size = data.length;
+  const owner = req.body.username as string;
   const fileData = {
-    contentType: mimetype,
-    size: data.length,
+    contentType: actualMimetype,
+    size,
     md5,
-    owner: req.body.username as string,
+    owner,
     meta: {}
   };
 
   await storage.save(path, data, fileData);
 
-  logger.info('Successfully saved file.', { path, data: fileData });
+  logger.info('Successfully saved file.', {
+    path,
+    size,
+    mimetype: actualMimetype,
+    mimetypeFrom: headerMimetype ? 'header' : 'files attribute'
+  });
   sendOK(res, { path });
 };
 
@@ -35,11 +44,14 @@ const loadHandler = async function (req: Request, res: express.Response): Promis
   }
 
   const [content, data] = await storage.load(path);
-  const contentType = data.contentType;
+  const { size, contentType } = data;
+  const headerMimetype = req.header('X-Mimetype');
+  const mimetype = headerMimetype ?? contentType;
   res.setHeader('Content-Disposition', `attachment; filename=${path.substring(path.lastIndexOf('/') + 1)}`);
-  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Type', mimetype);
+  res.setHeader('Content-Length', size);
   const stream = Readable.from(content);
-  logger.info('Successfully read file.', { path });
+  logger.info('Successfully read file.', { path, size, mimetype, mimetypeFrom: headerMimetype ? 'header' : 'fileData' });
   stream.pipe(res);
 };
 
