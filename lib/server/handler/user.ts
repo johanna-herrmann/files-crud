@@ -19,9 +19,8 @@ import {
 } from '@/user';
 import { loadLogger } from '@/logging';
 
-const logger = loadLogger();
-
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const body = req.body;
   const { username, password, meta } = body;
 
@@ -36,6 +35,7 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const addUserHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const body = req.body;
   const { username, password, meta, admin } = body;
 
@@ -50,6 +50,7 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
 };
 
 const changeUsernameHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const body = req.body;
   const { username, newUsername } = body;
 
@@ -64,6 +65,7 @@ const changeUsernameHandler = async function (req: Request, res: express.Respons
 };
 
 const setAdminStateHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const body = req.body;
   const { username, admin } = body;
 
@@ -74,6 +76,7 @@ const setAdminStateHandler = async function (req: Request, res: express.Response
 };
 
 const saveMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const body = req.body;
   const username = (req.params as Record<string, unknown>).username;
   const { meta } = body;
@@ -85,6 +88,7 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const changePasswordHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const body = req.body;
   const { username, newPassword } = body;
 
@@ -95,6 +99,7 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
 };
 
 const deleteUserHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const username = (req.params as Record<string, unknown>).username;
 
   await deleteUser(username as string);
@@ -104,6 +109,7 @@ const deleteUserHandler = async function (req: Request, res: express.Response): 
 };
 
 const loadMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const username = (req.params as Record<string, unknown>).username;
 
   const meta = await loadMeta(username as string);
@@ -113,6 +119,7 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const getUserHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const username = (req.params as Record<string, unknown>).username;
 
   const user = await getUser(username as string);
@@ -122,6 +129,7 @@ const getUserHandler = async function (req: Request, res: express.Response): Pro
 };
 
 const getUsersHandler = async function (_: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const users = await getUsers();
 
   logger.info('Successfully loaded list of users.');
@@ -130,6 +138,7 @@ const getUsersHandler = async function (_: Request, res: express.Response): Prom
 };
 
 const loginHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const body = req.body;
   const { username, password } = body;
 

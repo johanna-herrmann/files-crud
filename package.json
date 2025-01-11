@@ -11,9 +11,11 @@
   "private": true,
   "main": "built/lib/index.js",
   "types": "built/lib/index.d.ts",
+  "bin": {
+    "filescrud": "built/lib/cli.js"
+  },
   "author": "Johanna Herrmann",
   "scripts": {
-    "mtest": "cd built && export FILES_CRUD_SERVER__USE_HTTPS=false && node ./lib/index.js",
     "inst": "npm install",
     "audit": "better-npm-audit audit",
     "lint": "eslint **/*.ts",
@@ -69,6 +71,7 @@
     "@aws-sdk/client-dynamodb": "^3.699.0",
     "@aws-sdk/client-s3": "3.678.0",
     "@aws-sdk/lib-dynamodb": "^3.699.0",
+    "commander": "^13.0.0",
     "cors": "^2.8.5",
     "express": "^5.0.1",
     "express-fileupload": "^1.5.1",

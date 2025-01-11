@@ -2,8 +2,6 @@ import Request from '@/types/server/Request';
 import express from 'express';
 import { loadLogger } from '@/logging';
 
-const logger = loadLogger();
-
 const resolvePath = function (req: Request): string {
   const params = req.params as Record<string, string[]>;
   return params.path.join('/');
@@ -14,6 +12,7 @@ const getToken = function (req: Request): string {
 };
 
 const sendUnauthorized = function (res: express.Response, message: string): void {
+  const logger = loadLogger();
   const statusCode = 401;
   res.statusCode = statusCode;
   const fullMessage = `Unauthorized. ${message.replace(/\.$/, '')}.`;
@@ -22,6 +21,7 @@ const sendUnauthorized = function (res: express.Response, message: string): void
 };
 
 const sendNotFound = function (res: express.Response, path: string): void {
+  const logger = loadLogger();
   const statusCode = 404;
   res.statusCode = statusCode;
   const message = `Not Found: ${path}`;
@@ -30,6 +30,7 @@ const sendNotFound = function (res: express.Response, path: string): void {
 };
 
 const sendError = function (res: express.Response, message: string, error?: Error): void {
+  const logger = loadLogger();
   const statusCode = error ? 500 : 400;
   res.statusCode = statusCode;
   const messageWithoutDetails = `Error. ${message.replace(/\.$/, '')}.`;

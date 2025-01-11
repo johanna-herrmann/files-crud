@@ -11,6 +11,7 @@
     },
     "outDir": "built",
     "moduleResolution":"NodeNext",
+    "resolveJsonModule": true,
     "esModuleInterop": true, 
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

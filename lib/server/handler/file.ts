@@ -6,9 +6,8 @@ import { loadStorage } from '@/storage';
 import { loadLogger } from '@/logging';
 import UploadRequest from '@/types/server/UploadRequest';
 
-const logger = loadLogger();
-
 const saveHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
   const { data, mimetype, md5 } = (req as UploadRequest).files.file;
@@ -36,6 +35,7 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
 };
 
 const loadHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
 
@@ -56,6 +56,7 @@ const loadHandler = async function (req: Request, res: express.Response): Promis
 };
 
 const saveMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
 
@@ -71,6 +72,7 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const loadMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
 
@@ -84,6 +86,7 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const loadDataHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
 
@@ -97,6 +100,7 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
 };
 
 const copyHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const { path, targetPath, keepOwner, username } = req.body;
 
@@ -115,6 +119,7 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
 };
 
 const moveHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const { path, targetPath, keepOwner, username } = req.body;
 
@@ -133,6 +138,7 @@ const moveHandler = async function (req: Request, res: express.Response): Promis
 };
 
 const deleteHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
 
@@ -146,6 +152,7 @@ const deleteHandler = async function (req: Request, res: express.Response): Prom
 };
 
 const listHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
 

@@ -6,7 +6,7 @@ import { printer } from '@/printing/printer';
 loadConfig();
 
 const getRandomString = function (length: number): string {
-  return crypto.randomBytes(length).toString('base64');
+  return crypto.randomBytes(length).toString('base64url');
 };
 
 const createAdmin = async function ({ username, password }: { username?: string; password?: string }): Promise<void> {
