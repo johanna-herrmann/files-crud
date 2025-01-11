@@ -1,6 +1,7 @@
-import { createAdmin } from '@/command/admin';
+import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import User from '@/types/user/User';
+import { testUser } from '#/testItems';
 
 const RED_START = '\x1B[31m';
 const END = '\x1B[39m';
@@ -31,7 +32,7 @@ jest.mock('crypto', () => {
   };
 });
 
-describe('createAdmin', (): void => {
+describe('admin', (): void => {
   const stdout = process.stdout;
   const stderr = process.stderr;
 
@@ -61,68 +62,100 @@ describe('createAdmin', (): void => {
     data.user_ = [];
   });
 
-  test('creates admin, username and password given', async (): Promise<void> => {
-    await createAdmin({ username: 'testUsername', password: 'testPassword123' });
+  describe('createAdmin', (): void => {
+    test('creates admin, username and password given', async (): Promise<void> => {
+      await createAdmin({ username: 'testUsername', password: 'testPassword123' });
 
-    expect((data.user_?.at(0) as User).username).toBe('testUsername');
-    expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
-    expect((data.user_?.at(0) as User).salt).toBe('salt.testPassword123');
-    expect((data.user_?.at(0) as User).hash).toBe('hash.testPassword123');
-    expect(printings).toEqual(['Creating user...\n', 'Successfully created user. username: testUsername; password: testPassword123\n']);
-    expect(channels).toEqual(['out', 'out']);
+      expect((data.user_?.at(0) as User).username).toBe('testUsername');
+      expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
+      expect((data.user_?.at(0) as User).salt).toBe('salt.testPassword123');
+      expect((data.user_?.at(0) as User).hash).toBe('hash.testPassword123');
+      expect(printings).toEqual(['Creating user...\n', 'Successfully created user. username: testUsername; password: testPassword123\n']);
+      expect(channels).toEqual(['out', 'out']);
+    });
+
+    test('creates admin, username given', async (): Promise<void> => {
+      const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
+      await createAdmin({ username: 'testUsername' });
+
+      expect((data.user_?.at(0) as User).username).toBe('testUsername');
+      expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
+      expect((data.user_?.at(0) as User).salt).toBe(`salt.${password}`);
+      expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
+      expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: testUsername; password: ${password}\n`]);
+      expect(channels).toEqual(['out', 'out']);
+    });
+
+    test('creates admin, password given', async (): Promise<void> => {
+      const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
+      await createAdmin({ password: 'testPassword123' });
+
+      expect((data.user_?.at(0) as User).username).toBe(username);
+      expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
+      expect((data.user_?.at(0) as User).salt).toBe(`salt.testPassword123`);
+      expect((data.user_?.at(0) as User).hash).toBe(`hash.testPassword123`);
+      expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: ${username}; password: testPassword123\n`]);
+      expect(channels).toEqual(['out', 'out']);
+    });
+
+    test('creates admin, nothing given', async (): Promise<void> => {
+      const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
+      const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
+      await createAdmin({});
+
+      expect((data.user_?.at(0) as User).username).toBe(username);
+      expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
+      expect((data.user_?.at(0) as User).salt).toBe(`salt.${password}`);
+      expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
+      expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: ${username}; password: ${password}\n`]);
+      expect(channels).toEqual(['out', 'out']);
+    });
+
+    test('fails successfully', async (): Promise<void> => {
+      await createAdmin({ password: 'error' });
+
+      expect(data.user_?.length).toBe(0);
+      expect(printings).toEqual([
+        'Creating user...\n',
+        JSON.stringify(mock_error.stack)
+          .replace(/"/g, '')
+          .replace(/\\n/g, '\n')
+          .split('\n')
+          .map((line) => `${RED_START}${line}${END}`)
+          .join('\n') + '\n',
+        '\x1B[31mFailed due to error\x1B[39m\n'
+      ]);
+      expect(channels).toEqual(['out', 'err', 'out']);
+    });
   });
 
-  test('creates admin, username given', async (): Promise<void> => {
-    const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
-    await createAdmin({ username: 'testUsername' });
+  describe('createInitialAdminIfNoAdminExists', (): void => {
+    test('creates admin, if no admin exists', async (): Promise<void> => {
+      const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
+      const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
 
-    expect((data.user_?.at(0) as User).username).toBe('testUsername');
-    expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
-    expect((data.user_?.at(0) as User).salt).toBe(`salt.${password}`);
-    expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
-    expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: testUsername; password: ${password}\n`]);
-    expect(channels).toEqual(['out', 'out']);
-  });
+      await createInitialAdminIfNoAdminExists();
 
-  test('creates admin, password given', async (): Promise<void> => {
-    const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
-    await createAdmin({ password: 'testPassword123' });
+      expect((data.user_?.at(0) as User).username).toBe(username);
+      expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
+      expect((data.user_?.at(0) as User).salt).toBe(`salt.${password}`);
+      expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
+      expect(printings).toEqual([
+        'There is no admin user. Initial admin will be created.\n',
+        'Creating user...\n',
+        `Successfully created user. username: ${username}; password: ${password}\n`
+      ]);
+      expect(channels).toEqual(['out', 'out', 'out']);
+    });
 
-    expect((data.user_?.at(0) as User).username).toBe(username);
-    expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
-    expect((data.user_?.at(0) as User).salt).toBe(`salt.testPassword123`);
-    expect((data.user_?.at(0) as User).hash).toBe(`hash.testPassword123`);
-    expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: ${username}; password: testPassword123\n`]);
-    expect(channels).toEqual(['out', 'out']);
-  });
+    test('does nothing if an admin user exists', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: true };
 
-  test('creates admin, nothing given', async (): Promise<void> => {
-    const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
-    const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
-    await createAdmin({});
+      await createInitialAdminIfNoAdminExists();
 
-    expect((data.user_?.at(0) as User).username).toBe(username);
-    expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
-    expect((data.user_?.at(0) as User).salt).toBe(`salt.${password}`);
-    expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
-    expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: ${username}; password: ${password}\n`]);
-    expect(channels).toEqual(['out', 'out']);
-  });
-
-  test('fails successfully', async (): Promise<void> => {
-    await createAdmin({ password: 'error' });
-
-    expect(data.user_?.length).toBe(0);
-    expect(printings).toEqual([
-      'Creating user...\n',
-      JSON.stringify(mock_error.stack)
-        .replace(/"/g, '')
-        .replace(/\\n/g, '\n')
-        .split('\n')
-        .map((line) => `${RED_START}${line}${END}`)
-        .join('\n') + '\n',
-      '\x1B[31mFailed due to error\x1B[39m\n'
-    ]);
-    expect(channels).toEqual(['out', 'err', 'out']);
+      expect((data.user_?.at(0) as User).username).toBe(testUser.username);
+      expect(printings).toEqual([]);
+      expect(channels).toEqual([]);
+    });
   });
 });

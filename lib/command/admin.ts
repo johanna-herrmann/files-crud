@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { addUser } from '@/user';
+import { addUser, getUsers } from '@/user';
 import { loadConfig } from '@/config';
 import { printer } from '@/printing/printer';
 
@@ -27,4 +27,13 @@ const createAdmin = async function ({ username, password }: { username?: string;
   }
 };
 
-export { createAdmin };
+const createInitialAdminIfNoAdminExists = async function (): Promise<void> {
+  const users = await getUsers();
+  const admin = users.find((user) => user.admin);
+  if (!admin) {
+    printer.printLine('There is no admin user. Initial admin will be created.');
+    await createAdmin({});
+  }
+};
+
+export { createAdmin, createInitialAdminIfNoAdminExists };

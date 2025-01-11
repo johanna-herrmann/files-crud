@@ -12,7 +12,7 @@
   "main": "built/lib/index.js",
   "types": "built/lib/index.d.ts",
   "bin": {
-    "filescrud": "built/lib/cli.js"
+    "filescrud": "built/lib/index.js"
   },
   "author": "Johanna Herrmann",
   "scripts": {

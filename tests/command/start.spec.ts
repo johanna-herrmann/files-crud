@@ -50,7 +50,7 @@ describe('start', (): void => {
   });
 
   test('loads config, logs start line and calls startServer correctly.', async (): Promise<void> => {
-    start();
+    start(42);
 
     expect(mocked_startTime).toBe(42);
     expect(mocked_configLoaded).toBe(true);
