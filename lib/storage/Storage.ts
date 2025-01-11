@@ -97,6 +97,22 @@ class Storage implements StorageType {
     return existsSync(paths.join(this.directory, this.resolveContentPath(path)));
   }
 
+  public async isFile(path: string): Promise<boolean> {
+    if (!(await this.exists(path))) {
+      return false;
+    }
+    const stats = await fs.stat(paths.join(this.directory, this.resolveContentPath(path)));
+    return stats.isFile();
+  }
+
+  public async isDirectory(path: string): Promise<boolean> {
+    if (!(await this.exists(path))) {
+      return false;
+    }
+    const stats = await fs.stat(paths.join(this.directory, this.resolveContentPath(path)));
+    return stats.isDirectory();
+  }
+
   public async list(path: string): Promise<string[]> {
     const resolvedPath = paths.join(this.directory, this.resolveContentPath(path));
     const items = await fs.readdir(resolvedPath);

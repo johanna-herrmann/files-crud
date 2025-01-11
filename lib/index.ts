@@ -26,8 +26,9 @@ program
 program
   .command('integrity')
   .description('Checks the integrity of all files, using their md5 checksums.')
-  .action(() => {
-    checkIntegrity().then();
+  .argument('[path]', 'Path to the directory or file to check the integrity for. Storage root directory if not specified')
+  .action((path) => {
+    checkIntegrity(path ?? '').then();
   });
 
 // define admin subcommand

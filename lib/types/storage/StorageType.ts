@@ -63,6 +63,20 @@ interface StorageType {
   exists(path: string): Promise<boolean>;
 
   /**
+   * Checks if path resolves to a file.
+   * @param path The path to check for
+   * @returns Promise fulfilling with a boolean, true if it is a file
+   */
+  isFile(path: string): Promise<boolean>;
+
+  /**
+   * Checks if path resolves to a directory.
+   * @param path The path to check for
+   * @returns Promise fulfilling with a boolean, true if it is a directory
+   */
+  isDirectory(path: string): Promise<boolean>;
+
+  /**
    * Lists the names of directories and files in a directory.
    * The names will be sorted alphabetically, directories first.
    * Directory names will be suffixed with a trailing slash.

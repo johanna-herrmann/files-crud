@@ -219,6 +219,46 @@ describe('Storage', (): void => {
     expect(fileExists).toBe(false);
   });
 
+  test('Storage->isFile returns true if it is a file.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const isFile = await storage.isFile('a/file');
+
+    expect(isFile).toBe(true);
+  });
+
+  test('Storage->isFile returns false if it is a directory.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const isFile = await storage.isFile('a');
+
+    expect(isFile).toBe(false);
+  });
+
+  test('Storage->isDirectory returns true if it is a directory.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const isDirectory = await storage.isDirectory('a');
+
+    expect(isDirectory).toBe(true);
+  });
+
+  test('Storage->isDirectory returns false if it is a file.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
+    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const isDirectory = await storage.isDirectory('a/file');
+
+    expect(isDirectory).toBe(false);
+  });
+
   test('Storage->list returns items in directory, sorted alphabetically, directories first and with trailing slashes.', async (): Promise<void> => {
     mockFS({ '/base': { files: { a: { file2: '', dir2: {}, file1: '', dir1: {} } } } });
     const storage = new Storage();

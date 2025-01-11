@@ -3,15 +3,16 @@ import crypto from 'crypto';
 import { loadStorage } from '@/storage';
 import { loadConfig } from '@/config';
 import { printer } from '@/printing/printer';
+import { Storage } from '@/storage/Storage';
 
 loadConfig();
-const storage = loadStorage();
+const storage: Storage = loadStorage();
 
 let valid = 0;
 let invalid = 0;
 let errors = 0;
 
-const checkFileIntegrity = async function (file: string): Promise<void> {
+const checkFileIntegrity = async function (file: string): Promise<undefined> {
   printer.printStep(file);
   try {
     const [content, data] = await storage.load(file);
@@ -31,7 +32,7 @@ const checkFileIntegrity = async function (file: string): Promise<void> {
   }
 };
 
-const checkDirectoryIntegrity = async function (directory: string): Promise<void> {
+const checkDirectoryIntegrity = async function (directory: string): Promise<undefined> {
   const items = await storage.list(directory);
   for (const item of items) {
     const path = paths.join(directory, item);
@@ -43,10 +44,27 @@ const checkDirectoryIntegrity = async function (directory: string): Promise<void
   }
 };
 
-const checkIntegrity = async function () {
+const checkPathIntegrity = async function (path: string): Promise<undefined | 1> {
+  if (await storage.isFile(path)) {
+    return await checkFileIntegrity(path);
+  }
+  if (await storage.isDirectory(path)) {
+    return await checkDirectoryIntegrity(path);
+  }
+  printer.printError(`Error: ${path || '.'} does not exist.`);
+  return 1;
+};
+
+const checkIntegrity = async function (path: string) {
+  valid = 0;
+  invalid = 0;
+  errors = 0;
   try {
     printer.printLine('Starting check...');
-    await checkDirectoryIntegrity('');
+    const doesNotExist = await checkPathIntegrity(path);
+    if (doesNotExist) {
+      return;
+    }
     printer.printLine('Finished check');
     printer.printSummary(valid, invalid, errors);
   } catch (err: unknown) {

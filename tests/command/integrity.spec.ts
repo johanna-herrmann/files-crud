@@ -19,6 +19,15 @@ jest.mock('@/storage', () => {
           }
           return await actualStorage.load(path);
         },
+        async exists(path: string): Promise<boolean> {
+          return await actualStorage.exists(path);
+        },
+        async isFile(path: string): Promise<boolean> {
+          return await actualStorage.isFile(path);
+        },
+        async isDirectory(path: string): Promise<boolean> {
+          return await actualStorage.isDirectory(path);
+        },
         async list(path: string): Promise<string[]> {
           return await actualStorage.list(path);
         }
@@ -64,8 +73,8 @@ describe('integrityCheck', (): void => {
     channels = [];
   });
 
-  test('checks files correctly', async (): Promise<void> => {
-    await checkIntegrity();
+  test('checks files correctly, root', async (): Promise<void> => {
+    await checkIntegrity('');
 
     expect(printings).toEqual([
       'Starting check...\n',
@@ -84,6 +93,51 @@ describe('integrityCheck', (): void => {
     expect(channels).toEqual(['out', 'out', 'out', 'err', 'out', 'out', 'out', 'out', 'out', 'out', 'out', 'out']);
   });
 
+  test('checks files correctly, sub directory', async (): Promise<void> => {
+    await checkIntegrity('dir/subDir');
+
+    expect(printings).toEqual([
+      'Starting check...\n',
+      'Checking dir/subDir/error ',
+      `  ${RED_START}Error${END}\n`,
+      `${RED_START}Checking Error: error message: checking error${END}\n`,
+      'Checking dir/subDir/subFile ',
+      `  ${RED_START}Invalid${END}\n`,
+      'Finished check\n',
+      `total: 2\nvalid: ${GREEN_START}0${END}\ninvalid: ${RED_START}1${END}\nerrors: ${RED_START}1${END}\n`
+    ]);
+    expect(channels).toEqual(['out', 'out', 'out', 'err', 'out', 'out', 'out', 'out']);
+  });
+
+  test('checks files correctly, sub file', async (): Promise<void> => {
+    await checkIntegrity('dir/file');
+
+    expect(printings).toEqual([
+      'Starting check...\n',
+      'Checking dir/file ',
+      `  ${GREEN_START}Valid${END}\n`,
+      'Finished check\n',
+      `total: 1\nvalid: ${GREEN_START}1${END}\ninvalid: ${RED_START}0${END}\nerrors: ${RED_START}0${END}\n`
+    ]);
+    expect(channels).toEqual(['out', 'out', 'out', 'out', 'out']);
+  });
+
+  test('gives error, if it does not exist, given path', async (): Promise<void> => {
+    await checkIntegrity('nope');
+
+    expect(printings).toEqual(['Starting check...\n', `${RED_START}Error: nope does not exist.${END}\n`]);
+    expect(channels).toEqual(['out', 'err']);
+  });
+
+  test('gives error, if it does not exist, default path', async (): Promise<void> => {
+    mockFS({});
+
+    await checkIntegrity('');
+
+    expect(printings).toEqual(['Starting check...\n', `${RED_START}Error: . does not exist.${END}\n`]);
+    expect(channels).toEqual(['out', 'err']);
+  });
+
   test('fails correctly', async (): Promise<void> => {
     const error = new Error('failed successfully');
     outSpy = jest.spyOn(stdout, 'write').mockImplementation((message: string | Uint8Array): boolean => {
@@ -95,7 +149,7 @@ describe('integrityCheck', (): void => {
       return true;
     });
 
-    await checkIntegrity();
+    await checkIntegrity('');
 
     expect(printings).toEqual([
       'Starting check...\n',
