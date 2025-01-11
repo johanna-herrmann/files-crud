@@ -24,7 +24,7 @@ const buildRequestForFileAction = function (token: string, action: string, pathP
   } as unknown as Request;
 };
 
-const buildRequestForAccessLogging = function (ip: string, referer?: string, userAgent?: string): Request {
+const buildRequestForAccessLogging = function (ip: string, referer?: string, userAgent?: string, xForwardedFor?: string | string[]): Request {
   return {
     socket: {
       remoteAddress: ip
@@ -33,6 +33,7 @@ const buildRequestForAccessLogging = function (ip: string, referer?: string, use
     path: '/image.png',
     httpVersion: 'HTTP/2.0',
     headers: {
+      'X-Forwarded-For': xForwardedFor,
       referer,
       'user-agent': userAgent
     }

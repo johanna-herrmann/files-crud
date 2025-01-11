@@ -47,7 +47,7 @@ describe('logAccessMiddleware', (): void => {
   };
 
   describe('logs access with all properties given', (): void => {
-    test('full ip', (done): void => {
+    test('full ip, remoteAddress', (done): void => {
       loadConfig({ logging: { ipLogging: 'full' } });
       const req = buildRequestForAccessLogging(ip, referer, userAgent);
       const res = mockResponse(contentLength);
@@ -56,6 +56,40 @@ describe('logAccessMiddleware', (): void => {
         const { time, ...rest } = mocked_entry;
         expect(next).toBe(true);
         expect(rest).toEqual({ ip, method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
+        done();
+      }, 1000);
+
+      logAccessMiddleware(req, res, () => (next = true));
+      res.send();
+    });
+
+    test('full ip, xForwardedFor, single', (done): void => {
+      loadConfig({ logging: { ipLogging: 'full' } });
+      const req = buildRequestForAccessLogging(ip, referer, userAgent, '192.168.0.42');
+      const res = mockResponse(contentLength);
+      let next = false;
+      setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
+        expect(next).toBe(true);
+        expect(rest).toEqual({ ip: '192.168.0.42', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
+        expect(time as number).toBeGreaterThanOrEqual(0);
+        done();
+      }, 1000);
+
+      logAccessMiddleware(req, res, () => (next = true));
+      res.send();
+    });
+
+    test(`full ip, xForwardedFor, array's first`, (done): void => {
+      loadConfig({ logging: { ipLogging: 'full' } });
+      const req = buildRequestForAccessLogging(ip, referer, userAgent, ['192.168.0.42', '192.168.0.99']);
+      const res = mockResponse(contentLength);
+      let next = false;
+      setTimeout(() => {
+        const { time, ...rest } = mocked_entry;
+        expect(next).toBe(true);
+        expect(rest).toEqual({ ip: '192.168.0.42', method, path: uri, httpVersion, statusCode, contentLength, referer, userAgent });
         expect(time as number).toBeGreaterThanOrEqual(0);
         done();
       }, 1000);

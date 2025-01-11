@@ -17,7 +17,9 @@ const getIp = function (req: Request, ipLogging: 'full' | 'anonymous' | 'none'):
   if (ipLogging === 'none') {
     return '_';
   }
-  const ip = req.socket.remoteAddress ?? '?';
+  const xForwardedFor = req.headers['X-Forwarded-For'];
+  const xForwardedForSingle = typeof xForwardedFor === 'object' ? xForwardedFor[0] : xForwardedFor;
+  const ip = xForwardedForSingle ?? req.socket.remoteAddress ?? '?';
   if (ipLogging === 'full') {
     return ip;
   }
