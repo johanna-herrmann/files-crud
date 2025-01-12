@@ -12,5 +12,6 @@ export default {
   moduleNameMapper: {
     '@/(.*)': '<rootDir>/lib/$1',
     '#/(.*)': '<rootDir>/tests/$1'
-  }
+  },
+  modulePathIgnorePatterns: ['<rootDir>/built']
 };
