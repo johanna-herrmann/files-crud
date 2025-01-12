@@ -12,7 +12,7 @@ import { getConfig } from '@/config';
  */
 class PostgresDatabaseAdapter implements DatabaseAdapter {
   private readonly conf: PgDbConf;
-  private client: Client | null = null;
+  private client: Client;
   private connected = false;
 
   constructor() {
@@ -22,10 +22,23 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
     const database = config.database?.db || 'files-crud';
     const { user, pass } = config.database ?? {};
     this.conf = { host, port, database, user, password: pass };
+    this.client = getNewClient(this.conf);
   }
 
   public getConf(): PgDbConf {
     return this.conf;
+  }
+
+  public getClient(): Client {
+    return this.client;
+  }
+
+  public setClient(client: Client): void {
+    this.client = client;
+  }
+
+  public isConnected(): boolean {
+    return this.connected;
   }
 
   private buildUpdateAndValues(update: Record<string, DbValue>): [string, PgDbValue[]] {
@@ -33,7 +46,7 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
     const updateParts: string[] = [];
     const values: PgDbValue[] = [];
     Object.entries(update).forEach(([key, value]) => {
-      updateParts.push(`${key}=$${index++}`);
+      updateParts.push(`"${key}"=$${index++}`);
       values.push(typeof value === 'object' ? JSON.stringify(value) : value);
     });
     const updater = `SET ${updateParts.join(', ')}`;
@@ -41,12 +54,12 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
   }
 
   private buildReadingQuery(table: string, filterKey: string, filterValue: string): [string, PgDbValue[]] {
-    const query = `SELECT * FROM ${table} WHERE ${filterKey}=$1`;
+    const query = `SELECT * FROM ${table} WHERE "${filterKey}"=$1`;
     return [query, [filterValue]];
   }
 
   private buildDeletingQuery(table: string, filterKey: string, filterValue: string): [string, PgDbValue[]] {
-    const query = `DELETE FROM ${table} WHERE ${filterKey}=$1`;
+    const query = `DELETE FROM ${table} WHERE "${filterKey}"=$1`;
     return [query, [filterValue]];
   }
 
@@ -57,7 +70,7 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
     let index = 1;
     Object.entries(item).forEach(([key, value]) => {
       valueParts.push(`$${index++}`);
-      keys.push(key);
+      keys.push(`"${key}"`);
       values.push(typeof value === 'object' ? JSON.stringify(value) : value);
     });
     const query = `INSERT INTO ${table}(${keys.join(', ')}) VALUES(${valueParts.join(', ')})`;
@@ -66,7 +79,7 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
 
   private buildUpdatingQuery(table: string, filterKey: string, filterValue: string, update: Record<string, DbValue>): [string, PgDbValue[]] {
     const [updater, updateValues] = this.buildUpdateAndValues(update);
-    const query = `UPDATE ${table} ${updater} WHERE ${filterKey}=$${updateValues.length + 1}`;
+    const query = `UPDATE ${table} ${updater} WHERE "${filterKey}"=$${updateValues.length + 1}`;
     return [query, [...updateValues, filterValue]];
   }
 
@@ -83,7 +96,6 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
     if (this.connected) {
       return;
     }
-    this.client = this.client || getNewClient(this.conf);
     await connect(this.client);
     this.connected = true;
   }
@@ -113,9 +125,9 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
     const fields: string[] = [];
     Object.entries(item).forEach(([key, value]) => {
       const type = typeof value;
-      fields.push(`${key} ${types[type]}`);
+      fields.push(`"${key}" ${types[type]}`);
     });
-    fields.push(`PRIMARY KEY(${Object.keys(item)[0]})`);
+    fields[0] = `${fields[0]} PRIMARY KEY`;
     const query = `CREATE TABLE IF NOT EXISTS ${table}(${fields.join(', ')})`;
     await definingQuery(this.client, query);
   }
