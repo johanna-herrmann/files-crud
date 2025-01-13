@@ -1,5 +1,5 @@
 import DatabaseConfig from './DatabaseConfig';
-import StorageConfig from '@/types/storage/StorageConfig';
+import StorageConfig from '@/types/config/StorageConfig';
 import PermissionConfig from '@/types/config/PermissionConfig';
 import LoggingConfig from '@/types/config/LoggingConfig';
 import ServerConfig from '@/types/config/ServerConfig';

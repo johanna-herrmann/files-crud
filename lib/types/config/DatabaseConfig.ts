@@ -15,10 +15,6 @@ interface DatabaseConfig {
     failedLoginAttempts: string;
     jwtKey: string;
   };
-  userTableName?: string;
-  jwtKeyTableName?: string;
-  failedLoginAttemptsTableName?: string;
-  fileTableName?: string;
 }
 
 export default DatabaseConfig;
