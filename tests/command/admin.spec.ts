@@ -32,7 +32,7 @@ jest.mock('crypto', () => {
   };
 });
 
-describe('admin', (): void => {
+describe('command: admin', (): void => {
   const stdout = process.stdout;
   const stderr = process.stderr;
 

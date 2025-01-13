@@ -1,11 +1,9 @@
 import paths from 'path';
 import crypto from 'crypto';
 import { loadStorage } from '@/storage';
-import { loadConfig } from '@/config';
 import { printer } from '@/printing/printer';
 import { Storage } from '@/storage/Storage';
 
-loadConfig();
 const storage: Storage = loadStorage();
 
 let valid = 0;

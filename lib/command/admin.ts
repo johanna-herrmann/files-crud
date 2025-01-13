@@ -1,9 +1,6 @@
 import crypto from 'crypto';
 import { addUser, getUsers } from '@/user';
-import { loadConfig } from '@/config';
 import { printer } from '@/printing/printer';
-
-loadConfig();
 
 const getRandomString = function (length: number): string {
   return crypto.randomBytes(length).toString('base64url');

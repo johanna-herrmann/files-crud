@@ -16,6 +16,11 @@ class Printer {
     return this;
   }
 
+  public printBlock(block: string): Printer {
+    process.stdout.write(`${block}\n`);
+    return this;
+  }
+
   public printStep(path: string): Printer {
     process.stdout.write(`Checking ${path} `);
     return this;

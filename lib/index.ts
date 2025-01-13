@@ -5,6 +5,10 @@ import { description, version } from '../package.json';
 import { start } from '@/command/start';
 import { checkIntegrity } from '@/command/integrity';
 import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
+import { showConfig } from '@/command/config';
+import { loadConfig } from '@/config';
+
+loadConfig();
 
 const program = new Command();
 
@@ -26,9 +30,9 @@ program
 program
   .command('integrity')
   .description('Checks the integrity of all files, using their md5 checksums.')
-  .argument('[path]', 'Path to the directory or file to check the integrity for. Storage root directory if not specified')
+  .argument('[path]', 'Path to the directory or file to check the integrity for. Storage root directory if not specified', '')
   .action((path) => {
-    checkIntegrity(path ?? '').then();
+    checkIntegrity(path).then();
   });
 
 // define admin subcommand
@@ -39,6 +43,15 @@ program
   .option('-p, --password <password>', 'Password of the user to create. Will be chosen randomly if not provided')
   .action(({ username, password }: { username?: string; password?: string }) => {
     createAdmin({ username, password }).then();
+  });
+
+// define config subcommand
+program
+  .command('config')
+  .description('shows currently specified configuration.')
+  .argument('[format]', 'Format to show the config in (json|yaml)', 'properties')
+  .action((format: string) => {
+    showConfig(format);
   });
 
 //parse and start

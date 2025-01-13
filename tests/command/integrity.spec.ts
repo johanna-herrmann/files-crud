@@ -36,7 +36,7 @@ jest.mock('@/storage', () => {
   };
 });
 
-describe('integrityCheck', (): void => {
+describe('command: integrity', (): void => {
   const stdout = process.stdout;
   const stderr = process.stderr;
 
