@@ -12,6 +12,22 @@ const isDirectoryOperation = function (operation: Right | 'list'): boolean {
   return /^create|list$/.test(operation);
 };
 
+const getDirectoryPermissions = function (directoryPermissions: Record<string, string>, path: string): string | undefined {
+  const sortedKeys = Object.keys(directoryPermissions).sort((a: string, b: string) => {
+    const levelsA = a.split('/').length;
+    const levelsB = b.split('/').length;
+    if (levelsA > levelsB) {
+      return -1;
+    }
+    if (levelsA < levelsB) {
+      return 1;
+    }
+    return 0;
+  });
+  const key = sortedKeys.find((key) => path.replace(/^user_[^\/]*/, '$user') === key || path === key);
+  return key ? directoryPermissions[key] : undefined;
+};
+
 const parseLevelPermissions = function (permissions: string, levelIndex: 0 | 1 | 2): Right[] {
   const rights: Right[] = ['create', 'read', 'update', 'delete'];
   const rightsSet: Right[] = [];
@@ -47,8 +63,8 @@ const parsePermissions = function (permissions: string, level: 'owner' | 'user' 
 const getPermissions = function (user: User | null, path: string, data: FileData, exists: boolean, operation: Right | 'list'): Right[] {
   const config = getFullConfig();
   const directory = operation === 'list' ? path : paths.dirname(paths.join(paths.sep, path)).substring(1);
-  const directoriesPermissions = config.directoryPermissions as Record<string, string>;
-  const permissions = directoriesPermissions[directory.split('/')[0]] ?? config.defaultPermissions;
+  const directoryPermissions = config.directoryPermissions as Record<string, string>;
+  const permissions = (getDirectoryPermissions(directoryPermissions, directory) ?? config.defaultPermissions) as string;
 
   if (user?.admin) {
     return ['create', 'read', 'update', 'delete'];

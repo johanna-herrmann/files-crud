@@ -199,4 +199,38 @@ describe('getPermissions', (): void => {
       });
     });
   });
+
+  describe('directoryPermissions works in depths', (): void => {
+    test('1', async (): Promise<void> => {
+      const config = {
+        defaultPermissions: '000',
+        directoryPermissions: { dir: '040' }
+      };
+      await runTest(config, testUser, 'dir/file', nullData, false, 'read', ['read']);
+    });
+
+    test('2', async (): Promise<void> => {
+      const config = {
+        defaultPermissions: '000',
+        directoryPermissions: { dir: '010', 'dir/sub': '040' }
+      };
+      await runTest(config, testUser, 'dir/sub/file', nullData, false, 'read', ['read']);
+    });
+
+    test('3', async (): Promise<void> => {
+      const config = {
+        defaultPermissions: '000',
+        directoryPermissions: { dir: '010', 'dir/sub': '020', 'dir/sub/sub2': '040' }
+      };
+      await runTest(config, testUser, 'dir/sub/sub2/file', nullData, false, 'read', ['read']);
+    });
+
+    test('with owner id placeholder', async (): Promise<void> => {
+      const config = {
+        defaultPermissions: '000',
+        directoryPermissions: { dir: '010', 'dir/sub': '020', '$user/sub/sub2': '040' }
+      };
+      await runTest(config, testUser, 'user_id42/sub/sub2/file', nullData, false, 'read', ['read']);
+    });
+  });
 });
