@@ -1,5 +1,5 @@
 import yaml from 'yaml';
-import { getConfig } from '@/config/config';
+import { getConfig, getFullConfig } from '@/config/config';
 import { printer } from '@/printing/printer';
 import Config from '@/types/config/Config';
 
@@ -19,6 +19,9 @@ const toEnv = function (config: Config): string[] {
 
 const toPropertiesNotation = function (config: Config, prefix = '', entries: string[] = []): string[] {
   Object.entries(config).forEach(([key, value]) => {
+    if (typeof value === 'undefined') {
+      return;
+    }
     if (typeof value === 'object' && 'push' in value) {
       return entries.push(`${prefix}${key}=${value.join(',')}`);
     }
@@ -44,8 +47,8 @@ const formatConfig = function (config: Config, format: Format): string {
   }
 };
 
-const showConfig = function (format: string = 'json'): void {
-  const config = getConfig();
+const showConfig = function (format: string = 'json', noDefaults: boolean): void {
+  const config = noDefaults ? getConfig() : getFullConfig();
   printer.printBlock(formatConfig(config, format as Format));
 };
 

@@ -48,10 +48,11 @@ program
 // define config subcommand
 program
   .command('config')
-  .description('shows currently specified configuration.')
+  .description('shows currently configuration.')
   .argument('[format]', 'Format to show the config in (json|yaml)', 'properties')
-  .action((format: string) => {
-    showConfig(format);
+  .option('-n, --no-defaults', 'Only show specified configuration, but no defaults')
+  .action((format: string, { defaults }) => {
+    showConfig(format, !(defaults as boolean));
   });
 
 //parse and start

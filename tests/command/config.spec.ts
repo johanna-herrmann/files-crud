@@ -52,7 +52,7 @@ describe('command: config', (): void => {
   });
 
   test('shows config in json', async (): Promise<void> => {
-    showConfig('json');
+    showConfig('json', true);
 
     expect(printings).toEqual([
       '{\n' +
@@ -70,7 +70,7 @@ describe('command: config', (): void => {
   });
 
   test('shows config in yaml', async (): Promise<void> => {
-    showConfig('yaml');
+    showConfig('yaml', true);
 
     expect(printings).toEqual([
       'webRoot: /web\n' +
@@ -85,14 +85,14 @@ describe('command: config', (): void => {
   });
 
   test('shows config in properties notation', async (): Promise<void> => {
-    showConfig('properties');
+    showConfig('properties', true);
 
     expect(printings).toEqual([propertiesNotation]);
     expect(channels).toEqual(['out']);
   });
 
   test('shows config in env notation', async (): Promise<void> => {
-    showConfig('env');
+    showConfig('env', true);
 
     expect(printings).toEqual([
       'FILES_CRUD_WEB_ROOT=/web\n' +
@@ -106,9 +106,18 @@ describe('command: config', (): void => {
   });
 
   test('defaults to properties notation', async (): Promise<void> => {
-    showConfig('someNonsense');
+    showConfig('someNonsense', true);
 
     expect(printings).toEqual([propertiesNotation]);
+    expect(channels).toEqual(['out']);
+  });
+
+  test('full config', async (): Promise<void> => {
+    loadConfig({});
+
+    showConfig('properties', false);
+
+    expect((printings[0] as string).split('\n').length).toBe(29);
     expect(channels).toEqual(['out']);
   });
 });
