@@ -62,13 +62,18 @@ describe('fileSaveMiddleware', () => {
   describe('passes', (): void => {
     describe('if update permission is given', (): void => {
       const passesIfUpdatePermissionIsGiven = async function (level: string, token: string, owner: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: { update: true } } });
+        const levels: Record<string, string> = {
+          owner: '200',
+          user: '020',
+          public: '002'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         mockFS({
           './files': { [directory]: { file: '' } },
           './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
         const res = buildResponse();
 
         await fileSaveMiddleware(req, res, () => (next = true));
@@ -98,17 +103,16 @@ describe('fileSaveMiddleware', () => {
         mocked_user = testUser;
         await passesIfUpdatePermissionIsGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
       });
-
-      test('for owner, directory.', async (): Promise<void> => {
-        mocked_token = 'valid-user-token';
-        mocked_user = testUser;
-        await passesIfUpdatePermissionIsGiven('owner', 'valid-user-token', '', `user_${testUser.ownerId}`);
-      });
     });
 
     describe('if create permission is given', (): void => {
       const passesIfCreatePermissionIsGiven = async function (level: string, token: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: { create: true } } });
+        const levels: Record<string, string> = {
+          owner: '800',
+          user: '080',
+          public: '008'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         mockFS({
           '/opt/files-crud': {
             files: { [directory]: {} },
@@ -152,7 +156,12 @@ describe('fileSaveMiddleware', () => {
   describe('rejects', (): void => {
     describe('if update permission is not given', (): void => {
       const rejectsIfUpdatePermissionIsNotGiven = async function (level: string, token: string, owner: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: {} } });
+        const levels: Record<string, string> = {
+          owner: 'dff',
+          user: 'fdf',
+          public: 'ffd'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         let next = false;
         const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
         const res = buildResponse();
@@ -176,22 +185,10 @@ describe('fileSaveMiddleware', () => {
         await rejectsIfUpdatePermissionIsNotGiven('user', 'valid-user-token', 'owner', 'dir');
       });
 
-      test('for admin.', async (): Promise<void> => {
-        mocked_token = 'valid-admin-token';
-        mocked_user = { ...testUser, admin: true };
-        await rejectsIfUpdatePermissionIsNotGiven('admin', 'valid-admin-token', 'owner', 'dir');
-      });
-
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
         await rejectsIfUpdatePermissionIsNotGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
-      });
-
-      test('for owner, directory.', async (): Promise<void> => {
-        mocked_token = 'valid-user-token';
-        mocked_user = testUser;
-        await rejectsIfUpdatePermissionIsNotGiven('owner', 'valid-user-token', '', `user_${testUser.ownerId}`);
       });
     });
 
@@ -200,7 +197,12 @@ describe('fileSaveMiddleware', () => {
         let next = false;
         const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
         const res = buildResponse();
-        loadConfig({ defaultPermissions: { [level]: {} } });
+        const levels: Record<string, string> = {
+          owner: '7ff',
+          user: 'f7f',
+          public: 'ff7'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         mockFS({
           '/opt/files-crud': {
             files: { [directory]: {} },
@@ -221,12 +223,6 @@ describe('fileSaveMiddleware', () => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
         await rejectsIfCreatePermissionIsNotGiven('user', 'valid-user-token', 'dir');
-      });
-
-      test('for admin.', async (): Promise<void> => {
-        mocked_token = 'valid-admin-token';
-        mocked_user = { ...testUser, admin: true };
-        await rejectsIfCreatePermissionIsNotGiven('admin', 'valid-admin-token', 'dir');
       });
 
       test('for owner.', async (): Promise<void> => {

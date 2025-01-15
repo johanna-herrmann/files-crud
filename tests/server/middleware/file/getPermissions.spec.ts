@@ -1,11 +1,11 @@
 import { getPermissions } from '@/server/middleware/file/permissions';
 import { testUser } from '#/testItems';
 import { loadConfig } from '@/config/config';
+import { Logger } from '@/logging/Logger';
 import Config from '@/types/config/Config';
 import User from '@/types/user/User';
 import FileData from '@/types/storage/FileData';
-import Permissions from '@/types/config/Permissions';
-import { Logger } from '@/logging/Logger';
+import Right from '@/types/config/Right';
 
 const ownerPath = `user_${testUser.ownerId}/file`;
 const ownerData = { owner: testUser.ownerId, meta: {}, contentType: '', size: 42, md5: '0'.repeat(32) };
@@ -41,12 +41,12 @@ const runTest = async function (
   path: string,
   data: FileData,
   exists: boolean,
-  list: boolean,
-  expectedPermissions: Permissions
+  operation: Right | 'list',
+  expectedPermissions: Right[]
 ): Promise<void> {
   loadConfig(config);
 
-  const actualPermissions = getPermissions(user, path, data, exists, list);
+  const actualPermissions = getPermissions(user, path, data, exists, operation);
 
   expect(actualPermissions).toEqual(expectedPermissions);
 };
@@ -54,211 +54,148 @@ const runTest = async function (
 describe('getPermissions', (): void => {
   describe('allPermissions', (): void => {
     test('returns [create, read, update, delete] for admin', async (): Promise<void> => {
-      await runTest({}, admin, 'file', nullData, false, false, { create: true, read: true, update: true, delete: true });
+      await runTest({}, admin, 'file', nullData, false, 'read', ['create', 'read', 'update', 'delete']);
     });
 
     test('returns [read, update, delete] for owner, directory', async (): Promise<void> => {
-      await runTest({}, testUser, ownerPath, nullData, false, false, { read: true, update: true, delete: true });
+      await runTest({}, testUser, ownerPath, nullData, false, 'list', ['create', 'read', 'update', 'delete']);
     });
 
-    test('returns [read, update, delete] for owner, file', async (): Promise<void> => {
-      await runTest({}, testUser, 'file', ownerData, false, false, { read: true, update: true, delete: true });
+    test('returns [create, read, update, delete] for owner, file', async (): Promise<void> => {
+      await runTest({}, testUser, 'file', ownerData, true, 'update', ['create', 'read', 'update', 'delete']);
     });
 
-    test('returns [create, read, update, delete] for user', async (): Promise<void> => {
-      await runTest({}, testUser, 'file', nullData, false, false, { create: true, read: true, update: true, delete: true });
+    test('returns [create, read] for user', async (): Promise<void> => {
+      await runTest({}, testUser, 'file', nullData, false, 'read', ['create', 'read']);
     });
 
     test('returns [] for public access', async (): Promise<void> => {
-      await runTest({}, null, 'file', nullData, false, false, {});
+      await runTest({}, null, 'file', nullData, false, 'read', []);
     });
   });
 
   describe('defaultPermissions', (): void => {
-    test('returns [delete] for admin', async (): Promise<void> => {
-      const config = { defaultPermissions: { admin: { delete: true } } };
-      await runTest(config, admin, 'file', nullData, false, false, { delete: true });
+    test('returns [create, read, update, delete] for admin', async (): Promise<void> => {
+      const config = { defaultPermissions: '000' };
+      await runTest(config, admin, 'file', nullData, false, 'read', ['create', 'read', 'update', 'delete']);
     });
 
-    test('returns [delete] for owner, directory', async (): Promise<void> => {
-      await runTest({ defaultPermissions: { owner: { delete: true } } }, testUser, ownerPath, nullData, false, false, { delete: true });
+    test('returns [create, read, update, delete] for owner, directory', async (): Promise<void> => {
+      await runTest({ defaultPermissions: '100' }, testUser, ownerPath, nullData, false, 'list', ['delete']);
     });
 
     test('returns [delete] for owner, file', async (): Promise<void> => {
-      await runTest({ defaultPermissions: { owner: { delete: true } } }, testUser, 'file', ownerData, false, false, { delete: true });
+      await runTest({ defaultPermissions: '100' }, testUser, 'file', ownerData, true, 'update', ['delete']);
     });
 
     test('returns [delete] for user', async (): Promise<void> => {
-      await runTest({ defaultPermissions: { user: { delete: true } } }, testUser, 'file', nullData, false, false, { delete: true });
+      await runTest({ defaultPermissions: '010' }, testUser, 'file', nullData, false, 'read', ['delete']);
     });
 
     test('returns [delete] for pubic', async (): Promise<void> => {
-      await runTest({ defaultPermissions: { public: { delete: true } } }, null, 'file', nullData, false, false, { delete: true });
+      await runTest({ defaultPermissions: '001' }, null, 'file', nullData, false, 'read', ['delete']);
     });
   });
 
   describe('directoryPermissions', (): void => {
-    const buildDirectoryPermissions = function (level: 'admin' | 'owner' | 'user' | 'public'): Config {
+    const buildDirectoryPermissions = function (level: 0 | 1 | 2): Config {
+      const reads = ['400', '040', '004'];
+      const deletes = ['100', '010', '001'];
       return {
-        defaultPermissions: { [level]: { read: false } },
-        directoryPermissions: { dir: { [level]: { delete: true } } }
+        defaultPermissions: reads[level],
+        directoryPermissions: { dir: deletes[level] }
       };
     };
 
-    test('returns [delete] for admin', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('admin'), admin, 'dir/file', nullData, false, false, { delete: true });
-    });
-
     test('returns [delete] for owner, file', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('owner'), testUser, 'dir/file', ownerData, false, false, { delete: true });
+      await runTest(buildDirectoryPermissions(0), testUser, 'dir/file', ownerData, true, 'update', ['delete']);
     });
 
     test('returns [delete] for user', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('user'), testUser, 'dir/file', nullData, false, false, { delete: true });
+      await runTest(buildDirectoryPermissions(1), testUser, 'dir/file', nullData, false, 'read', ['delete']);
     });
 
     test('returns [delete] for pubic', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('public'), null, 'dir/file', nullData, false, false, { delete: true });
+      await runTest(buildDirectoryPermissions(2), null, 'dir/file', nullData, false, 'read', ['delete']);
     });
   });
 
-  describe('userDirectoryPermissions', (): void => {
-    const buildDirectoryPermissions = function (level: 'admin' | 'owner' | 'user' | 'public'): Config {
-      return {
-        defaultPermissions: { [level]: { read: false } },
-        directoryPermissions: { [`user_${testUser.ownerId}`]: { [level]: { update: true } } },
-        userDirectoryPermissions: { [level]: { delete: true } }
-      };
-    };
-
-    test('returns [delete] for admin', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('admin'), admin, ownerPath, nullData, false, false, { delete: true });
-    });
-
-    test('returns [delete] for owner, file', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('owner'), testUser, ownerPath, ownerData, false, false, { delete: true });
-    });
-
-    test('returns [delete] for user', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('user'), testUser, ownerPath, nullData, false, false, { delete: true });
-    });
-
-    test('returns [delete] for pubic', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('public'), null, ownerPath, nullData, false, false, { delete: true });
-    });
-  });
-
-  describe('userFilePermissions', (): void => {
-    const buildDirectoryPermissions = function (level: 'admin' | 'owner' | 'user' | 'public'): Config {
-      return {
-        defaultPermissions: { [level]: { read: false } },
-        directoryPermissions: { dir: { [level]: { create: true } } },
-        userDirectoryPermissions: { [level]: { update: true } },
-        userFilePermissions: { [level]: { delete: true } }
-      };
-    };
-
-    test('returns [delete] for admin, file', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('admin'), admin, 'dir/file', nullData, true, false, { delete: true });
-    });
-
-    test('returns [delete] for owner, file', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('owner'), testUser, 'dir/file', ownerData, true, false, { delete: true });
-    });
-
-    test('returns [delete] for owner, directory', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('owner'), testUser, ownerPath, nullData, true, false, { delete: true });
-    });
-
-    test('returns [delete] for user', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('user'), testUser, 'dir/file', nullData, true, false, { delete: true });
-    });
-
-    test('returns [delete] for pubic', async (): Promise<void> => {
-      await runTest(buildDirectoryPermissions('public'), null, 'dir/file', nullData, true, false, { delete: true });
-    });
-  });
-
-  describe('falls back correctly', (): void => {
-    describe('permissions falls back', (): void => {
-      test('from actual.admin to default.admin', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: { admin: { delete: true } },
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, admin, 'dir/file', nullData, true, false, { delete: true });
+  describe('specific permissions', (): void => {
+    describe('parses letters correctly', (): void => {
+      test('no access', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '-'.repeat(12) }, testUser, 'dir/file', nullData, false, 'read', []);
       });
 
-      test('from actual.admin to default.admin to fallback.all.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: {},
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, admin, 'dir/file', nullData, true, false, { create: true, read: true, update: true, delete: true });
+      test('full access, owner', async (): Promise<void> => {
+        await runTest({ defaultPermissions: 'crud'.repeat(3) }, testUser, 'dir/file', ownerData, true, 'update', [
+          'create',
+          'read',
+          'update',
+          'delete'
+        ]);
       });
 
-      test('from actual.owner to actual.user.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: { owner: { create: true } },
-          directoryPermissions: { dir: { user: { delete: true } } }
-        };
-        await runTest(config, testUser, 'dir/file', ownerData, true, false, { delete: true });
+      test('full access, user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: 'crud'.repeat(3) }, testUser, 'dir/file', nullData, false, 'read', [
+          'create',
+          'read',
+          'update',
+          'delete'
+        ]);
       });
 
-      test('from actual.owner to actual.user to default.owner.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: { owner: { delete: true } },
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, testUser, 'dir/file', ownerData, true, false, { delete: true });
+      test('full access, public', async (): Promise<void> => {
+        await runTest({ defaultPermissions: 'crud'.repeat(3) }, null, 'dir/file', ownerData, true, 'read', ['create', 'read', 'update', 'delete']);
       });
 
-      test('from actual.owner to actual.user to default.owner to default.user.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: { user: { delete: true } },
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, testUser, 'dir/file', ownerData, true, false, { delete: true });
+      test('rud spread, read for owner', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '-r----u----d' }, testUser, ownerPath, nullData, false, 'list', ['read']);
       });
 
-      test('from actual.owner to actual.user to default.owner to default.user to fallback.read.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: {},
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, testUser, 'dir/file', ownerData, true, false, { read: true });
+      test('rud spread, update for user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '-r----u----d' }, testUser, 'dir/file', nullData, false, 'update', ['update']);
       });
 
-      test('from actual.user to default.user.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: { user: { delete: true } },
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, testUser, 'dir/file', nullData, true, false, { delete: true });
+      test('rud spread, delete for public', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '-r----u----d' }, null, 'dir/file', nullData, false, 'delete', ['delete']);
       });
 
-      test('from actual.user to default.user to fallback.read.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: {},
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, testUser, 'dir/file', nullData, true, false, { read: true });
+      test('cru for user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '----cru-----' }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update']);
+      });
+    });
+
+    describe('parses hex digits correctly', (): void => {
+      test('no access', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '000' }, null, 'dir/file', nullData, false, 'read', []);
       });
 
-      test('from actual.public to default.public.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: { public: { delete: true } },
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, null, 'dir/file', nullData, true, false, { delete: true });
+      test('full access, owner', async (): Promise<void> => {
+        await runTest({ defaultPermissions: 'fff' }, testUser, 'dir/file', ownerData, true, 'update', ['create', 'read', 'update', 'delete']);
       });
 
-      test('from actual.public to default.public to fallback.none.', async (): Promise<void> => {
-        const config = {
-          defaultPermissions: {},
-          directoryPermissions: { dir: {} }
-        };
-        await runTest(config, null, 'dir/file', nullData, true, false, {});
+      test('full access, user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: 'fff' }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update', 'delete']);
+      });
+
+      test('full access, public', async (): Promise<void> => {
+        await runTest({ defaultPermissions: 'fff' }, null, 'dir/file', ownerData, true, 'read', ['create', 'read', 'update', 'delete']);
+      });
+
+      test('rud spread, read for owner', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '421' }, testUser, ownerPath, nullData, false, 'list', ['read']);
+      });
+
+      test('rud spread, update for user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '421' }, testUser, 'dir/file', nullData, false, 'update', ['update']);
+      });
+
+      test('rud spread, delete for public', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '421' }, null, 'dir/file', nullData, false, 'delete', ['delete']);
+      });
+
+      test('cru for user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '0e0' }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update']);
       });
     });
   });

@@ -6,18 +6,15 @@ import { loadStorage } from '@/storage';
 import { Storage } from '@/storage/Storage';
 import { getPermissions } from '@/server/middleware/file/permissions';
 import User from '@/types/user/User';
-import Permissions from '@/types/config/Permissions';
 import Right from '@/types/config/Right';
 import FileData from '@/types/storage/FileData';
 
 const nullData: FileData = { owner: '', meta: {}, contentType: '', size: -1, md5: '0'.repeat(32) };
 
-const ensureRights = function (permissions: Permissions, rights: Right[], path: string, res: express.Response): boolean {
-  for (const right of rights) {
-    if (!permissions[right]) {
-      sendUnauthorized(res, `You are not allowed to ${right} ${path}`);
-      return false;
-    }
+const ensureRights = function (rightsSet: Right[], requiredRight: Right, path: string, res: express.Response): boolean {
+  if (!rightsSet.includes(requiredRight)) {
+    sendUnauthorized(res, `You are not allowed to ${requiredRight} ${path}`);
+    return false;
   }
   return true;
 };
@@ -31,12 +28,11 @@ const checkForSingleFile = async function (
   requiredRight: Right
 ): Promise<boolean> {
   const data = exists ? await storage.loadData(path) : nullData;
-  const permissions = getPermissions(user, path, data, exists, false);
-  return ensureRights(permissions, [requiredRight], path, res);
+  const permissions = getPermissions(user, path, data, exists, requiredRight);
+  return ensureRights(permissions, requiredRight, path, res);
 };
 
 const loadMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-  resolvePath(req);
   const storage = loadStorage();
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
@@ -86,8 +82,8 @@ const directoryListingMiddleware = async function (req: Request, res: express.Re
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
   const exists = await storage.exists(path);
-  const permissions = getPermissions(user, path, nullData, exists, true);
-  const allowed = ensureRights(permissions, ['read'], path, res);
+  const permissions = getPermissions(user, path, nullData, exists, 'list');
+  const allowed = ensureRights(permissions, 'read', path, res);
   if (allowed) {
     next();
   }

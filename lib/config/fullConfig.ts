@@ -1,5 +1,4 @@
 import Config from '@/types/config/Config';
-import PermissionConfig from '@/types/config/PermissionConfig';
 import DatabaseConfig from '@/types/config/DatabaseConfig';
 import StorageConfig from '@/types/config/StorageConfig';
 import LoggingConfig from '@/types/config/LoggingConfig';
@@ -127,52 +126,14 @@ const loadServerConfig = function (config: Config) {
   return conf;
 };
 
-const defaultDirConf = {
-  public: {},
-  user: { create: true, read: true, update: true, delete: true },
-  admin: { create: true, read: true, update: true, delete: true }
-};
-
-const loadDefaultPermissions = function (config: Config): PermissionConfig {
-  if (!config.defaultPermissions) {
-    return defaultDirConf;
-  }
-  return { ...defaultDirConf, ...config.defaultPermissions };
-};
-
-const loadDirectoryPermissions = function (config: Config): Record<string, PermissionConfig> {
+const loadDirectoryPermissions = function (config: Config): Record<string, string> {
   return config.directoryPermissions ?? {};
-};
-
-const loadUserDirectoryPermissions = function (config: Config): PermissionConfig {
-  const defaultConf = {
-    public: {},
-    user: {},
-    owner: { create: true, read: true, update: true, delete: true },
-    admin: { create: true, read: true, update: true, delete: true }
-  };
-  if (!config.userDirectoryPermissions) {
-    return {};
-  }
-  return { ...defaultConf, ...config.userDirectoryPermissions };
-};
-
-const loadUserFilePermissions = function (config: Config): PermissionConfig {
-  const defaultConf = {
-    public: {},
-    user: { read: true },
-    owner: { read: true, update: true, delete: true },
-    admin: { read: true, update: true, delete: true }
-  };
-  if (!config.userFilePermissions) {
-    return {};
-  }
-  return { ...defaultConf, ...config.userFilePermissions };
 };
 
 const loadFullConfig = function (config: Config): Config {
   const register = config.register ?? 'admin';
 
+  // noinspection SpellCheckingInspection
   return {
     database: loadDbConfig(config),
     storage: loadStorageConfig(config),
@@ -185,9 +146,7 @@ const loadFullConfig = function (config: Config): Config {
     register,
     tokens: register === 'token' ? (config.tokens ?? []) : undefined,
     directoryPermissions: loadDirectoryPermissions(config),
-    userDirectoryPermissions: loadUserDirectoryPermissions(config),
-    userFilePermissions: loadUserFilePermissions(config),
-    defaultPermissions: loadDefaultPermissions(config),
+    defaultPermissions: config.defaultPermissions ?? 'crudcr------',
     server: loadServerConfig(config),
     webRoot: config.webRoot
   };

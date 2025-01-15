@@ -62,7 +62,12 @@ describe('directoryListingMiddleware', () => {
   describe('passes', (): void => {
     describe('if read permission is given', (): void => {
       const passesIfReadPermissionIsGiven = async function (level: string, token: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: { read: true } } });
+        const levels: Record<string, string> = {
+          owner: '400',
+          user: '040',
+          public: '004'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         mockFS({
           '/opt/files-crud': {
             files: { [directory]: { file: '' } },
@@ -105,7 +110,12 @@ describe('directoryListingMiddleware', () => {
   describe('rejects', (): void => {
     describe('if read permission is not given', (): void => {
       const rejectsIfReadPermissionIsNotGiven = async function (level: string, token: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: {} } });
+        const levels: Record<string, string> = {
+          owner: 'bff',
+          user: 'fbf',
+          public: 'ffb'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         let next = false;
         const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
         const res = buildResponse();
@@ -129,12 +139,6 @@ describe('directoryListingMiddleware', () => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
         await rejectsIfReadPermissionIsNotGiven('user', 'valid-user-token', 'dir');
-      });
-
-      test('for admin.', async (): Promise<void> => {
-        mocked_token = 'valid-admin-token';
-        mocked_user = { ...testUser, admin: true };
-        await rejectsIfReadPermissionIsNotGiven('admin', 'valid-admin-token', 'dir');
       });
 
       test('for owner, directory.', async (): Promise<void> => {

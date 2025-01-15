@@ -62,7 +62,12 @@ describe('fileDeleteMiddleware', () => {
   describe('passes', (): void => {
     describe('if delete permission is given', (): void => {
       const passesIfDeletePermissionIsGiven = async function (level: string, token: string, owner: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: { delete: true } } });
+        const levels: Record<string, string> = {
+          owner: '100',
+          user: '010',
+          public: '001'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         mockFS({
           './files': { [directory]: { file: '' } },
           './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
@@ -97,19 +102,18 @@ describe('fileDeleteMiddleware', () => {
         mocked_user = testUser;
         await passesIfDeletePermissionIsGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
       });
-
-      test('for owner, directory.', async (): Promise<void> => {
-        mocked_token = 'valid-user-token';
-        mocked_user = testUser;
-        await passesIfDeletePermissionIsGiven('owner', 'valid-user-token', '', `user_${testUser.ownerId}`);
-      });
     });
   });
 
   describe('rejects', (): void => {
     describe('if delete permission is not given', (): void => {
       const rejectsIfDeletePermissionIsNotGiven = async function (level: string, token: string, owner: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: {} }, userDirectoryPermissions: { [level]: {} }, userFilePermissions: { [level]: {} } });
+        const levels: Record<string, string> = {
+          owner: 'eff',
+          user: 'fef',
+          public: 'ffe'
+        };
+        loadConfig({ defaultPermissions: levels[level] });
         let next = false;
         const req = buildRequestForFileAction(token, 'delete', `${directory}/file`, {});
         const res = buildResponse();
@@ -133,22 +137,10 @@ describe('fileDeleteMiddleware', () => {
         await rejectsIfDeletePermissionIsNotGiven('user', 'valid-user-token', 'owner', 'dir');
       });
 
-      test('for admin.', async (): Promise<void> => {
-        mocked_token = 'valid-admin-token';
-        mocked_user = { ...testUser, admin: true };
-        await rejectsIfDeletePermissionIsNotGiven('admin', 'valid-admin-token', 'owner', 'dir');
-      });
-
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
         await rejectsIfDeletePermissionIsNotGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
-      });
-
-      test('for owner, directory.', async (): Promise<void> => {
-        mocked_token = 'valid-user-token';
-        mocked_user = testUser;
-        await rejectsIfDeletePermissionIsNotGiven('owner', 'valid-user-token', '', `user_${testUser.ownerId}`);
       });
     });
   });

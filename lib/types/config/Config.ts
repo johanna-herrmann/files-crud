@@ -1,6 +1,5 @@
 import DatabaseConfig from './DatabaseConfig';
 import StorageConfig from '@/types/config/StorageConfig';
-import PermissionConfig from '@/types/config/PermissionConfig';
 import LoggingConfig from '@/types/config/LoggingConfig';
 import ServerConfig from '@/types/config/ServerConfig';
 
@@ -14,10 +13,8 @@ interface Config {
   region?: string;
   register?: 'all' | 'admin' | 'token';
   tokens?: string[];
-  directoryPermissions?: Record<string, PermissionConfig>;
-  userDirectoryPermissions?: PermissionConfig;
-  userFilePermissions?: PermissionConfig;
-  defaultPermissions?: PermissionConfig;
+  directoryPermissions?: Record<string, string>;
+  defaultPermissions?: string;
   server?: ServerConfig;
   webRoot?: string;
 }

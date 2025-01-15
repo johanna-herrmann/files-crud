@@ -11,13 +11,7 @@ describe('command: config', (): void => {
       sslCertPath: './cert.pem',
       sslKeyPath: './privateKey.pem'
     },
-    defaultPermissions: {
-      public: {
-        create: true,
-        delete: true,
-        read: true
-      }
-    }
+    defaultPermissions: '00d'
   };
 
   const propertiesNotation =
@@ -26,9 +20,7 @@ describe('command: config', (): void => {
     'server.port=9001\n' +
     'server.sslCertPath=./cert.pem\n' +
     'server.sslKeyPath=./privateKey.pem\n' +
-    'defaultPermissions.public.create=true\n' +
-    'defaultPermissions.public.delete=true\n' +
-    'defaultPermissions.public.read=true\n';
+    'defaultPermissions=00d\n';
 
   const stdout = process.stdout;
   const stderr = process.stderr;
@@ -71,13 +63,7 @@ describe('command: config', (): void => {
         '        "sslCertPath": "./cert.pem",\n' +
         '        "sslKeyPath": "./privateKey.pem"\n' +
         '    },\n' +
-        '    "defaultPermissions": {\n' +
-        '        "public": {\n' +
-        '            "create": true,\n' +
-        '            "delete": true,\n' +
-        '            "read": true\n' +
-        '        }\n' +
-        '    }\n' +
+        '    "defaultPermissions": "00d"\n' +
         '}\n'
     ]);
     expect(channels).toEqual(['out']);
@@ -93,11 +79,7 @@ describe('command: config', (): void => {
         '    port: 9001\n' +
         '    sslCertPath: ./cert.pem\n' +
         '    sslKeyPath: ./privateKey.pem\n' +
-        'defaultPermissions:\n' +
-        '    public:\n' +
-        '        create: true\n' +
-        '        delete: true\n' +
-        '        read: true\n\n'
+        'defaultPermissions: 00d\n\n'
     ]);
     expect(channels).toEqual(['out']);
   });
@@ -118,9 +100,7 @@ describe('command: config', (): void => {
         'FILES_CRUD_SERVER__PORT=9001\n' +
         'FILES_CRUD_SERVER__SSL_CERT_PATH=./cert.pem\n' +
         'FILES_CRUD_SERVER__SSL_KEY_PATH=./privateKey.pem\n' +
-        'FILES_CRUD_DEFAULT_PERMISSIONS__PUBLIC__CREATE=true\n' +
-        'FILES_CRUD_DEFAULT_PERMISSIONS__PUBLIC__DELETE=true\n' +
-        'FILES_CRUD_DEFAULT_PERMISSIONS__PUBLIC__READ=true\n'
+        'FILES_CRUD_DEFAULT_PERMISSIONS=00d\n'
     ]);
     expect(channels).toEqual(['out']);
   });
