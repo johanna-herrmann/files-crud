@@ -202,13 +202,13 @@ describe('app->buildApp', (): void => {
 
     test('handles file upload correctly, limit not exceeded', async (): Promise<void> => {
       const app = buildApp(true);
-      app.post('/upload', (req: Request, res: express.Response) => {
+      app.post('/api/upload', (req: Request, res: express.Response) => {
         const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
         res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
       });
       const content = (await fs.readFile(__filename)).subarray(0, 16).toString('base64');
 
-      const response = await request(app).post('/upload').attach('file', __filename);
+      const response = await request(app).post('/api/upload').attach('file', __filename);
 
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -226,12 +226,12 @@ describe('app->buildApp', (): void => {
     test('handles file upload correctly, limit exceeded, 10 bytes', async (): Promise<void> => {
       loadConfig({ server: { fileSiteLimit: 10 } });
       const app = buildApp(true);
-      app.post('/upload', (req: Request, res: express.Response) => {
+      app.post('/api/upload', (req: Request, res: express.Response) => {
         const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
         res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
       });
 
-      const response = await request(app).post('/upload').attach('file', __filename);
+      const response = await request(app).post('/api/upload').attach('file', __filename);
 
       expect(response.statusCode).toBe(413);
     });
@@ -239,12 +239,12 @@ describe('app->buildApp', (): void => {
     test('handles file upload correctly, limit exceeded, 1k', async (): Promise<void> => {
       loadConfig({ server: { fileSiteLimit: 10 } });
       const app = buildApp(true);
-      app.post('/upload', (req: Request, res: express.Response) => {
+      app.post('/api/upload', (req: Request, res: express.Response) => {
         const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
         res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
       });
 
-      const response = await request(app).post('/upload').attach('file', __filename);
+      const response = await request(app).post('/api/upload').attach('file', __filename);
 
       expect(response.statusCode).toBe(413);
     });
@@ -254,7 +254,7 @@ describe('app->buildApp', (): void => {
     test('register', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/register');
+      await request(app).post('/api/register');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler']);
     });
@@ -262,7 +262,7 @@ describe('app->buildApp', (): void => {
     test('login', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/login');
+      await request(app).post('/api/login');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'loginHandler']);
     });
@@ -270,7 +270,7 @@ describe('app->buildApp', (): void => {
     test('addUser', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/user/add');
+      await request(app).post('/api/user/add');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'addUserHandler']);
       expect(mocked_lastAction).toBe('add');
@@ -279,7 +279,7 @@ describe('app->buildApp', (): void => {
     test('setAdmin', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/user/set-admin');
+      await request(app).post('/api/user/set-admin');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'setAdminStateHandler']);
       expect(mocked_lastAction).toBe('set-admin');
@@ -288,7 +288,7 @@ describe('app->buildApp', (): void => {
     test('changeUsername', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/user/change-username');
+      await request(app).post('/api/user/change-username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changeUsernameHandler']);
       expect(mocked_lastAction).toBe('change-username');
@@ -297,7 +297,7 @@ describe('app->buildApp', (): void => {
     test('changePassword', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/user/change-password');
+      await request(app).post('/api/user/change-password');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changePasswordHandler']);
       expect(mocked_lastAction).toBe('change-password');
@@ -306,7 +306,7 @@ describe('app->buildApp', (): void => {
     test('saveMeta', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).post('/user/save-meta/username');
+      const response = await request(app).post('/api/user/save-meta/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'saveUserMetaHandler']);
       expect(mocked_lastAction).toBe('save-meta');
@@ -317,7 +317,7 @@ describe('app->buildApp', (): void => {
     test('delete', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).delete('/user/delete/username');
+      const response = await request(app).delete('/api/user/delete/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'deleteUserHandler']);
       expect(mocked_lastAction).toBe('delete');
@@ -328,7 +328,7 @@ describe('app->buildApp', (): void => {
     test('loadMeta', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/user/load-meta/username');
+      const response = await request(app).get('/api/user/load-meta/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'loadUserMetaHandler']);
       expect(mocked_lastAction).toBe('load-meta');
@@ -339,7 +339,7 @@ describe('app->buildApp', (): void => {
     test('one', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/user/one/username');
+      const response = await request(app).get('/api/user/one/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUserHandler']);
       expect(mocked_lastAction).toBe('one');
@@ -350,7 +350,7 @@ describe('app->buildApp', (): void => {
     test('list', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).get('/user/list');
+      await request(app).get('/api/user/list');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUsersHandler']);
       expect(mocked_lastAction).toBe('list');
@@ -361,7 +361,7 @@ describe('app->buildApp', (): void => {
     test('saveFile', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).post('/file/save/dir/file');
+      const response = await request(app).post('/api/file/save/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileSaveMiddleware', 'saveFileHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
@@ -370,7 +370,7 @@ describe('app->buildApp', (): void => {
     test('saveFileMeta', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).post('/file/save-meta/dir/file');
+      const response = await request(app).post('/api/file/save-meta/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileSaveMetaMiddleware', 'saveFileMetaHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
@@ -379,7 +379,7 @@ describe('app->buildApp', (): void => {
     test('copyFile', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/file/copy');
+      await request(app).post('/api/file/copy');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileCopyMiddleware', 'copyFileHandler']);
     });
@@ -387,7 +387,7 @@ describe('app->buildApp', (): void => {
     test('moveFile', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/file/move');
+      await request(app).post('/api/file/move');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileMoveMiddleware', 'moveFileHandler']);
     });
@@ -395,7 +395,7 @@ describe('app->buildApp', (): void => {
     test('deleteFile', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).delete('/file/delete/dir/file');
+      const response = await request(app).delete('/api/file/delete/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileDeleteMiddleware', 'deleteFileHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
@@ -404,7 +404,7 @@ describe('app->buildApp', (): void => {
     test('loadFileMeta', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/file/load-meta/dir/file');
+      const response = await request(app).get('/api/file/load-meta/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadMetaMiddleware', 'loadFileMetaHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
@@ -413,7 +413,7 @@ describe('app->buildApp', (): void => {
     test('loadFileData', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/file/load-data/dir/file');
+      const response = await request(app).get('/api/file/load-data/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadDataMiddleware', 'loadFileDataHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
@@ -422,7 +422,7 @@ describe('app->buildApp', (): void => {
     test('loadFile', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/file/one/dir/file');
+      const response = await request(app).get('/api/file/one/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadMiddleware', 'loadFileHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
@@ -431,7 +431,7 @@ describe('app->buildApp', (): void => {
     test('listDirectory', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/file/list/dir/sub');
+      const response = await request(app).get('/api/file/list/dir/sub');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'directoryListingMiddleware', 'listDirectoryItemsHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'sub'] });
@@ -454,7 +454,7 @@ describe('app->buildApp', (): void => {
       const error = new Error('test error');
       const app = buildApp();
 
-      const response = await request(app).post('/login').send({ error });
+      const response = await request(app).post('/api/login').send({ error });
 
       expect(response.statusCode).toBe(500);
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'loginHandler', 'errorMiddleware']);
@@ -464,7 +464,7 @@ describe('app->buildApp', (): void => {
       const error = new Error('test error');
       const app = buildApp();
 
-      const response = await request(app).post('/register').send({ error });
+      const response = await request(app).post('/api/register').send({ error });
 
       expect(response.statusCode).toBe(500);
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler', 'errorMiddleware']);

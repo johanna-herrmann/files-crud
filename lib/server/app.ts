@@ -73,6 +73,7 @@ const addCommonMiddlewares = function (app: express.Application, config: Config)
     app.use(staticHandler(config.webRoot));
   }
   app.use(
+    '/api/',
     fileUpload({
       abortOnLimit: true,
       responseOnLimit: `uploaded file is to big. Limit: 100 MiB`,
@@ -84,30 +85,30 @@ const addCommonMiddlewares = function (app: express.Application, config: Config)
 };
 
 const addUserHandling = function (app: express.Application): void {
-  app.use('/user/:action{/:username}', userMiddleware);
-  app.post('/register', registerMiddleware, registerHandler);
-  app.post('/login', loginHandler);
-  app.post('/user/add', addUserHandler);
-  app.post('/user/set-admin', setAdminStateHandler);
-  app.post('/user/change-username', changeUsernameHandler);
-  app.post('/user/change-password', changePasswordHandler);
-  app.post('/user/save-meta/:username', saveUserMetaHandler);
-  app.delete('/user/delete/:username', deleteUserHandler);
-  app.get('/user/load-meta/:username', loadUserMetaHandler);
-  app.get('/user/one/:username', getUserHandler);
-  app.get('/user/list', getUsersHandler);
+  app.use('/api/user/:action{/:username}', userMiddleware);
+  app.post('/api/register', registerMiddleware, registerHandler);
+  app.post('/api/login', loginHandler);
+  app.post('/api/user/add', addUserHandler);
+  app.post('/api/user/set-admin', setAdminStateHandler);
+  app.post('/api/user/change-username', changeUsernameHandler);
+  app.post('/api/user/change-password', changePasswordHandler);
+  app.post('/api/user/save-meta/:username', saveUserMetaHandler);
+  app.delete('/api/user/delete/:username', deleteUserHandler);
+  app.get('/api/user/load-meta/:username', loadUserMetaHandler);
+  app.get('/api/user/one/:username', getUserHandler);
+  app.get('/api/user/list', getUsersHandler);
 };
 
 const addFileHandling = function (app: express.Application): void {
-  app.post('/file/save/*path', fileSaveMiddleware, saveFileHandler);
-  app.post('/file/save-meta/*path', fileSaveMetaMiddleware, saveFileMetaHandler);
-  app.post('/file/copy', fileCopyMiddleware, copyFileHandler);
-  app.post('/file/move', fileMoveMiddleware, moveFileHandler);
-  app.delete('/file/delete/*path', fileDeleteMiddleware, deleteFileHandler);
-  app.get('/file/load-meta/*path', fileLoadMetaMiddleware, loadFileMetaHandler);
-  app.get('/file/load-data/*path', fileLoadDataMiddleware, loadFileDataHandler);
-  app.get('/file/one/*path', fileLoadMiddleware, loadFileHandler);
-  app.get('/file/list/*path', directoryListingMiddleware, listDirectoryItemsHandler);
+  app.post('/api/file/save/*path', fileSaveMiddleware, saveFileHandler);
+  app.post('/api/file/save-meta/*path', fileSaveMetaMiddleware, saveFileMetaHandler);
+  app.post('/api/file/copy', fileCopyMiddleware, copyFileHandler);
+  app.post('/api/file/move', fileMoveMiddleware, moveFileHandler);
+  app.delete('/api/file/delete/*path', fileDeleteMiddleware, deleteFileHandler);
+  app.get('/api/file/load-meta/*path', fileLoadMetaMiddleware, loadFileMetaHandler);
+  app.get('/api/file/load-data/*path', fileLoadDataMiddleware, loadFileDataHandler);
+  app.get('/api/file/one/*path', fileLoadMiddleware, loadFileHandler);
+  app.get('/api/file/list/*path', directoryListingMiddleware, listDirectoryItemsHandler);
 };
 
 const addFallbacks = function (app: express.Application): void {

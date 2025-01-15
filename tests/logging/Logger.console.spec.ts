@@ -98,9 +98,26 @@ describe('Logger logs to console', (): void => {
     test('not on api access', async (): Promise<void> => {
       new Logger().access({
         method: 'POST',
-        path: '/register',
+        path: '/api/register',
         statusCode: '200',
         contentLength: 123,
+        time: 0,
+        ip: '',
+        httpVersion: '',
+        referer: '',
+        userAgent: ''
+      });
+
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(loggedMessage).toBe('');
+    });
+
+    test('not if statusCode is greater than 399', async (): Promise<void> => {
+      new Logger().access({
+        method: 'GET',
+        path: '/image.png',
+        statusCode: '400',
+        contentLength: 12,
         time: 0,
         ip: '',
         httpVersion: '',

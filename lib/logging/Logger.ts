@@ -231,8 +231,8 @@ class Logger {
    */
   public access({ method, path, statusCode, contentLength, ...rest }: Omit<AccessLogEntry, 'timestamp'>): Logger {
     this.accessFileLogger?.info('', { method, path, statusCode, contentLength, ...rest });
-    const isApiRequest = /^\/(?:file|login|register|user)(?:[\/?].*)?/.test(path as string);
-    if (!isApiRequest) {
+    const isApiRequest = /^\/api\//.test(path as string);
+    if (!isApiRequest && (statusCode as number) < 399) {
       this.ttyLogger?.info(`Access: statusCode ${statusCode} on ${method} ${path}`, {
         sourcePath: getSourcePath(),
         meta: { method, path, statusCode, contentLength }
