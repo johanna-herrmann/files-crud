@@ -17,6 +17,8 @@ type Handler = (req: Request, res: express.Response) => void | Promise<void>;
 let mocked_lastLogEntry: Omit<AccessLogEntry, 'timestamp'> | null = null;
 
 const mocked_lastChain: string[] = [];
+let mocked_lastAction = '';
+let mocked_lastUsername = '';
 
 jest.mock('@/logging/index', () => {
   // noinspection JSUnusedGlobalSymbols
@@ -55,6 +57,11 @@ jest.mock('@/server/middleware', () => {
         return res.status(404).send();
       }
 
+      if (key === 'userMiddleware') {
+        mocked_lastAction = (req.params as Record<string, string>).action;
+        mocked_lastUsername = (req.params as Record<string, string>).username;
+      }
+
       next();
     };
   });
@@ -91,6 +98,8 @@ describe('app->buildApp', (): void => {
   afterEach(async (): Promise<void> => {
     loadConfig();
     mocked_lastLogEntry = null;
+    mocked_lastAction = '';
+    mocked_lastUsername = '';
     mocked_lastChain.splice(0, mocked_lastChain.length);
   });
 
@@ -264,6 +273,7 @@ describe('app->buildApp', (): void => {
       await request(app).post('/user/add');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'addUserHandler']);
+      expect(mocked_lastAction).toBe('add');
     });
 
     test('setAdmin', async (): Promise<void> => {
@@ -272,6 +282,7 @@ describe('app->buildApp', (): void => {
       await request(app).post('/user/set-admin');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'setAdminStateHandler']);
+      expect(mocked_lastAction).toBe('set-admin');
     });
 
     test('changeUsername', async (): Promise<void> => {
@@ -280,6 +291,7 @@ describe('app->buildApp', (): void => {
       await request(app).post('/user/change-username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changeUsernameHandler']);
+      expect(mocked_lastAction).toBe('change-username');
     });
 
     test('changePassword', async (): Promise<void> => {
@@ -288,6 +300,7 @@ describe('app->buildApp', (): void => {
       await request(app).post('/user/change-password');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changePasswordHandler']);
+      expect(mocked_lastAction).toBe('change-password');
     });
 
     test('saveMeta', async (): Promise<void> => {
@@ -296,6 +309,8 @@ describe('app->buildApp', (): void => {
       const response = await request(app).post('/user/save-meta/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'saveUserMetaHandler']);
+      expect(mocked_lastAction).toBe('save-meta');
+      expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
     });
 
@@ -305,6 +320,8 @@ describe('app->buildApp', (): void => {
       const response = await request(app).delete('/user/delete/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'deleteUserHandler']);
+      expect(mocked_lastAction).toBe('delete');
+      expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
     });
 
@@ -314,6 +331,8 @@ describe('app->buildApp', (): void => {
       const response = await request(app).get('/user/load-meta/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'loadUserMetaHandler']);
+      expect(mocked_lastAction).toBe('load-meta');
+      expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
     });
 
@@ -323,6 +342,8 @@ describe('app->buildApp', (): void => {
       const response = await request(app).get('/user/one/username');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUserHandler']);
+      expect(mocked_lastAction).toBe('one');
+      expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
     });
 
@@ -332,6 +353,7 @@ describe('app->buildApp', (): void => {
       await request(app).get('/user/list');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUsersHandler']);
+      expect(mocked_lastAction).toBe('list');
     });
   });
 

@@ -84,7 +84,7 @@ const addCommonMiddlewares = function (app: express.Application, config: Config)
 };
 
 const addUserHandling = function (app: express.Application): void {
-  app.use('/user', userMiddleware);
+  app.use('/user/:action{/:username}', userMiddleware);
   app.post('/register', registerMiddleware, registerHandler);
   app.post('/login', loginHandler);
   app.post('/user/add', addUserHandler);
