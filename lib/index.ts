@@ -6,7 +6,7 @@ import { start } from '@/command/start';
 import { checkIntegrity } from '@/command/integrity';
 import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
 import { showConfig } from '@/command/config';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 
 loadConfig();
 

@@ -1,8 +1,9 @@
 import DatabaseAdapter from '@/types/database/DatabaseAdapter';
 import DbItem from '@/types/database/DbItem';
 import mongoose from 'mongoose';
-import { getConfig } from '@/config';
+import { getFullConfig } from '@/config/config';
 import DbValue from '@/types/database/DbValue';
+import DatabaseConfig from '@/types/config/DatabaseConfig';
 
 interface MongoItem {
   _doc: {
@@ -32,9 +33,9 @@ class MongoDatabaseAdapter implements DatabaseAdapter {
   private readonly pass?: string;
 
   constructor() {
-    const config = getConfig();
-    const url = config.database?.url || 'mongodb://localhost:27017/files-crud';
-    const { user, pass } = config.database ?? {};
+    const config = getFullConfig();
+    const url = config.database?.url as string;
+    const { user, pass } = config.database as DatabaseConfig;
     this.url = url;
     this.user = user;
     this.pass = pass;

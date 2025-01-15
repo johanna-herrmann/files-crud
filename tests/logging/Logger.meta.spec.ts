@@ -1,6 +1,6 @@
 import { Logger, setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import process from 'process';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 
 let logSpy: jest.Spied<typeof console.log>;
 let errorSpy: jest.Spied<typeof console.error>;

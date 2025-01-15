@@ -1,14 +1,14 @@
 import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import process from 'process';
-import { getConfig } from '@/config';
+import paths from 'path';
+import { getFullConfig } from '@/config/config';
 import { accessLogFormats, logFormats } from '@/logging/formats';
 import { getSourcePath } from '@/logging/getSourcePath';
 import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequencyUnit';
 import LoggingFormat from '@/types/config/LoggingFormat';
 import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
-import paths from 'path';
 
 const { combine, timestamp, printf } = format;
 
@@ -144,18 +144,18 @@ class Logger {
   }
 
   constructor() {
-    const config = getConfig();
-    this.ttyLoggingFormat = config.logging?.ttyLoggingFormat ?? 'coloredHumanReadableLine';
-    this.fileLoggingFormat = config.logging?.fileLoggingFormat ?? 'json';
-    this.accessLoggingFormat = config.logging?.accessLoggingFormat ?? 'json';
-    this.errorLogFile = config.logging?.errorLogFile ?? 'error.log';
-    this.accessLogFile = config.logging?.accessLogFile ?? 'access.log';
-    this.errorFileLoggingEnabled = config.logging?.enableErrorFileLogging ?? true;
-    this.accessLoggingEnabled = config.logging?.enableAccessLogging ?? true;
-    this.rotationEnabled = config.logging?.enableLogFileRotation ?? true;
-    this.rotationFrequencyUnit = config.logging?.logFileRotationFrequencyUnit ?? 'd';
-    this.rotationMaxFiles = config.logging?.logFileRotationMaxFiles ?? '14d';
-    this.logFileRotationCompressionEnabled = config.logging?.logFileRotationEnableCompression ?? true;
+    const config = getFullConfig();
+    this.ttyLoggingFormat = config.logging?.ttyLoggingFormat as LoggingFormat;
+    this.fileLoggingFormat = config.logging?.fileLoggingFormat as LoggingFormat;
+    this.accessLoggingFormat = config.logging?.accessLoggingFormat as AccessLoggingFormat;
+    this.errorLogFile = config.logging?.errorLogFile as string;
+    this.accessLogFile = config.logging?.accessLogFile as string;
+    this.errorFileLoggingEnabled = config.logging?.enableErrorFileLogging as boolean;
+    this.accessLoggingEnabled = config.logging?.enableAccessLogging as boolean;
+    this.rotationEnabled = config.logging?.enableLogFileRotation as boolean;
+    this.rotationFrequencyUnit = config.logging?.logFileRotationFrequencyUnit as LogFileRotationFrequencyUnit;
+    this.rotationMaxFiles = config.logging?.logFileRotationMaxFiles as string;
+    this.logFileRotationCompressionEnabled = config.logging?.logFileRotationEnableCompression as boolean;
 
     this.createConsoleLogger();
     this.createErrorFileLogger();

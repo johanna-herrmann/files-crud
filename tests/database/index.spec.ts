@@ -1,5 +1,5 @@
 import { loadDb, closeDb, resetDb } from '@/database';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
 
 describe('database', (): void => {

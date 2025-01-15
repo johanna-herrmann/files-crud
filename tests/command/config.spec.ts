@@ -1,4 +1,4 @@
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import Config from '@/types/config/Config';
 import { showConfig } from '@/command/config';
 

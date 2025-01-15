@@ -4,9 +4,7 @@ import User from '@/types/user/User';
 import Request from '@/types/server/Request';
 import UserActionParams from '@/types/user/UserActionParams';
 import { getToken, sendUnauthorized } from '@/server/util';
-import { getConfig } from '@/config';
-
-const config = getConfig();
+import { getFullConfig } from '@/config/config';
 
 const isSelfAction = function (user: User, username: string): boolean {
   return user.username === username;
@@ -55,7 +53,8 @@ const userMiddleware = async function (req: Request, res: express.Response, next
 };
 
 const registerMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-  if (!config.register || config.register === 'all') {
+  const config = getFullConfig();
+  if (config.register === 'all') {
     return next();
   }
 

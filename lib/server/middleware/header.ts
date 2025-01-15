@@ -1,6 +1,6 @@
 import Request from '@/types/server/Request';
 import express from 'express';
-import { getConfig } from '@/config';
+import { getConfig } from '@/config/config';
 
 const headerMiddleware = function (_: Request, res: express.Response, next: express.NextFunction): void {
   const config = getConfig();

@@ -1,6 +1,6 @@
 import DatabaseType from '@/types/database/Database';
 import DatabaseAdapter from '@/types/database/DatabaseAdapter';
-import { getConfig } from '@/config';
+import { getConfig } from '@/config/config';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';

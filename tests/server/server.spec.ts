@@ -4,7 +4,7 @@ import https from 'https';
 import net from 'net';
 import express from 'express';
 import mockFS from 'mock-fs';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { startServer } from '@/server/server';
 import { Logger } from '@/logging/Logger';
 
@@ -86,7 +86,7 @@ describe('startServer', (): void => {
 
     test('with default config', async (): Promise<void> => {
       const host = '127.0.0.1';
-      const port = 3000;
+      const port = 9000;
 
       startServer(0);
 
@@ -148,7 +148,7 @@ describe('startServer', (): void => {
 
     test('with default config', async (): Promise<void> => {
       const host = '127.0.0.1';
-      const port = 3000;
+      const port = 9000;
       loadConfig({ server: { useHttps: true } });
 
       startServer(0);
@@ -224,7 +224,7 @@ describe('startServer', (): void => {
 
     test('with default config', async (): Promise<void> => {
       const host = '127.0.0.1';
-      const port = 3000;
+      const port = 9000;
       loadConfig({ server: { useHttps: true, useHttp2: true } });
 
       startServer(0);

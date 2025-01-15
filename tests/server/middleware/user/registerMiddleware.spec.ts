@@ -1,5 +1,5 @@
 import { assertUnauthorized, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { registerMiddleware } from '@/server/middleware';
 import { Logger } from '@/logging/Logger';
 
@@ -32,7 +32,7 @@ describe('registerMiddleware', (): void => {
   });
 
   test('passes without token', async (): Promise<void> => {
-    loadConfig();
+    loadConfig({ register: 'all' });
     const req = buildRequestForUserAction('', '-', undefined, { username: 'username', password: 'password' });
     const res = buildResponse();
     let next = false;

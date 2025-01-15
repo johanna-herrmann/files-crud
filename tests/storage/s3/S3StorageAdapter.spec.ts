@@ -1,6 +1,6 @@
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import { S3Client } from '@aws-sdk/client-s3';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 
 let mocked_s3: Record<string, Buffer | undefined> = {};
 
@@ -33,6 +33,8 @@ describe('S3Storage', (): void => {
   });
 
   test('S3StorageAdapter->constructor creates client and sets bucket correctly, without endpoint.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 's3' } });
+
     const storage = new S3StorageAdapter();
 
     const [client, bucket] = storage.getConf();
@@ -108,20 +110,25 @@ describe('S3Storage', (): void => {
   });
 
   test('S3StorageAdapter->write creates object, string.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 's3' } });
     const storage = new S3StorageAdapter();
+
     await storage.write('file', 'content', 'utf8');
 
     expect(mocked_s3['files-crud|file']).toEqual(Buffer.from('content', 'utf8'));
   });
 
   test('S3StorageAdapter->write creates object, buffer.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 's3' } });
     const storage = new S3StorageAdapter();
+
     await storage.write('file', Buffer.from('content', 'utf8'));
 
     expect(mocked_s3['files-crud|file']).toEqual(Buffer.from('content', 'utf8'));
   });
 
   test('S3StorageAdapter->read reads file, read.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 's3' } });
     mocked_s3['files-crud|file'] = Buffer.from('content', 'utf8');
     const storage = new S3StorageAdapter();
 
@@ -131,6 +138,7 @@ describe('S3Storage', (): void => {
   });
 
   test('S3StorageAdapter->read reads file, buffer.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 's3' } });
     mocked_s3['files-crud|file'] = Buffer.from('content', 'utf8');
     const storage = new S3StorageAdapter();
 
@@ -140,6 +148,7 @@ describe('S3Storage', (): void => {
   });
 
   test('S3StorageAdapter->delete deletes object.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 's3' } });
     mocked_s3['files-crud|file'] = Buffer.from('');
     mocked_s3['files-crud|file2'] = Buffer.from('');
     const storage = new S3StorageAdapter();
@@ -151,6 +160,7 @@ describe('S3Storage', (): void => {
   });
 
   test('S3StorageAdapter->copy copies file.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 's3' } });
     mocked_s3['files-crud|file'] = Buffer.from('testContent', 'utf8');
     mocked_s3['files-crud|other'] = Buffer.from('');
     const storage = new S3StorageAdapter();

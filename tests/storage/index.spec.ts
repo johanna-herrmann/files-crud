@@ -1,6 +1,6 @@
 import { loadStorage, resetStorage } from '@/storage';
 import mockFS from 'mock-fs';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import paths from 'path';
 
 describe('storage', (): void => {

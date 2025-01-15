@@ -1,7 +1,7 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { MongoDatabaseAdapter, schemata } from '@/database/mongodb/MongoDatabaseAdapter';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { testUser } from '#/testItems';
 import User from '@/types/user/User';
 
@@ -35,7 +35,7 @@ describe('MongoDatabaseAdapter', (): void => {
   });
 
   test('MongoDatabaseAdapter->constructor works correctly, default conf.', async (): Promise<void> => {
-    loadConfig();
+    loadConfig({ database: { name: 'mongodb' } });
     const url = 'mongodb://localhost:27017/files-crud';
 
     db = new MongoDatabaseAdapter();

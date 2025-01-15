@@ -2,7 +2,7 @@ import { Logger, setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import mockFS from 'mock-fs';
 import fs from 'fs';
 import paths from 'path';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 
 const path = `${paths.dirname(paths.dirname(__dirname))}/node_modules/`;
 const errorLogFile = paths.join('/logs', 'error.log');

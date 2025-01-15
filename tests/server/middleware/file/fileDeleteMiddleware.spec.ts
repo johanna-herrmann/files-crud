@@ -1,5 +1,5 @@
 import mockFS from 'mock-fs';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { fileDeleteMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
@@ -109,15 +109,13 @@ describe('fileDeleteMiddleware', () => {
   describe('rejects', (): void => {
     describe('if delete permission is not given', (): void => {
       const rejectsIfDeletePermissionIsNotGiven = async function (level: string, token: string, owner: string, directory: string) {
-        loadConfig({ defaultPermissions: { [level]: {} } });
+        loadConfig({ defaultPermissions: { [level]: {} }, userDirectoryPermissions: { [level]: {} }, userFilePermissions: { [level]: {} } });
         let next = false;
         const req = buildRequestForFileAction(token, 'delete', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
-          '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
-          }
+          './files': { [directory]: { file: '' } },
+          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
 
         await fileDeleteMiddleware(req, res, () => (next = true));

@@ -2,7 +2,7 @@ import Request from '@/types/server/Request';
 import express from 'express';
 import onFinished from 'on-finished';
 import { OutgoingMessage } from 'http';
-import { getConfig } from '@/config';
+import { getFullConfig } from '@/config/config';
 import { loadLogger } from '@/logging';
 
 const anonymizeIp = function (ip: string): string {
@@ -43,8 +43,8 @@ const getContentLength = function (res: express.Response): number | undefined {
 
 const logAccessMiddleware = function (req: Request, res: express.Response, next: express.NextFunction) {
   const start = Date.now();
-  const config = getConfig();
-  const ipLogging = config.logging?.ipLogging ?? 'anonymous';
+  const config = getFullConfig();
+  const ipLogging = config.logging?.ipLogging as 'full' | 'anonymous' | 'none';
   const ip = getIp(req, ipLogging);
   const method = req.method;
   const path = req.path;

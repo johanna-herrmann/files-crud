@@ -1,5 +1,5 @@
 import mockFS from 'mock-fs';
-import { getConfig, loadConfig } from '@/config';
+import { getConfig, getFullConfig, loadConfig } from '@/config/config';
 import process from 'process';
 
 describe('config', (): void => {
@@ -84,6 +84,35 @@ describe('config', (): void => {
       logging: { ipLogging: 'none' },
       database: { name: 'mongodb', url: 'mongodb://localhost:12345' },
       server: { host: '0.0.0.0', port: 9000, useHttps: true }
+    });
+  });
+
+  test('defaults correctly, empty file', async (): Promise<void> => {
+    mockFS({ './config.json': '{}' });
+
+    loadConfig();
+
+    expect(getFullConfig().database).toEqual({ name: 'in-memory' });
+    expect(getFullConfig().server).toEqual({ host: '127.0.0.1', port: 9000, noRobots: false, fileSizeLimit: '100m', useHttps: false, cors: {} });
+  });
+
+  test('defaults correctly, file with few properties', async (): Promise<void> => {
+    mockFS({ './config.json': '{"server":{"useHttps":true}}' });
+
+    loadConfig();
+
+    expect(getFullConfig().database).toEqual({ name: 'in-memory' });
+    expect(getFullConfig().server).toEqual({
+      host: '127.0.0.1',
+      port: 9000,
+      noRobots: false,
+      fileSizeLimit: '100m',
+      useHttps: true,
+      cors: {},
+      useHttp2: false,
+      hsts: true,
+      sslKeyPath: './privateKey.pem',
+      sslCertPath: './certificate.pem'
     });
   });
 });

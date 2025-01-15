@@ -1,5 +1,5 @@
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import PgDbConf from '@/types/database/PgDbConf';
 
 let mock_providedConf: PgDbConf | undefined;
@@ -19,6 +19,7 @@ describe('PostgresDatabaseAdapter->constructor works correctly', (): void => {
   });
 
   test('default config.', async (): Promise<void> => {
+    loadConfig({ database: { name: 'postgresql' } });
     const conf = {
       host: 'localhost',
       port: 5432,

@@ -1,7 +1,7 @@
 import { Database } from '@/database/Database';
 import { data, MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
 import { expectKeys } from '#/database/expectKeys';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import User from '@/types/user/User';
 import FailedLoginAttempts from '@/types/user/FailedLoginAttempts';
 import { testUser } from '#/testItems';

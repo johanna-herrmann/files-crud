@@ -1,5 +1,5 @@
 import { buildRequestForAccessLogging } from '#/server/expressTestUtils';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { logAccessMiddleware } from '@/server/middleware/access';
 // @ts-expect-error we feel safe to be type-less here
 import MockExpressResponse from 'mock-express-response';

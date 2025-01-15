@@ -4,7 +4,7 @@ import paths from 'path';
 import fs from 'fs/promises';
 import crypto from 'crypto';
 import { buildApp, parseSizeLimit } from '@/server/app';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { Logger } from '@/logging/Logger';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
 import UploadRequest from '@/types/server/UploadRequest';
@@ -224,7 +224,7 @@ describe('app->buildApp', (): void => {
     });
 
     test('handles file upload correctly, limit exceeded, 10 bytes', async (): Promise<void> => {
-      loadConfig({ server: { fileSiteLimit: 10 } });
+      loadConfig({ server: { fileSizeLimit: 10 } });
       const app = buildApp(true);
       app.post('/api/upload', (req: Request, res: express.Response) => {
         const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
@@ -237,7 +237,7 @@ describe('app->buildApp', (): void => {
     });
 
     test('handles file upload correctly, limit exceeded, 1k', async (): Promise<void> => {
-      loadConfig({ server: { fileSiteLimit: 10 } });
+      loadConfig({ server: { fileSizeLimit: 10 } });
       const app = buildApp(true);
       app.post('/api/upload', (req: Request, res: express.Response) => {
         const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };

@@ -1,5 +1,5 @@
 import { loadLogger, resetLogger } from '@/logging';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import process from 'process';
 

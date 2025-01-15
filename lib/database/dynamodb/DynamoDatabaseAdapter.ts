@@ -2,7 +2,7 @@ import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
 import DatabaseAdapter from '@/types/database/DatabaseAdapter';
 import DbItem from '@/types/database/DbItem';
 import DbValue from '@/types/database/DbValue';
-import { getConfig } from '@/config';
+import { getFullConfig } from '@/config/config';
 import { createTable, deleteItem, itemExists, listTables, loadItem, loadItems, putItem, updateItem } from '@/database/dynamodb/dynamoDbHelper';
 
 /**
@@ -13,10 +13,10 @@ class DynamoDatabaseAdapter implements DatabaseAdapter {
   private client: DynamoDBClient | null = null;
 
   constructor() {
-    const config = getConfig();
-    const region = config.database?.region || config.region || 'eu-central-1';
-    const accessKeyId = config.database?.accessKeyId || config.accessKeyId || 'fallback-key';
-    const secretAccessKey = config.database?.secretAccessKey || config.secretAccessKey || 'fallback-secret';
+    const config = getFullConfig();
+    const region = (config.database?.region || config.region) as string;
+    const accessKeyId = (config.database?.accessKeyId || config.accessKeyId) as string;
+    const secretAccessKey = (config.database?.secretAccessKey || config.secretAccessKey) as string;
     this.config = {
       region,
       credentials: {
@@ -42,7 +42,7 @@ class DynamoDatabaseAdapter implements DatabaseAdapter {
   }
 
   private getDynamoTableName(table: string): string {
-    const config = getConfig();
+    const config = getFullConfig();
     const tableNames: Record<string, string | undefined> = config.database?.dynamoTableNames ?? {};
     return tableNames[table] ?? `files-crud-${table.replace(/_/g, '').toLowerCase()}`;
   }

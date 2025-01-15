@@ -1,7 +1,7 @@
 import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
 import { getObjectBody, putObject, deleteObject, copyObject } from './s3StorageHelper';
+import { getFullConfig } from '@/config/config';
 import StorageAdapter from '@/types/storage/StorageAdapter';
-import { getConfig } from '@/config';
 
 /**
  * StorageAdapter for s3 storage.
@@ -13,13 +13,13 @@ class S3StorageAdapter implements StorageAdapter {
   private readonly bucket: string;
 
   constructor() {
-    const config = getConfig();
-    const region = config.storage?.region || config.region || 'eu-central-1';
-    const accessKeyId = config.storage?.accessKeyId || config.accessKeyId || 'fallback-key';
-    const secretAccessKey = config.storage?.secretAccessKey || config.secretAccessKey || 'fallback-secret';
-    const bucket = config.storage?.bucket ?? 'files-crud';
+    const config = getFullConfig();
+    const region = (config.storage?.region || config.region) as string;
+    const accessKeyId = (config.storage?.accessKeyId || config.accessKeyId) as string;
+    const secretAccessKey = (config.storage?.secretAccessKey || config.secretAccessKey) as string;
+    const bucket = config.storage?.bucket as string;
     const endpoint = config.storage?.endpoint;
-    const forcePathStyle = config.storage?.forcePathStyle ?? false;
+    const forcePathStyle = config.storage?.forcePathStyle as boolean;
     const conf: S3ClientConfig = { region, forcePathStyle, credentials: { accessKeyId, secretAccessKey } };
     if (!!endpoint) {
       conf.endpoint = endpoint;

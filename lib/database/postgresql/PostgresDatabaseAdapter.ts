@@ -1,11 +1,12 @@
 import { Client } from 'pg';
+import { connect, definingQuery, end, getNewClient, readingQuery, writingQuery } from '@/database/postgresql/pgWrapper';
+import { getFullConfig } from '@/config/config';
 import DatabaseAdapter from '@/types/database/DatabaseAdapter';
 import DbItem from '@/types/database/DbItem';
 import PgDbConf from '@/types/database/PgDbConf';
 import DbValue from '@/types/database/DbValue';
 import PgDbValue from '@/types/database/PgDbValue';
-import { connect, definingQuery, end, getNewClient, readingQuery, writingQuery } from '@/database/postgresql/pgWrapper';
-import { getConfig } from '@/config';
+import DatabaseConfig from '@/types/config/DatabaseConfig';
 
 /**
  * Database Adapter for postgresql.
@@ -16,11 +17,11 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
   private connected = false;
 
   constructor() {
-    const config = getConfig();
-    const host = config.database?.host || 'localhost';
-    const port = config.database?.port || 5432;
-    const database = config.database?.db || 'files-crud';
-    const { user, pass } = config.database ?? {};
+    const config = getFullConfig();
+    const host = config.database?.host as string;
+    const port = config.database?.port as number;
+    const database = config.database?.db as string;
+    const { user, pass } = config.database as DatabaseConfig;
     this.conf = { host, port, database, user, password: pass };
     this.client = getNewClient(this.conf);
   }

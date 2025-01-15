@@ -1,12 +1,12 @@
-import { getConfig } from '@/config';
-import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
-import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
-import FileData from '@/types/storage/FileData';
+import paths from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import StorageType from '@/types/storage/StorageType';
 import { sanitizePath } from '@/storage/sanitizePath';
-import paths from 'path';
+import { getFullConfig } from '@/config/config';
+import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
+import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
+import StorageType from '@/types/storage/StorageType';
+import FileData from '@/types/storage/FileData';
 
 const removeTildeFromPath = function (path: string): string {
   return path.replace(/~/gu, '-');
@@ -19,10 +19,10 @@ class Storage implements StorageType {
   private readonly contentStorage: FsStorageAdapter | S3StorageAdapter;
 
   public constructor() {
-    const config = getConfig();
-    const directory = paths.resolve(config.storage?.path ?? config.path ?? './');
+    const config = getFullConfig();
+    const directory = paths.resolve((config.storage?.path ?? config.path) as string);
     this.directory = paths.resolve(paths.sep, sanitizePath(directory));
-    this.storageType = config.storage?.name ?? 'fs';
+    this.storageType = config.storage?.name as 'fs' | 's3';
     this.dataStorage = new FsStorageAdapter(this.directory);
     this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(paths.join(this.directory, 'files'));
   }

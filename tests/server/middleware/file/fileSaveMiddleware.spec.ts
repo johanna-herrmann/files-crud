@@ -1,5 +1,5 @@
 import mockFS from 'mock-fs';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { fileSaveMiddleware } from '@/server/middleware/file/file';
 import User from '@/types/user/User';

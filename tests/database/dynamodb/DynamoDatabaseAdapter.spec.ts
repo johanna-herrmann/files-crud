@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { NativeAttributeValue } from '@aws-sdk/lib-dynamodb';
 import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { testUser } from '#/testItems';
 import User from '@/types/user/User';
 import JwtKey from '@/types/user/JwtKey';
@@ -109,6 +109,8 @@ describe('DynamoDatabaseAdapter', (): void => {
   });
 
   test('DynamoDatabaseAdapter->constructor works correctly, default conf.', async (): Promise<void> => {
+    loadConfig({ database: { name: 'dynamodb' } });
+
     db = new DynamoDatabaseAdapter();
 
     expect(db.getConf().region).toBe('eu-central-1');
@@ -117,7 +119,7 @@ describe('DynamoDatabaseAdapter', (): void => {
   });
 
   test('DynamoDatabaseAdapter->constructor works correctly, global conf.', async (): Promise<void> => {
-    loadConfig({ region: 'globalRegion', accessKeyId: 'globalKey', secretAccessKey: 'globalSecret' });
+    loadConfig({ database: { name: 'dynamodb' }, region: 'globalRegion', accessKeyId: 'globalKey', secretAccessKey: 'globalSecret' });
 
     db = new DynamoDatabaseAdapter();
 

@@ -1,6 +1,6 @@
 import { Storage } from '@/storage/Storage';
 import mockFS from 'mock-fs';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import fs from 'fs/promises';

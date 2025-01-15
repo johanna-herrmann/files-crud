@@ -2,7 +2,7 @@ import { Logger, setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import mockFS from 'mock-fs';
 import fs from 'fs';
 import paths from 'path';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import LoggingConfig from '@/types/config/LoggingConfig';
 import winston from 'winston';
 

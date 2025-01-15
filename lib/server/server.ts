@@ -4,7 +4,7 @@ import http2 from 'http2';
 import fs from 'fs';
 import { buildApp } from '@/server/app';
 import { loadLogger } from '@/logging';
-import { getConfig } from '@/config';
+import { getFullConfig } from '@/config/config';
 import Request from '@/types/server/Request';
 import express from 'express';
 
@@ -54,9 +54,9 @@ const startHttpServer = function (host: string, port: number, webRoot: string | 
 
 const startHttpsServer = function (host: string, port: number, webRoot: string | undefined, start: number): void {
   startRedirectingServer(host, port);
-  const config = getConfig();
-  const sslKeyPath = config.server?.sslKeyPath ?? './privateKey.pem';
-  const sslCertPath = config.server?.sslCertPath ?? './certificate.pem';
+  const config = getFullConfig();
+  const sslKeyPath = config.server?.sslKeyPath as string;
+  const sslCertPath = config.server?.sslCertPath as string;
   const key = fs.readFileSync(sslKeyPath, 'utf8');
   const cert = fs.readFileSync(sslCertPath, 'utf8');
   const app = buildApp();
@@ -67,10 +67,10 @@ const startHttpsServer = function (host: string, port: number, webRoot: string |
 };
 
 const startServer = function (start: number): void {
-  const config = getConfig();
-  const useHttps = config.server?.useHttps ?? false;
-  const host = config.server?.host ?? '127.0.0.1';
-  const port = config.server?.port ?? 3000;
+  const config = getFullConfig();
+  const useHttps = config.server?.useHttps as boolean;
+  const host = config.server?.host as string;
+  const port = config.server?.port as number;
   const webRoot = config.webRoot;
   if (useHttps) {
     return startHttpsServer(host, port, webRoot, start);

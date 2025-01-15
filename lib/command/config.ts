@@ -1,5 +1,5 @@
 import yaml from 'yaml';
-import { getConfig } from '@/config';
+import { getConfig } from '@/config/config';
 import { printer } from '@/printing/printer';
 import Config from '@/types/config/Config';
 

@@ -1,9 +1,11 @@
 import fs from 'fs';
 import yaml from 'yaml';
 import { readEnv } from 'read-env';
-import Config from './types/config/Config';
+import Config from '../types/config/Config';
+import { loadFullConfig } from '@/config/fullConfig';
 
 const config: Config = {};
+let fullConfig: Config = {};
 
 const getConfigString = function () {
   if (fs.existsSync('./config.json')) {
@@ -53,12 +55,17 @@ const loadConfig = function (config_?: Config) {
   const newConfig = getNewConfig(config_);
   Object.keys(config).forEach((key) => delete (config as Record<string, unknown>)[key]);
   Object.keys(newConfig).forEach((key) => ((config as Record<string, unknown>)[key] = newConfig[key]));
+  fullConfig = loadFullConfig(config);
 };
 
 const getConfig = function (): Config {
   return config;
 };
 
+const getFullConfig = function (): Config {
+  return fullConfig;
+};
+
 loadConfig();
 
-export { getConfig, loadConfig };
+export { getConfig, getFullConfig, loadConfig };

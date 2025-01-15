@@ -1,6 +1,6 @@
 import { buildSimpleRequest, buildResponse } from '#/server/expressTestUtils';
 import { headerMiddleware } from '@/server/middleware/header';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 
 describe('headerMiddleware', (): void => {
   test('blinds server headers', async (): Promise<void> => {

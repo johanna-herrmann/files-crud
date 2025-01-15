@@ -42,10 +42,9 @@ import {
   loadFileDataHandler,
   listDirectoryItemsHandler
 } from '@/server/handler';
-import { getConfig } from '@/config';
+import { getFullConfig } from '@/config/config';
 import Config from '@/types/config/Config';
 
-const FILE_SIZE_LIMIT = 1024 * 1024 * 100; // 100 MiB;
 const TIMEOUT = 15 * 1000; // 15 seconds;
 
 const parseSizeLimit = function (input: string | number): number {
@@ -77,7 +76,7 @@ const addCommonMiddlewares = function (app: express.Application, config: Config)
     fileUpload({
       abortOnLimit: true,
       responseOnLimit: `uploaded file is to big. Limit: 100 MiB`,
-      limits: { fileSize: parseSizeLimit(config.server?.fileSiteLimit ?? FILE_SIZE_LIMIT) },
+      limits: { fileSize: parseSizeLimit(config.server?.fileSizeLimit as string | number) },
       uploadTimeout: TIMEOUT
     })
   );
@@ -117,7 +116,7 @@ const addFallbacks = function (app: express.Application): void {
 };
 
 const buildApp = function (noFallbacks?: boolean): express.Application {
-  const config = getConfig();
+  const config = getFullConfig();
   const app = config.server?.useHttp2 ? http2Express(express) : express();
   addCommonMiddlewares(app, config);
   addUserHandling(app);

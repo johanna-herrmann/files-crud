@@ -1,6 +1,6 @@
 import { getPermissions } from '@/server/middleware/file/permissions';
 import { testUser } from '#/testItems';
-import { loadConfig } from '@/config';
+import { loadConfig } from '@/config/config';
 import Config from '@/types/config/Config';
 import User from '@/types/user/User';
 import FileData from '@/types/storage/FileData';
@@ -57,16 +57,16 @@ describe('getPermissions', (): void => {
       await runTest({}, admin, 'file', nullData, false, false, { create: true, read: true, update: true, delete: true });
     });
 
-    test('returns [read] for owner, directory', async (): Promise<void> => {
-      await runTest({}, testUser, ownerPath, nullData, false, false, { read: true });
+    test('returns [read, update, delete] for owner, directory', async (): Promise<void> => {
+      await runTest({}, testUser, ownerPath, nullData, false, false, { read: true, update: true, delete: true });
     });
 
-    test('returns [read] for owner, file', async (): Promise<void> => {
-      await runTest({}, testUser, 'file', ownerData, false, false, { read: true });
+    test('returns [read, update, delete] for owner, file', async (): Promise<void> => {
+      await runTest({}, testUser, 'file', ownerData, false, false, { read: true, update: true, delete: true });
     });
 
-    test('returns [read] for user', async (): Promise<void> => {
-      await runTest({}, testUser, 'file', nullData, false, false, { read: true });
+    test('returns [create, read, update, delete] for user', async (): Promise<void> => {
+      await runTest({}, testUser, 'file', nullData, false, false, { create: true, read: true, update: true, delete: true });
     });
 
     test('returns [] for public access', async (): Promise<void> => {
