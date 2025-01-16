@@ -13,7 +13,7 @@ describe('config', (): void => {
   afterEach(async (): Promise<void> => {
     mockFS.restore();
     process.env = OLD_ENV;
-    setEnvPrefix('FILES_CRUD')
+    setEnvPrefix('FILES_CRUD');
   });
 
   test('loads missing file correctly', async (): Promise<void> => {
