@@ -1,5 +1,5 @@
 import yaml from 'yaml';
-import { getConfig, getFullConfig } from '@/config/config';
+import { getConfig, getEnvPrefix, getFullConfig } from '@/config/config';
 import { printer } from '@/printing/printer';
 import Config from '@/types/config/Config';
 
@@ -9,7 +9,7 @@ const toEnv = function (config: Config): string[] {
   const properties = toPropertiesNotation(config);
   return properties.map((property) => {
     const [key, value] = property.split('=');
-    const envKey = `FILES_CRUD_${key
+    const envKey = `${getEnvPrefix()}_${key
       .replace(/\./g, '__')
       .replace(/([A-Z])/g, '_$1')
       .toUpperCase()}`;

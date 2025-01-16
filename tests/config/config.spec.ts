@@ -1,5 +1,5 @@
 import mockFS from 'mock-fs';
-import { getConfig, getFullConfig, loadConfig } from '@/config/config';
+import { getConfig, getFullConfig, loadConfig, setEnvPrefix } from '@/config/config';
 import process from 'process';
 
 describe('config', (): void => {
@@ -71,7 +71,7 @@ describe('config', (): void => {
     expect(getConfig()).toEqual({ database: { name: 'mongodb', url: 'mongodb://localhost:27017' } });
   });
 
-  test('overwrites correctly based on environment-variables', async (): Promise<void> => {
+  test('loads correctly based on environment-variables', async (): Promise<void> => {
     mockFS({ './config.json': '{"database":{"name":"mongodb", "url":"mongodb://localhost:27017"}, "server":{"host":"127.0.0.1","port":9000}}' });
     process.env.FILES_CRUD_LOGGING__IP_LOGGING = 'none';
     process.env.FILES_CRUD_DATABASE__URL = 'mongodb://localhost:12345';
@@ -84,6 +84,20 @@ describe('config', (): void => {
       logging: { ipLogging: 'none' },
       database: { name: 'mongodb', url: 'mongodb://localhost:12345' },
       server: { host: '0.0.0.0', port: 9000, useHttps: true }
+    });
+  });
+
+  test('loads correctly based on environment-variables, specific prefix', async (): Promise<void> => {
+    mockFS({ './config.json': '{"database":{"name":"mongodb", "url":"mongodb://localhost:27017"}}' });
+    setEnvPrefix('PREF');
+    process.env.PREF_LOGGING__IP_LOGGING = 'none';
+    process.env.PREF_DATABASE__URL = 'mongodb://localhost:12345';
+
+    loadConfig();
+
+    expect(getConfig()).toEqual({
+      logging: { ipLogging: 'none' },
+      database: { name: 'mongodb', url: 'mongodb://localhost:12345' }
     });
   });
 

@@ -1,4 +1,4 @@
-import { loadConfig } from '@/config/config';
+import { loadConfig, setEnvPrefix } from '@/config/config';
 import Config from '@/types/config/Config';
 import { showConfig } from '@/command/config';
 
@@ -105,6 +105,22 @@ describe('command: config', (): void => {
     expect(channels).toEqual(['out']);
   });
 
+  test('shows config in env notation, specific prefix', async (): Promise<void> => {
+    setEnvPrefix('PREF');
+
+    showConfig('env', true);
+
+    expect(printings).toEqual([
+      'PREF_WEB_ROOT=/web\n' +
+        'PREF_SERVER__USE_HTTPS=true\n' +
+        'PREF_SERVER__PORT=9001\n' +
+        'PREF_SERVER__SSL_CERT_PATH=./cert.pem\n' +
+        'PREF_SERVER__SSL_KEY_PATH=./privateKey.pem\n' +
+        'PREF_DEFAULT_PERMISSIONS=00d\n'
+    ]);
+    expect(channels).toEqual(['out']);
+  });
+
   test('defaults to properties notation', async (): Promise<void> => {
     showConfig('someNonsense', true);
 
@@ -117,7 +133,7 @@ describe('command: config', (): void => {
 
     showConfig('properties', false);
 
-    expect((printings[0] as string).split('\n').length).toBe(29);
+    expect((printings[0] as string).split('\n').length).toBe(24);
     expect(channels).toEqual(['out']);
   });
 });

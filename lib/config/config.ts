@@ -6,6 +6,7 @@ import { loadFullConfig } from '@/config/fullConfig';
 
 const config: Config = {};
 let fullConfig: Config = {};
+let envPrefix = 'FILES_CRUD';
 
 const getConfigString = function () {
   if (fs.existsSync('./config.json')) {
@@ -26,7 +27,7 @@ const getConfigFromFile = function (): Record<string, unknown> {
 };
 
 const getConfigFromEnv = function (): Record<string, unknown> {
-  return readEnv('FILES_CRUD');
+  return readEnv(envPrefix);
 };
 
 const mergeConfigs = function (fileConfig: Record<string, unknown>, envConfig: Record<string, unknown>): void {
@@ -66,6 +67,14 @@ const getFullConfig = function (): Config {
   return fullConfig;
 };
 
+const setEnvPrefix = function (prefix: string): void {
+  envPrefix = prefix;
+};
+
+const getEnvPrefix = function (): string {
+  return envPrefix;
+};
+
 loadConfig();
 
-export { getConfig, getFullConfig, loadConfig };
+export { getConfig, getFullConfig, loadConfig, setEnvPrefix, getEnvPrefix };
