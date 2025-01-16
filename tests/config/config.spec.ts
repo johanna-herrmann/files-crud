@@ -13,6 +13,7 @@ describe('config', (): void => {
   afterEach(async (): Promise<void> => {
     mockFS.restore();
     process.env = OLD_ENV;
+    setEnvPrefix('FILES_CRUD')
   });
 
   test('loads missing file correctly', async (): Promise<void> => {
@@ -71,23 +72,27 @@ describe('config', (): void => {
     expect(getConfig()).toEqual({ database: { name: 'mongodb', url: 'mongodb://localhost:27017' } });
   });
 
-  test('loads correctly based on environment-variables', async (): Promise<void> => {
+  test('overwrites correctly based on environment-variables', async (): Promise<void> => {
     mockFS({ './config.json': '{"database":{"name":"mongodb", "url":"mongodb://localhost:27017"}, "server":{"host":"127.0.0.1","port":9000}}' });
     process.env.FILES_CRUD_LOGGING__IP_LOGGING = 'none';
     process.env.FILES_CRUD_DATABASE__URL = 'mongodb://localhost:12345';
     process.env.FILES_CRUD_SERVER__HOST = '0.0.0.0';
     process.env.FILES_CRUD_SERVER__USE_HTTPS = 'true';
+    process.env.FILES_CRUD_TOKENS = 't1,t2';
+    process.env.FILES_CRUD_DEFAULT_PERMISSIONS = '001';
 
     loadConfig();
 
     expect(getConfig()).toEqual({
       logging: { ipLogging: 'none' },
       database: { name: 'mongodb', url: 'mongodb://localhost:12345' },
-      server: { host: '0.0.0.0', port: 9000, useHttps: true }
+      server: { host: '0.0.0.0', port: 9000, useHttps: true },
+      tokens: ['t1', 't2'],
+      defaultPermissions: '001'
     });
   });
 
-  test('loads correctly based on environment-variables, specific prefix', async (): Promise<void> => {
+  test('overwrites correctly based on environment-variables, specific prefix', async (): Promise<void> => {
     mockFS({ './config.json': '{"database":{"name":"mongodb", "url":"mongodb://localhost:27017"}}' });
     setEnvPrefix('PREF');
     process.env.PREF_LOGGING__IP_LOGGING = 'none';
@@ -98,6 +103,53 @@ describe('config', (): void => {
     expect(getConfig()).toEqual({
       logging: { ipLogging: 'none' },
       database: { name: 'mongodb', url: 'mongodb://localhost:12345' }
+    });
+  });
+
+  test('loads correctly based on environment-variables, no defaultPermissions', async (): Promise<void> => {
+    loadConfig();
+
+    expect(getConfig()).toEqual({});
+  });
+
+  test('loads correctly based on environment-variables, directoryPermissions, explicit object', async (): Promise<void> => {
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS = '{"special/world":"fff", "special/admins":"000"}';
+
+    loadConfig();
+
+    expect(getConfig()).toEqual({
+      directoryPermissions: {
+        'special/world': 'fff',
+        'special/admins': '000'
+      }
+    });
+  });
+
+  test('loads correctly based on environment-variables, directoryPermissions, separated', async (): Promise<void> => {
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__DIRECTORIES = 'special/world,special/admins';
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__PERMISSIONS = 'fff,000';
+
+    loadConfig();
+
+    expect(getConfig()).toEqual({
+      directoryPermissions: {
+        'special/world': 'fff',
+        'special/admins': '000'
+      }
+    });
+  });
+
+  test('loads correctly based on environment-variables, directoryPermissions, for each', async (): Promise<void> => {
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__SOME_DIR = '001';
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__SOME_OTHER_DIR = '009';
+
+    loadConfig();
+
+    expect(getConfig()).toEqual({
+      directoryPermissions: {
+        someDir: '001',
+        someOtherDir: '009'
+      }
     });
   });
 

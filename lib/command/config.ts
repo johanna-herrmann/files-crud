@@ -6,7 +6,7 @@ import Config from '@/types/config/Config';
 type Format = 'json' | 'yaml' | 'env' | 'properties';
 
 const toEnv = function (config: Config): string[] {
-  const properties = toPropertiesNotation(config);
+  const properties = toPropertiesNotation(config as Record<string, unknown>);
   return properties.map((property) => {
     const [key, value] = property.split('=');
     const envKey = `${getEnvPrefix()}_${key
@@ -17,18 +17,25 @@ const toEnv = function (config: Config): string[] {
   });
 };
 
-const toPropertiesNotation = function (config: Config, prefix = '', entries: string[] = []): string[] {
+const toPropertiesNotation = function (config: Record<string, unknown>, prefix = '', entries: string[] = []): string[] {
   Object.entries(config).forEach(([key, value]) => {
-    if (typeof value === 'undefined') {
+    if (typeof value === 'undefined' || value === null) {
+      return;
+    }
+    if (key === 'directoryPermissions') {
+      const keys = Object.keys(config.directoryPermissions ?? {});
+      const values = Object.values(config.directoryPermissions ?? {});
+      entries.push(`${prefix}${key}.directories=${keys.join(',')}`);
+      entries.push(`${prefix}${key}.permissions=${values.join(',')}`);
       return;
     }
     if (typeof value === 'object' && 'push' in value) {
-      return entries.push(`${prefix}${key}=${value.join(',')}`);
+      return entries.push(`${prefix}${key}=${(value as []).join(',')}`);
     }
     if (typeof value !== 'object') {
       return entries.push(`${prefix}${key}=${value}`);
     }
-    return toPropertiesNotation(value, `${prefix}${key}.`, entries);
+    return toPropertiesNotation(value as Record<string, unknown>, `${prefix}${key}.`, entries);
   });
   return entries;
 };
@@ -43,7 +50,7 @@ const formatConfig = function (config: Config, format: Format): string {
       return toEnv(config).join('\n');
     case 'properties':
     default:
-      return toPropertiesNotation(config).join('\n');
+      return toPropertiesNotation(config as Record<string, unknown>).join('\n');
   }
 };
 

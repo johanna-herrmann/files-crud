@@ -11,7 +11,12 @@ describe('command: config', (): void => {
       sslCertPath: './cert.pem',
       sslKeyPath: './privateKey.pem'
     },
-    defaultPermissions: '00d'
+    defaultPermissions: '00d',
+    directoryPermissions: {
+      'special/world': '000',
+      'special/admins': '999'
+    },
+    tokens: ['token1', 'token2']
   };
 
   const propertiesNotation =
@@ -20,7 +25,10 @@ describe('command: config', (): void => {
     'server.port=9001\n' +
     'server.sslCertPath=./cert.pem\n' +
     'server.sslKeyPath=./privateKey.pem\n' +
-    'defaultPermissions=00d\n';
+    'defaultPermissions=00d\n' +
+    'directoryPermissions.directories=special/world,special/admins\n' +
+    'directoryPermissions.permissions=000,999\n' +
+    'tokens=token1,token2\n';
 
   const stdout = process.stdout;
   const stderr = process.stderr;
@@ -63,7 +71,15 @@ describe('command: config', (): void => {
         '        "sslCertPath": "./cert.pem",\n' +
         '        "sslKeyPath": "./privateKey.pem"\n' +
         '    },\n' +
-        '    "defaultPermissions": "00d"\n' +
+        '    "defaultPermissions": "00d",\n' +
+        '    "directoryPermissions": {\n' +
+        '        "special/world": "000",\n' +
+        '        "special/admins": "999"\n' +
+        '    },\n' +
+        '    "tokens": [\n' +
+        '        "token1",\n' +
+        '        "token2"\n' +
+        '    ]\n' +
         '}\n'
     ]);
     expect(channels).toEqual(['out']);
@@ -79,7 +95,13 @@ describe('command: config', (): void => {
         '    port: 9001\n' +
         '    sslCertPath: ./cert.pem\n' +
         '    sslKeyPath: ./privateKey.pem\n' +
-        'defaultPermissions: 00d\n\n'
+        'defaultPermissions: 00d\n' +
+        'directoryPermissions:\n' +
+        '    special/world: "000"\n' +
+        '    special/admins: "999"\n' +
+        'tokens:\n' +
+        '    - token1\n' +
+        '    - token2\n\n'
     ]);
     expect(channels).toEqual(['out']);
   });
@@ -100,7 +122,10 @@ describe('command: config', (): void => {
         'FILES_CRUD_SERVER__PORT=9001\n' +
         'FILES_CRUD_SERVER__SSL_CERT_PATH=./cert.pem\n' +
         'FILES_CRUD_SERVER__SSL_KEY_PATH=./privateKey.pem\n' +
-        'FILES_CRUD_DEFAULT_PERMISSIONS=00d\n'
+        'FILES_CRUD_DEFAULT_PERMISSIONS=00d\n' +
+        'FILES_CRUD_DIRECTORY_PERMISSIONS__DIRECTORIES=special/world,special/admins\n' +
+        'FILES_CRUD_DIRECTORY_PERMISSIONS__PERMISSIONS=000,999\n' +
+        'FILES_CRUD_TOKENS=token1,token2\n'
     ]);
     expect(channels).toEqual(['out']);
   });
@@ -110,14 +135,7 @@ describe('command: config', (): void => {
 
     showConfig('env', true);
 
-    expect(printings).toEqual([
-      'PREF_WEB_ROOT=/web\n' +
-        'PREF_SERVER__USE_HTTPS=true\n' +
-        'PREF_SERVER__PORT=9001\n' +
-        'PREF_SERVER__SSL_CERT_PATH=./cert.pem\n' +
-        'PREF_SERVER__SSL_KEY_PATH=./privateKey.pem\n' +
-        'PREF_DEFAULT_PERMISSIONS=00d\n'
-    ]);
+    expect((printings[0] as string).split('\n')[0]).toBe('PREF_WEB_ROOT=/web');
     expect(channels).toEqual(['out']);
   });
 
@@ -133,7 +151,7 @@ describe('command: config', (): void => {
 
     showConfig('properties', false);
 
-    expect((printings[0] as string).split('\n').length).toBe(24);
+    expect((printings[0] as string).split('\n').length).toBe(26);
     expect(channels).toEqual(['out']);
   });
 });

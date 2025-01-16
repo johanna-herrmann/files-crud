@@ -26,8 +26,44 @@ const getConfigFromFile = function (): Record<string, unknown> {
   return JSON.parse(configString) as Record<string, unknown>;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const patchEnvForSeparatedDirectoryPermissions = function (env: Record<string, any>): void {
+  if (!env.directoryPermissions?.directories || !env.directoryPermissions?.permissions) {
+    return;
+  }
+  const directories = env.directoryPermissions.directories.split(',').map((directory: string) => directory.trim());
+  const permissions = env.directoryPermissions.permissions.split(',').map((permission: string) => permission.trim());
+  const length = Math.min(directories.length, permissions.length);
+  for (let i = 0; i < length; i++) {
+    env.directoryPermissions[directories[i]] = permissions[i];
+  }
+  delete env.directoryPermissions.directories;
+  delete (env.directoryPermissions as Record<string, unknown>).permissions;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const patchEnvForPermissions = function (env: Record<string, any>): void {
+  if (!!env.defaultPermissions) {
+    env.defaultPermissions = `${(env.defaultPermissions + '').padStart(3, '0')}`;
+  }
+  if (!env.directoryPermissions) {
+    return;
+  }
+  const directoryPermissions = env.directoryPermissions ?? {};
+  env.directoryPermissions = {};
+  Object.entries(directoryPermissions).forEach(([key, value]) => {
+    env.directoryPermissions[key] = `${(value + '').padStart(3, '0')}`;
+  });
+};
+
 const getConfigFromEnv = function (): Record<string, unknown> {
-  return readEnv(envPrefix);
+  const env = readEnv(envPrefix);
+  patchEnvForSeparatedDirectoryPermissions(env);
+  patchEnvForPermissions(env);
+  if (typeof env.tokens === 'string') {
+    env.tokens = env.tokens.split(',').map((token: string) => token.trim());
+  }
+  return env;
 };
 
 const mergeConfigs = function (fileConfig: Record<string, unknown>, envConfig: Record<string, unknown>): void {
