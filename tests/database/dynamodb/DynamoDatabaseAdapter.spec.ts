@@ -7,6 +7,7 @@ import User from '@/types/user/User';
 import JwtKey from '@/types/user/JwtKey';
 import DbItem from '@/types/database/DbItem';
 import DbValue from '@/types/database/DbValue';
+import FailedLoginAttempts from '@/types/user/FailedLoginAttempts';
 
 type Tables = Record<string, DbItem[]>;
 interface Credentials {
@@ -16,8 +17,11 @@ interface Credentials {
 
 const mocked_keys: Record<string, string> = {
   'files-crud-user': '',
+  fc_user: '',
   'files-crud-jwtkey': '',
-  'files-crud-failedloginattempts': ''
+  'fc_jwt-key': '',
+  'files-crud-failedloginattempts': '',
+  'fc_failed-login-attempts': ''
 };
 
 const mocked_tables: string[] = [];
@@ -160,16 +164,85 @@ describe('DynamoDatabaseAdapter', (): void => {
     expect(db.getClient()).toBeNull();
   });
 
-  test('DynamoDatabaseAdapter->init initializes user table.', async (): Promise<void> => {
-    mocked_keys['files-crud-user'] = '';
-    delete mocked_db['files-crud-user'];
+  test('DynamoDatabaseAdapter->init initializes user table, default table name.', async (): Promise<void> => {
+    const tableName = 'files-crud-user';
+    mocked_keys[tableName] = '';
+    delete mocked_db[tableName];
     db = new DynamoDatabaseAdapter();
     await db.open();
 
     await db.init<User>('user_', testUser);
 
-    expect(mocked_tables).toEqual(['files-crud-user']);
-    expect(mocked_keys['files-crud-user']).toBe('username');
+    expect(mocked_tables).toEqual([tableName]);
+    expect(mocked_keys[tableName]).toBe('username');
+  });
+
+  test('DynamoDatabaseAdapter->init initializes user table, specific table name.', async (): Promise<void> => {
+    const tableName = 'fc_user';
+    loadConfig({ database: { name: 'dynamodb', userTableName: tableName } });
+    mocked_keys[tableName] = '';
+    delete mocked_db[tableName];
+    db = new DynamoDatabaseAdapter();
+    await db.open();
+
+    await db.init<User>('user_', testUser);
+
+    expect(mocked_tables).toEqual([tableName]);
+    expect(mocked_keys[tableName]).toBe('username');
+  });
+
+  test('DynamoDatabaseAdapter->init initializes failedLoginAttempts table, default table name.', async (): Promise<void> => {
+    const tableName = 'files-crud-failedloginattempts';
+    mocked_keys[tableName] = '';
+    delete mocked_db[tableName];
+    db = new DynamoDatabaseAdapter();
+    await db.open();
+
+    await db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', lastAttempt: 0, attempts: 0 });
+
+    expect(mocked_tables).toEqual([tableName]);
+    expect(mocked_keys[tableName]).toBe('username');
+  });
+
+  test('DynamoDatabaseAdapter->init initializes failedLoginAttempts table, specific table name.', async (): Promise<void> => {
+    const tableName = 'fc_failed-login-attempts';
+    loadConfig({ database: { name: 'dynamodb', failedLoginAttemptsTableName: tableName } });
+    mocked_keys[tableName] = '';
+    delete mocked_db[tableName];
+    db = new DynamoDatabaseAdapter();
+    await db.open();
+
+    await db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', lastAttempt: 0, attempts: 0 });
+
+    expect(mocked_tables).toEqual([tableName]);
+    expect(mocked_keys[tableName]).toBe('username');
+  });
+
+  test('DynamoDatabaseAdapter->init initializes jwtKey table, default table name.', async (): Promise<void> => {
+    const tableName = 'files-crud-jwtkey';
+    mocked_keys[tableName] = '';
+    delete mocked_db[tableName];
+    db = new DynamoDatabaseAdapter();
+    await db.open();
+
+    await db.init<JwtKey>('jwtKey', { kid: '', key: '' });
+
+    expect(mocked_tables).toEqual([tableName]);
+    expect(mocked_keys[tableName]).toBe('kid');
+  });
+
+  test('DynamoDatabaseAdapter->init initializes jwtKey table, specific table name.', async (): Promise<void> => {
+    const tableName = 'fc_jwt-key';
+    loadConfig({ database: { name: 'dynamodb', jwtKeyTableName: tableName } });
+    mocked_keys[tableName] = '';
+    delete mocked_db[tableName];
+    db = new DynamoDatabaseAdapter();
+    await db.open();
+
+    await db.init<JwtKey>('jwtKey', { kid: '', key: '' });
+
+    expect(mocked_tables).toEqual([tableName]);
+    expect(mocked_keys[tableName]).toBe('kid');
   });
 
   test('DynamoDatabaseAdapter->init does nothing if table exists.', async (): Promise<void> => {

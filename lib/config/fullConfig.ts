@@ -11,11 +11,9 @@ const loadDbConfig = function (config: Config): DatabaseConfig {
     region: config.database?.region ?? config.region ?? 'eu-central-1',
     accessKeyId: config.database?.accessKeyId ?? config.accessKeyId ?? 'fallback-key',
     secretAccessKey: config.database?.secretAccessKey ?? config.secretAccessKey ?? 'fallback-secret',
-    dynamoTableNames: config.database?.dynamoTableNames ?? {
-      user: 'files-crud-user',
-      failedLoginAttempts: 'files-crud-failedloginattempts',
-      jwtKey: 'files-crud-jwtkey'
-    }
+    userTableName: config.database?.userTableName ?? 'files-crud-user',
+    failedLoginAttemptsTableName: config.database?.failedLoginAttemptsTableName ?? 'files-crud-failedloginattempts',
+    jwtKeyTableName: config.database?.jwtKeyTableName ?? 'files-crud-jwtkey'
   };
 
   const mongodbConfig: Partial<DatabaseConfig> = {

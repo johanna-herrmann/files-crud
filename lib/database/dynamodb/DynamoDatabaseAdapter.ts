@@ -43,7 +43,12 @@ class DynamoDatabaseAdapter implements DatabaseAdapter {
 
   private getDynamoTableName(table: string): string {
     const config = getFullConfig();
-    const tableNames: Record<string, string | undefined> = config.database?.dynamoTableNames ?? {};
+    const { userTableName, failedLoginAttemptsTableName, jwtKeyTableName } = config.database ?? {};
+    const tableNames: Record<string, string | undefined> = {
+      user_: userTableName,
+      failedLoginAttempts: failedLoginAttemptsTableName,
+      jwtKey: jwtKeyTableName
+    };
     return tableNames[table] ?? `files-crud-${table.replace(/_/g, '').toLowerCase()}`;
   }
 
