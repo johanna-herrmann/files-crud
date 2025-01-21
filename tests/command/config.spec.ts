@@ -60,7 +60,7 @@ describe('command: config', (): void => {
   });
 
   test('shows config in json', async (): Promise<void> => {
-    showConfig('json', true);
+    showConfig('json', false);
 
     expect(printings).toEqual([
       '{\n' +
@@ -86,7 +86,7 @@ describe('command: config', (): void => {
   });
 
   test('shows config in yaml', async (): Promise<void> => {
-    showConfig('yaml', true);
+    showConfig('yaml', false);
 
     expect(printings).toEqual([
       'webRoot: /web\n' +
@@ -107,14 +107,14 @@ describe('command: config', (): void => {
   });
 
   test('shows config in properties notation', async (): Promise<void> => {
-    showConfig('properties', true);
+    showConfig('properties', false);
 
     expect(printings).toEqual([propertiesNotation]);
     expect(channels).toEqual(['out']);
   });
 
   test('shows config in env notation', async (): Promise<void> => {
-    showConfig('env', true);
+    showConfig('env', false);
 
     expect(printings).toEqual([
       'FILES_CRUD_WEB_ROOT=/web\n' +
@@ -133,14 +133,14 @@ describe('command: config', (): void => {
   test('shows config in env notation, specific prefix', async (): Promise<void> => {
     setEnvPrefix('PREF');
 
-    showConfig('env', true);
+    showConfig('env', false);
 
     expect((printings[0] as string).split('\n')[0]).toBe('PREF_WEB_ROOT=/web');
     expect(channels).toEqual(['out']);
   });
 
   test('defaults to properties notation', async (): Promise<void> => {
-    showConfig('someNonsense', true);
+    showConfig('someNonsense', false);
 
     expect(printings).toEqual([propertiesNotation]);
     expect(channels).toEqual(['out']);
@@ -149,9 +149,9 @@ describe('command: config', (): void => {
   test('full config', async (): Promise<void> => {
     loadConfig({});
 
-    showConfig('properties', false);
+    showConfig('properties', true);
 
-    expect((printings[0] as string).split('\n').length).toBe(26);
+    expect((printings[0] as string).split('\n').length).toBe(27);
     expect(channels).toEqual(['out']);
   });
 });

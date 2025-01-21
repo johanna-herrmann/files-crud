@@ -31,6 +31,11 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
   }
 
   logger.info('Successfully registered user.', { username });
+
+  if ((password as string).length < 10) {
+    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (password as string).length });
+  }
+
   sendOK(res, { username });
 };
 
@@ -46,6 +51,11 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
   }
 
   logger.info('Successfully added user.', { username, admin });
+
+  if ((password as string).length < 10) {
+    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (password as string).length });
+  }
+
   sendOK(res, { username });
 };
 
@@ -95,6 +105,11 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
   await changePassword(username as string, newPassword as string);
 
   logger.info('Successfully changed password.', { username });
+
+  if ((newPassword as string).length < 10) {
+    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (newPassword as string).length });
+  }
+
   sendOK(res);
 };
 

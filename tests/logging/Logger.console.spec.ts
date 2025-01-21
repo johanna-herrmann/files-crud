@@ -47,7 +47,7 @@ describe('Logger logs to console', (): void => {
     };
 
     test('on level debug, if log level is debug', async (): Promise<void> => {
-      process.env.LOG_LEVEL = 'debug';
+      loadConfig({ logging: { enableErrorFileLogging: false, enableAccessLogging: false, level: 'debug' } });
 
       new Logger().debug('test message');
 

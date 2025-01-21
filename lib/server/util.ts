@@ -1,10 +1,16 @@
-import Request from '@/types/server/Request';
+import paths from 'path';
 import express from 'express';
 import { loadLogger } from '@/logging';
+import Request from '@/types/server/Request';
+
+const sanitizePath = function (path: string): string {
+  return (paths.join(paths.sep, paths.normalize(path)).substring(1) || '-').replace('\0', '');
+};
 
 const resolvePath = function (req: Request): string {
   const params = req.params as Record<string, string[]>;
-  return params.path.join('/');
+  const path = params.path.join('/');
+  return sanitizePath(path);
 };
 
 const getToken = function (req: Request): string {
@@ -51,4 +57,4 @@ const sendOK = function (res: express.Response, body?: Record<string, unknown>):
   res.json(body ?? {});
 };
 
-export { resolvePath, getToken, sendUnauthorized, sendNotFound, sendError, sendOK };
+export { sanitizePath, resolvePath, getToken, sendUnauthorized, sendNotFound, sendError, sendOK };

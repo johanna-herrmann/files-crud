@@ -96,6 +96,7 @@ describe('FsStorageAdapter', (): void => {
     await storage.delete('sub/file');
 
     expect(await exists('/base/sub')).toBe(false);
+    expect(await exists('/base')).toBe(true);
   });
 
   test('FsStorageAdapter->delete deletes file and directory recursively.', async (): Promise<void> => {

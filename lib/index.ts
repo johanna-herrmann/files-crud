@@ -55,12 +55,12 @@ program
 // define config subcommand
 program
   .command('config')
-  .description('shows currently configuration.')
-  .argument('[format]', 'Format to show the config in (json|yaml)', 'properties')
+  .description('shows current configuration.')
+  .argument('[format]', 'Format to show the config in (json|yaml|env|properties)', 'json')
   .option('-n, --no-defaults', 'Only show specified configuration, but no defaults')
   .action((format: string, { defaults }) => {
     setEnvPrefix(program.optsWithGlobals().envPrefix);
-    showConfig(format, !(defaults as boolean));
+    showConfig(format, defaults as boolean);
   });
 
 //parse and start

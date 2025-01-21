@@ -1,7 +1,7 @@
-import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
 import process from 'process';
 import paths from 'path';
+import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import { getFullConfig } from '@/config/config';
 import { accessLogFormats, logFormats } from '@/logging/formats';
 import { getSourcePath } from '@/logging/getSourcePath';
@@ -47,6 +47,7 @@ const dateFormatter = function (): string {
  * When stdout or stderr is redirected to file, file logging format is used.
  */
 class Logger {
+  private readonly level: 'debug' | 'info' | 'warn' | 'error';
   private readonly ttyLoggingFormat: LoggingFormat;
   private readonly fileLoggingFormat: LoggingFormat;
   private readonly accessLoggingFormat: AccessLoggingFormat;
@@ -78,7 +79,7 @@ class Logger {
     const stdoutIsTTY = process.stdout.isTTY ?? false;
     const stderrIsTTY = process.stderr.isTTY ?? false;
     this.ttyLogger = createLogger({
-      level: process.env.LOG_LEVEL || 'info',
+      level: this.level,
       format: combine(
         timestamp({ format: dateFormatter }),
         printf(({ level, message, timestamp, sourcePath, meta }) => {
@@ -145,6 +146,7 @@ class Logger {
 
   constructor() {
     const config = getFullConfig();
+    this.level = config.logging?.level as 'debug' | 'info' | 'warn' | 'error';
     this.ttyLoggingFormat = config.logging?.ttyLoggingFormat as LoggingFormat;
     this.fileLoggingFormat = config.logging?.fileLoggingFormat as LoggingFormat;
     this.accessLoggingFormat = config.logging?.accessLoggingFormat as AccessLoggingFormat;

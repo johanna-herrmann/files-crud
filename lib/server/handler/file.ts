@@ -1,9 +1,9 @@
-import Request from '@/types/server/Request';
-import express from 'express';
 import { Readable } from 'stream';
-import { resolvePath, sendError, sendOK } from '@/server/util';
+import express from 'express';
+import { resolvePath, sanitizePath, sendError, sendOK } from '@/server/util';
 import { loadStorage } from '@/storage';
 import { loadLogger } from '@/logging';
+import Request from '@/types/server/Request';
 import UploadRequest from '@/types/server/UploadRequest';
 
 const saveHandler = async function (req: Request, res: express.Response): Promise<void> {
@@ -103,38 +103,42 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
   const logger = loadLogger();
   const storage = loadStorage();
   const { path, targetPath, keepOwner, username } = req.body;
+  const sanitizedPath = sanitizePath(path as string);
+  const sanitizedTargetPath = sanitizePath(targetPath as string);
 
-  if (!(await storage.exists(path as string))) {
-    return sendError(res, `File ${path} does not exist`);
+  if (!(await storage.exists(sanitizedPath))) {
+    return sendError(res, `File ${sanitizedPath} does not exist`);
   }
 
   if (keepOwner) {
-    await storage.copy(path as string, targetPath as string);
+    await storage.copy(sanitizedPath, sanitizedTargetPath);
   } else {
-    await storage.copy(path as string, targetPath as string, username as string);
+    await storage.copy(sanitizedPath, sanitizedTargetPath, username as string);
   }
 
-  logger.info('Successfully copied file.', { path, targetPath });
-  sendOK(res, { path: targetPath });
+  logger.info('Successfully copied file.', { path: sanitizedPath, targetPath: sanitizedTargetPath });
+  sendOK(res, { path: sanitizedTargetPath });
 };
 
 const moveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
   const { path, targetPath, keepOwner, username } = req.body;
+  const sanitizedPath = sanitizePath(path as string);
+  const sanitizedTargetPath = sanitizePath(targetPath as string);
 
-  if (!(await storage.exists(path as string))) {
+  if (!(await storage.exists(sanitizedPath))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
   if (keepOwner) {
-    await storage.move(path as string, targetPath as string);
+    await storage.move(sanitizedPath, sanitizedTargetPath);
   } else {
-    await storage.move(path as string, targetPath as string, username as string);
+    await storage.move(sanitizedPath, sanitizedTargetPath, username as string);
   }
 
-  logger.info('Successfully moved file.', { path, targetPath });
-  sendOK(res, { path: targetPath });
+  logger.info('Successfully moved file.', { path: sanitizedPath, targetPath: sanitizedTargetPath });
+  sendOK(res, { path: sanitizedTargetPath });
 };
 
 const deleteHandler = async function (req: Request, res: express.Response): Promise<void> {

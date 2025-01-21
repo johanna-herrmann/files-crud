@@ -54,8 +54,8 @@ const formatConfig = function (config: Config, format: Format): string {
   }
 };
 
-const showConfig = function (format: string = 'json', noDefaults: boolean): void {
-  const config = noDefaults ? getConfig() : getFullConfig();
+const showConfig = function (format: string = 'json', defaults: boolean): void {
+  const config = defaults ? getFullConfig() : getConfig();
   printer.printBlock(formatConfig(config, format as Format));
 };
 

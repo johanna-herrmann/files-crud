@@ -1,8 +1,7 @@
-import fse from 'fs-extra';
 import fs from 'fs/promises';
 import paths from 'path';
+import fse from 'fs-extra';
 import StorageAdapter from '@/types/storage/StorageAdapter';
-import { sanitizePath } from '@/storage/sanitizePath';
 
 /**
  * StorageAdapter for fs storage.
@@ -13,11 +12,11 @@ class FsStorageAdapter implements StorageAdapter {
   private readonly directory: string;
 
   public constructor(path: string) {
-    this.directory = paths.join(paths.sep, sanitizePath(path));
+    this.directory = path;
   }
 
   private resolvePath(path: string): string {
-    return paths.join(this.directory, sanitizePath(path));
+    return paths.join(this.directory, path);
   }
 
   private async removeParentDirectoryIfEmpty(path: string): Promise<void> {

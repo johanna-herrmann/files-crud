@@ -152,6 +152,18 @@ describe('file handlers', (): void => {
       expect(JSON.parse(await fs.readFile('./data/dir~file', 'utf8'))).toEqual(data);
       assertOK(res, { path: 'dir/file' });
     });
+
+    test('saves file, without jailbreak', async (): Promise<void> => {
+      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
+      (req.params as Record<string, string | string[]>).path = ['..', '..', 'file'];
+      const res = buildResponse();
+      req.headers['X-Mimetype'] = 'image/png';
+
+      await saveHandler(req, res);
+
+      expect(await exists('./files/file')).toBe(true);
+      assertOK(res, { path: 'file' });
+    });
   });
 
   describe('loadHandler', (): void => {
@@ -348,6 +360,29 @@ describe('file handlers', (): void => {
       assertOK(res, { path: 'c/copy' });
     });
 
+    test('copies file, without jailbreak', async (): Promise<void> => {
+      buildFSMock(
+        { dir: { file: contentBuffer } },
+        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
+      );
+      const req = buildRequestForFileAction('', 'copy', undefined, {
+        path: '../dir/file',
+        targetPath: '../c/copy',
+        username: 'new',
+        keepOwner: true
+      });
+      const res = buildResponse();
+
+      await copyHandler(req, res);
+
+      expect(JSON.parse(await fs.readFile('./data/c~copy', 'utf8'))).toEqual({
+        owner: testUser.username,
+        contentType: 'text/plain',
+        meta: { k: 'v' }
+      });
+      assertOK(res, { path: 'c/copy' });
+    });
+
     test('returns error if file does not exist', async (): Promise<void> => {
       const req = buildRequestForFileAction('', 'copy', undefined, { path: 'dir/file', targetPath: 'c/copy' });
       const res = buildResponse();
@@ -388,6 +423,29 @@ describe('file handlers', (): void => {
         { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
       );
       const req = buildRequestForFileAction('', 'move', undefined, { path: 'dir/file', targetPath: 'm/move', username: 'new', keepOwner: true });
+      const res = buildResponse();
+
+      await moveHandler(req, res);
+
+      expect(JSON.parse(await fs.readFile('./data/m~move', 'utf8'))).toEqual({
+        owner: testUser.username,
+        contentType: 'text/plain',
+        meta: { k: 'v' }
+      });
+      assertOK(res, { path: 'm/move' });
+    });
+
+    test('moves file, without jailbreak', async (): Promise<void> => {
+      buildFSMock(
+        { dir: { file: contentBuffer } },
+        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
+      );
+      const req = buildRequestForFileAction('', 'move', undefined, {
+        path: '../dir/file',
+        targetPath: '../m/move',
+        username: 'new',
+        keepOwner: true
+      });
       const res = buildResponse();
 
       await moveHandler(req, res);

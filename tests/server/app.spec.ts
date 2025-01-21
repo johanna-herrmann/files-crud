@@ -156,7 +156,7 @@ describe('app->buildApp', (): void => {
         ip: '::ffff:_',
         method: 'GET',
         path: '/test',
-        httpVersion: '1.1',
+        httpVersion: 'HTTP/1.1',
         statusCode: 200,
         contentLength: undefined,
         referer: '_',

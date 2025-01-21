@@ -5,7 +5,7 @@ import LogEntry from '@/types/logging/LogEntry';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
 
 const { colorize } = format;
-const BOTTOM_LINE = '\u2500'.repeat(process.stdout.columns || 80);
+const bottomLine = () => '\u2500'.repeat(process.stdout.columns || 80);
 
 const buildMetaPad = function (meta: unknown, delimiter: ' - ' | '\n'): string {
   return meta ? `${delimiter}${JSON.stringify(meta)}` : '';
@@ -18,7 +18,7 @@ const humanReadableLine = function ({ level, message, timestamp, sourcePath, met
 
 const humanReadableBlock = function ({ level, message, timestamp, sourcePath, meta }: LogEntry): string {
   const metaPad = buildMetaPad(meta, '\n');
-  return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}${metaPad}\n${BOTTOM_LINE}\n`;
+  return `${timestamp}\n[${sourcePath}]\n${level.toUpperCase()}:\n${message}${metaPad}\n${bottomLine()}\n`;
 };
 
 const coloredHumanReadableLine = function ({ level, message, timestamp, sourcePath, meta }: LogEntry): string {
@@ -29,7 +29,7 @@ const coloredHumanReadableLine = function ({ level, message, timestamp, sourcePa
 const coloredHumanReadableBlock = function ({ level, message, timestamp, sourcePath, meta }: LogEntry): string {
   const metaPad = buildMetaPad(meta, ' - ');
   const block = colorize().colorize(level, `${timestamp} - [${sourcePath}] - ${level.toUpperCase()}: - ${message}${metaPad}`).replace(/ - /g, '\n');
-  return `${block}\n${BOTTOM_LINE}\n`;
+  return `${block}\n${bottomLine()}\n`;
 };
 
 const json = function ({ level, message, timestamp, sourcePath, meta }: LogEntry): string {
@@ -71,4 +71,4 @@ const accessLogFormats: Record<AccessLoggingFormat, (entry: AccessLogEntry) => s
   json: accessJson
 };
 
-export { logFormats, accessLogFormats, BOTTOM_LINE };
+export { logFormats, accessLogFormats };

@@ -25,6 +25,8 @@ const admin = false;
 const meta = { k: 'v' };
 const newMeta = { abc: 123 };
 
+let mock_loggedWarnMessage = '';
+let mock_loggedWarnMeta: Record<string, unknown> | undefined;
 let mock_loggedErrorMessage = '';
 let mock_loggedErrorMeta: Record<string, unknown> | undefined;
 
@@ -71,7 +73,9 @@ jest.mock('@/logging/index', () => {
         info() {
           return this;
         },
-        warn() {
+        warn(message: string, meta?: Record<string, unknown>) {
+          mock_loggedWarnMessage = message;
+          mock_loggedWarnMeta = meta;
           return this;
         },
         error(message: string, meta?: Record<string, unknown>) {
@@ -88,12 +92,14 @@ describe('user handlers', (): void => {
   afterEach(async () => {
     data.user_ = [];
     resetLastMessage();
+    mock_loggedWarnMessage = '';
+    mock_loggedWarnMeta = undefined;
     mock_loggedErrorMessage = '';
     mock_loggedErrorMeta = undefined;
   });
 
   describe('registerHandler', (): void => {
-    test('registers User if it does not exist already.', async (): Promise<void> => {
+    test('registers User if it does not exist already, warning about short password.', async (): Promise<void> => {
       const req = buildRequestForUserAction('valid_admin_token', 'register', undefined, { username, password, meta });
       const res = buildResponse();
 
@@ -101,6 +107,20 @@ describe('user handlers', (): void => {
 
       assertOK(res, { username });
       expect((data.user_?.at(0) as User)?.username).toBe(username);
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
+      expect(mock_loggedWarnMeta).toEqual({ length: 3 });
+    });
+
+    test('registers User if it does not exist already, not warning about short password.', async (): Promise<void> => {
+      const req = buildRequestForUserAction('valid_admin_token', 'register', undefined, { username, password: '-'.repeat(10), meta });
+      const res = buildResponse();
+
+      await registerHandler(req, res);
+
+      assertOK(res, { username });
+      expect((data.user_?.at(0) as User)?.username).toBe(username);
+      expect(mock_loggedWarnMessage).toBe('');
+      expect(mock_loggedWarnMeta).toBeUndefined();
     });
 
     test('rejects if user does exist already.', async (): Promise<void> => {
@@ -118,7 +138,7 @@ describe('user handlers', (): void => {
   });
 
   describe('addUserHandler', (): void => {
-    test('adds User if it does not exist already, admin.', async (): Promise<void> => {
+    test('adds User if it does not exist already, admin, warning about short password.', async (): Promise<void> => {
       const req = buildRequestForUserAction('valid_admin_token', 'add', undefined, { username, password, meta, admin: true });
       const res = buildResponse();
 
@@ -127,6 +147,21 @@ describe('user handlers', (): void => {
       assertOK(res, { username });
       expect((data.user_?.at(0) as User)?.username).toBe(username);
       expect((data.user_?.at(0) as User)?.admin).toBe(true);
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
+      expect(mock_loggedWarnMeta).toEqual({ length: 3 });
+    });
+
+    test('adds User if it does not exist already, admin, not warning about short password.', async (): Promise<void> => {
+      const req = buildRequestForUserAction('valid_admin_token', 'add', undefined, { username, password: '-'.repeat(10), meta, admin: true });
+      const res = buildResponse();
+
+      await addUserHandler(req, res);
+
+      assertOK(res, { username });
+      expect((data.user_?.at(0) as User)?.username).toBe(username);
+      expect((data.user_?.at(0) as User)?.admin).toBe(true);
+      expect(mock_loggedWarnMessage).toBe('');
+      expect(mock_loggedWarnMeta).toBeUndefined();
     });
 
     test('adds User if it does not exist already, normal user.', async (): Promise<void> => {
@@ -179,7 +214,22 @@ describe('user handlers', (): void => {
   });
 
   describe('changePasswordHandler', (): void => {
-    test('changes password', async (): Promise<void> => {
+    test('changes password, warning about short password', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
+      const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { username, newPassword: 'newPasswd' });
+      const res = buildResponse();
+
+      await changePasswordHandler(req, res);
+
+      assertOK(res);
+      expect((data.user_?.at(0) as User)?.hashVersion).toBe('testVersion');
+      expect((data.user_?.at(0) as User)?.salt).toBe('salt.newPasswd');
+      expect((data.user_?.at(0) as User)?.hash).toBe('hash.newPasswd');
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
+      expect(mock_loggedWarnMeta).toEqual({ length: 9 });
+    });
+
+    test('changes password, not warning about short password', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
       const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { username, newPassword: 'newPassword' });
       const res = buildResponse();
@@ -190,6 +240,8 @@ describe('user handlers', (): void => {
       expect((data.user_?.at(0) as User)?.hashVersion).toBe('testVersion');
       expect((data.user_?.at(0) as User)?.salt).toBe('salt.newPassword');
       expect((data.user_?.at(0) as User)?.hash).toBe('hash.newPassword');
+      expect(mock_loggedWarnMessage).toBe('');
+      expect(mock_loggedWarnMeta).toBeUndefined();
     });
   });
 

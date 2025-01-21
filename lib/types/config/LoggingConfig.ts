@@ -3,6 +3,7 @@ import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequenc
 import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
 
 interface LoggingConfig {
+  level?: 'debug' | 'info' | 'warn' | 'error';
   accessLogFile?: string;
   errorLogFile?: string;
   ttyLoggingFormat?: LoggingFormat;

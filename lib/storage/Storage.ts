@@ -1,14 +1,13 @@
 import paths from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import { sanitizePath } from '@/storage/sanitizePath';
 import { getFullConfig } from '@/config/config';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import StorageType from '@/types/storage/StorageType';
 import FileData from '@/types/storage/FileData';
 
-const removeTildeFromPath = function (path: string): string {
+const removeTilde = function (path: string): string {
   return path.replace(/~/gu, '-');
 };
 
@@ -21,26 +20,23 @@ class Storage implements StorageType {
   public constructor() {
     const config = getFullConfig();
     const directory = paths.resolve((config.storage?.path ?? config.path) as string);
-    this.directory = paths.resolve(paths.sep, sanitizePath(directory));
+    this.directory = paths.resolve(paths.sep, directory);
     this.storageType = config.storage?.name as 'fs' | 's3';
     this.dataStorage = new FsStorageAdapter(this.directory);
-    this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(paths.join(this.directory, 'files'));
-  }
-
-  private getPathKey(path: string): string {
-    return sanitizePath(path).replace(/[/\\]/gu, '~');
+    this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(this.directory);
   }
 
   private resolvePath(path: string, sub: string): string {
-    return paths.join(sub, sanitizePath(path));
+    return paths.join(sub, path);
   }
 
   private resolveContentPath(path: string): string {
-    return this.resolvePath(removeTildeFromPath(path), 'files');
+    return removeTilde(this.resolvePath(path, 'files'));
   }
 
   private resolveDataPath(path: string): string {
-    return this.resolvePath(this.getPathKey(removeTildeFromPath(path)), 'data');
+    const resolvedPath = removeTilde(this.resolvePath(path, 'data'));
+    return resolvedPath.replace(/\//g, '~').replace(/^data~/, 'data/');
   }
 
   public getConf(): ['fs' | 's3', string, FsStorageAdapter, FsStorageAdapter | S3StorageAdapter] {
@@ -50,19 +46,19 @@ class Storage implements StorageType {
   public async save(path: string, content: Buffer, data: FileData): Promise<void> {
     await this.setData(path, data);
     await this.dataStorage.write(this.resolveContentPath(path), '', 'utf8');
-    return await this.contentStorage.write(sanitizePath(path), content);
+    return await this.contentStorage.write(this.resolveContentPath(path), content);
   }
 
   public async load(path: string): Promise<[Buffer, FileData]> {
     const data = await this.loadData(path);
-    const content = await this.contentStorage.read(sanitizePath(path));
+    const content = await this.contentStorage.read(this.resolveContentPath(path));
     return [(content as Buffer) ?? Buffer.from(''), data];
   }
 
   public async delete(path: string): Promise<void> {
-    await this.contentStorage.delete(sanitizePath(path));
-    await this.dataStorage.delete(this.resolveDataPath(path));
     const resolvedContentPath = this.resolveContentPath(path);
+    await this.contentStorage.delete(resolvedContentPath);
+    await this.dataStorage.delete(this.resolveDataPath(path));
     if (await this.exists(resolvedContentPath)) {
       await this.dataStorage.delete(resolvedContentPath);
     }
@@ -71,7 +67,7 @@ class Storage implements StorageType {
   public async copy(path: string, copyPath: string, owner?: string): Promise<void> {
     await this.dataStorage.copy(this.resolveDataPath(path), this.resolveDataPath(copyPath));
     await this.dataStorage.copy(this.resolveContentPath(path), this.resolveContentPath(copyPath));
-    await this.contentStorage.copy(sanitizePath(path), sanitizePath(copyPath));
+    await this.contentStorage.copy(this.resolveContentPath(path), this.resolveContentPath(copyPath));
     if (!!owner) {
       const data = await this.loadData(copyPath);
       data.owner = owner;

@@ -1,9 +1,9 @@
-import Request from '@/types/server/Request';
 import express from 'express';
-import onFinished from 'on-finished';
 import { OutgoingMessage } from 'http';
+import onFinished from 'on-finished';
 import { getFullConfig } from '@/config/config';
 import { loadLogger } from '@/logging';
+import Request from '@/types/server/Request';
 
 const anonymizeIp = function (ip: string): string {
   const ipv4Regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.)\d{1,3}$/u;
@@ -48,7 +48,7 @@ const logAccessMiddleware = function (req: Request, res: express.Response, next:
   const ip = getIp(req, ipLogging);
   const method = req.method;
   const path = req.path;
-  const httpVersion = req.httpVersion;
+  const httpVersion = `HTTP/${req.httpVersion}`;
   const referer = req.headers.referer ?? '_';
   const userAgent = req.headers['user-agent'] ?? '_';
 

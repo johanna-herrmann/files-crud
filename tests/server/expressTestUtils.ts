@@ -31,7 +31,7 @@ const buildRequestForAccessLogging = function (ip: string, referer?: string, use
     },
     method: 'GET',
     path: '/image.png',
-    httpVersion: 'HTTP/2.0',
+    httpVersion: '2.0',
     headers: {
       'X-Forwarded-For': xForwardedFor,
       referer,

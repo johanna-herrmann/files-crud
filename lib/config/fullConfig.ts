@@ -71,6 +71,7 @@ const loadStorageConfig = function (config: Config): StorageConfig {
 
 const loadLoggingConfig = function (config: Config) {
   let conf: LoggingConfig = {
+    level: config.logging?.level || 'info',
     ipLogging: config.logging?.ipLogging ?? 'anonymous',
     ttyLoggingFormat: config.logging?.ttyLoggingFormat ?? 'coloredHumanReadableLine',
     enableAccessLogging: config.logging?.enableAccessLogging ?? true,
