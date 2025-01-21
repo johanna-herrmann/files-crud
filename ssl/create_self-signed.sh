@@ -1,6 +1,5 @@
 #!/bin/bash
 
-echo hello
 openssl genrsa -out privateKey.pem 4096
 openssl req -new -key privateKey.pem -out csr.pem
 
