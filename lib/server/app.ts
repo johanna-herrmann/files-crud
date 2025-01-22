@@ -17,6 +17,7 @@ import {
   directoryListingMiddleware,
   logAccessMiddleware,
   headerMiddleware,
+  controlMiddleware,
   notFoundMiddleware,
   errorMiddleware
 } from '@/server/middleware';
@@ -40,7 +41,9 @@ import {
   loadFileHandler,
   loadFileMetaHandler,
   loadFileDataHandler,
-  listDirectoryItemsHandler
+  listDirectoryItemsHandler,
+  stopHandler,
+  reloadHandler
 } from '@/server/handler';
 import { getFullConfig } from '@/config/config';
 import Config from '@/types/config/Config';
@@ -110,6 +113,12 @@ const addFileHandling = function (app: express.Application): void {
   app.get('/api/file/list/*path', directoryListingMiddleware, listDirectoryItemsHandler);
 };
 
+const addControlHandling = function (app: express.Application): void {
+  app.use('/control/', controlMiddleware);
+  app.post('/control/stop', stopHandler);
+  app.post('/control/reload', reloadHandler);
+};
+
 const addFallbacks = function (app: express.Application): void {
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);
@@ -121,6 +130,7 @@ const buildApp = function (noFallbacks?: boolean): express.Application {
   addCommonMiddlewares(app, config);
   addUserHandling(app);
   addFileHandling(app);
+  addControlHandling(app);
 
   if (noFallbacks) {
     return app;

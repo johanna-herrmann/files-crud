@@ -1,8 +1,8 @@
 import fs from 'fs';
 import yaml from 'yaml';
 import { readEnv } from 'read-env';
-import Config from '../types/config/Config';
 import { loadFullConfig } from '@/config/fullConfig';
+import Config from '@/types/config/Config';
 
 const config: Config = {};
 let fullConfig: Config = {};
@@ -113,4 +113,8 @@ const getEnvPrefix = function (): string {
 
 loadConfig();
 
-export { getConfig, getFullConfig, loadConfig, setEnvPrefix, getEnvPrefix };
+const reloadConfig = function () {
+  loadConfig();
+};
+
+export { getConfig, getFullConfig, loadConfig, setEnvPrefix, getEnvPrefix, reloadConfig };

@@ -13,4 +13,8 @@ const resetStorage = function (): void {
   storage = null;
 };
 
-export { loadStorage, resetStorage };
+const reloadStorage = function (): void {
+  storage = new Storage();
+};
+
+export { loadStorage, resetStorage, reloadStorage };

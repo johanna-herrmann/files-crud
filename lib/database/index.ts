@@ -25,4 +25,8 @@ const resetDb = function (): void {
   db = null;
 };
 
-export { loadDb, closeDb, resetDb };
+const reloadDb = function (): void {
+  db = new Database();
+};
+
+export { loadDb, closeDb, resetDb, reloadDb };

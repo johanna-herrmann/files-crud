@@ -13,4 +13,8 @@ const resetLogger = function () {
   logger = null;
 };
 
-export { loadLogger, resetLogger };
+const reloadLogger = function () {
+  logger = new Logger();
+};
+
+export { loadLogger, resetLogger, reloadLogger };

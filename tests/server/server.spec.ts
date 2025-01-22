@@ -2,11 +2,13 @@ import http from 'http';
 import http2 from 'http2';
 import https from 'https';
 import net from 'net';
+import fs from 'fs';
+import paths from 'path';
 import express from 'express';
-import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
 import { startServer } from '@/server/server';
 import { Logger } from '@/logging/Logger';
+import { getControlToken, setControlToken } from '@/server/middleware/control';
 
 interface CreateHttpsSslOptions {
   key: string;
@@ -39,6 +41,7 @@ jest.mock('@/logging/index', () => {
 });
 
 jest.mock('@/server/app', () => {
+  // noinspection JSUnusedGlobalSymbols
   return {
     buildApp(): express.Application {
       return { k: 'v' } as unknown as express.Application;
@@ -46,24 +49,68 @@ jest.mock('@/server/app', () => {
   };
 });
 
+jest.mock('uuid', () => {
+  const actual = jest.requireActual('uuid');
+  return {
+    ...actual,
+    v4() {
+      return 'mocked-uuid';
+    }
+  };
+});
+
+const key = 'privateKey.pem';
+const cert = 'certificate.pem';
+
 describe('startServer', (): void => {
+  let fsReadSpy: jest.Spied<typeof fs.readFileSync>;
+  let fsWriteSpy: jest.Spied<typeof fs.writeFileSync>;
   let httpSpy: jest.Spied<typeof http.createServer>;
   let httpsSpy: jest.Spied<typeof https.createServer>;
   let http2Spy: jest.Spied<typeof http2.createSecureServer>;
+  let lastControlFilePath = '';
+  let lastControlFileContent = '';
 
   beforeEach(async (): Promise<void> => {
+    setControlToken('');
     jest.useFakeTimers();
     jest.setSystemTime(42);
+    // @ts-expect-error // this is fine
+    fsReadSpy = jest.spyOn(fs, 'readFileSync').mockImplementation((path: string): string | Buffer => {
+      if (/key.*\.pem/iu.test(path)) {
+        return key;
+      }
+      if (/cert.*\.pem/iu.test(path)) {
+        return cert;
+      }
+      return '-';
+    });
+    // @ts-expect-error // this is fine
+    fsWriteSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation((path: string, content: string): void => {
+      lastControlFilePath = path;
+      lastControlFileContent = content;
+    });
   });
 
   afterEach(async (): Promise<void> => {
+    fsReadSpy.mockRestore();
+    fsWriteSpy.mockRestore();
     httpSpy?.mockRestore();
     httpsSpy?.mockRestore();
     http2Spy?.mockRestore();
     mocked_lastLoggedMessage = '';
     mocked_lastLoggedMeta = undefined;
+    lastControlFileContent = '';
+    lastControlFilePath = '';
     jest.useRealTimers();
   });
+
+  const assertControlPrepared = function (port: number, protocol: 'https' | 'http'): void {
+    const token = 'mocked-uuid';
+    expect(paths.resolve(lastControlFilePath)).toBe(paths.resolve('./.control.json'));
+    expect(JSON.parse(lastControlFileContent)).toEqual({ port, protocol, token });
+    expect(getControlToken()).toBe(token);
+  };
 
   describe('starts http server', (): void => {
     let appProvided: express.Application | null = null;
@@ -95,6 +142,7 @@ describe('startServer', (): void => {
       expect((listenOptionsProvided as unknown as net.ListenOptions)?.port).toBe(port);
       expect(mocked_lastLoggedMessage).toBe('Application started as http server in 42 ms.');
       expect(mocked_lastLoggedMeta).toEqual({ host, port, webRoot: undefined });
+      assertControlPrepared(port, 'http');
     });
 
     test('with specific config', async (): Promise<void> => {
@@ -110,23 +158,16 @@ describe('startServer', (): void => {
       expect((listenOptionsProvided as unknown as net.ListenOptions)?.port).toBe(port);
       expect(mocked_lastLoggedMessage).toBe('Application started as http server in 42 ms.');
       expect(mocked_lastLoggedMeta).toEqual({ host, port, webRoot });
+      assertControlPrepared(port, 'http');
     });
   });
 
   describe('starts https server', (): void => {
-    const key = 'privateKey.pem';
-    const cert = 'certificate.pem';
-
     let appProvided: express.Application | null = null;
     let createOptionsProvided: CreateHttpsSslOptions | null = null;
     let listenOptionsProvided: net.ListenOptions | null = null;
 
     beforeEach(async (): Promise<void> => {
-      mockFS({
-        './privateKey.pem': key,
-        './certificate.pem': cert,
-        '/etc/ssl-conf/files-crud': { 'key.pem': key, 'cert.pem': cert }
-      });
       httpsSpy = jest.spyOn(https, 'createServer').mockImplementation(
         // @ts-expect-error we know options and app are valid createSecureServer arguments
         (options: CreateHttpsSslOptions, app: express.Application): http.Server<typeof http.IncomingMessage, typeof http.ServerResponse> => {
@@ -140,10 +181,6 @@ describe('startServer', (): void => {
           } as http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
         }
       );
-    });
-
-    afterEach(async (): Promise<void> => {
-      mockFS.restore();
     });
 
     test('with default config', async (): Promise<void> => {
@@ -160,6 +197,7 @@ describe('startServer', (): void => {
       expect((listenOptionsProvided as unknown as net.ListenOptions)?.port).toBe(port);
       expect(mocked_lastLoggedMessage).toBe('Application started as https server in 42 ms.');
       expect(mocked_lastLoggedMeta).toEqual({ host, port, webRoot: undefined });
+      assertControlPrepared(port, 'https');
     });
 
     test('with specific config', async (): Promise<void> => {
@@ -186,23 +224,16 @@ describe('startServer', (): void => {
       expect((listenOptionsProvided as unknown as net.ListenOptions)?.port).toBe(port);
       expect(mocked_lastLoggedMessage).toBe('Application started as https server in 42 ms.');
       expect(mocked_lastLoggedMeta).toEqual({ host, port, webRoot });
+      assertControlPrepared(port, 'https');
     });
   });
 
   describe('starts http2 server', (): void => {
-    const key = 'privateKey.pem';
-    const cert = 'certificate.pem';
-
     let appProvided: express.Application | null = null;
     let createOptionsProvided: CreateHttp2SslOptions | null = null;
     let listenOptionsProvided: net.ListenOptions | null = null;
 
     beforeEach(async (): Promise<void> => {
-      mockFS({
-        './privateKey.pem': key,
-        './certificate.pem': cert,
-        '/etc/ssl-conf/files-crud': { 'key.pem': key, 'cert.pem': cert }
-      });
       http2Spy = jest.spyOn(http2, 'createSecureServer').mockImplementation(
         // @ts-expect-error we know options and app are valid createSecureServer arguments
         (options: CreateHttp2SslOptions, app: express.Application): http.Server<typeof http.IncomingMessage, typeof http.ServerResponse> => {
@@ -216,10 +247,6 @@ describe('startServer', (): void => {
           } as http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
         }
       );
-    });
-
-    afterEach(async (): Promise<void> => {
-      mockFS.restore();
     });
 
     test('with default config', async (): Promise<void> => {
@@ -237,6 +264,7 @@ describe('startServer', (): void => {
       expect((listenOptionsProvided as unknown as net.ListenOptions)?.port).toBe(port);
       expect(mocked_lastLoggedMessage).toBe('Application started as https (http2) server in 42 ms.');
       expect(mocked_lastLoggedMeta).toEqual({ host, port, webRoot: undefined });
+      assertControlPrepared(port, 'https');
     });
 
     test('with specific config', async (): Promise<void> => {
@@ -265,6 +293,7 @@ describe('startServer', (): void => {
       expect((listenOptionsProvided as unknown as net.ListenOptions)?.port).toBe(port);
       expect(mocked_lastLoggedMessage).toBe('Application started as https (http2) server in 42 ms.');
       expect(mocked_lastLoggedMeta).toEqual({ host, port, webRoot });
+      assertControlPrepared(port, 'https');
     });
   });
 });

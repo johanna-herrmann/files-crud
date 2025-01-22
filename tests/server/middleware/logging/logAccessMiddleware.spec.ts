@@ -47,6 +47,21 @@ describe('logAccessMiddleware', (): void => {
   };
 
   describe('logs access with all properties given', (): void => {
+    test('nothing on /control/* paths', (done): void => {
+      loadConfig({ logging: { ipLogging: 'full' } });
+      const req = buildRequestForAccessLogging(ip, referer, userAgent, undefined, '/control/');
+      const res = mockResponse(contentLength);
+      let next = false;
+      setTimeout(() => {
+        expect(next).toBe(true);
+        expect(mocked_entry).toEqual(nullLogEntry);
+        done();
+      }, 1000);
+
+      logAccessMiddleware(req, res, () => (next = true));
+      res.send();
+    });
+
     test('full ip, remoteAddress', (done): void => {
       loadConfig({ logging: { ipLogging: 'full' } });
       const req = buildRequestForAccessLogging(ip, referer, userAgent);

@@ -1,5 +1,5 @@
-import Request from '@/types/server/Request';
 import express from 'express';
+import Request from '@/types/server/Request';
 
 let lastMessage = '{}';
 
@@ -16,6 +16,10 @@ const buildRequestForUserAction = function (
   } as unknown as Request;
 };
 
+const buildRequestForControlAction = function (ip: string, xForwardedFor?: string, token?: string): Request {
+  return { headers: { authorization: token, ['X-Forwarded-For']: xForwardedFor }, socket: { remoteAddress: ip } } as unknown as Request;
+};
+
 const buildRequestForFileAction = function (token: string, action: string, pathParam: string | undefined, body: Record<string, unknown>): Request {
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
@@ -24,13 +28,19 @@ const buildRequestForFileAction = function (token: string, action: string, pathP
   } as unknown as Request;
 };
 
-const buildRequestForAccessLogging = function (ip: string, referer?: string, userAgent?: string, xForwardedFor?: string | string[]): Request {
+const buildRequestForAccessLogging = function (
+  ip: string,
+  referer?: string,
+  userAgent?: string,
+  xForwardedFor?: string | string[],
+  path?: string
+): Request {
   return {
     socket: {
       remoteAddress: ip
     },
     method: 'GET',
-    path: '/image.png',
+    path: path ?? '/image.png',
     httpVersion: '2.0',
     headers: {
       'X-Forwarded-For': xForwardedFor,
@@ -101,6 +111,7 @@ const resetLastMessage = function () {
 
 export {
   buildRequestForUserAction,
+  buildRequestForControlAction,
   buildRequestForFileAction,
   buildRequestForAccessLogging,
   buildSimpleRequest,

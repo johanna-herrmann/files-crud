@@ -1,8 +1,8 @@
-import express from 'express';
-import request from 'supertest';
 import paths from 'path';
 import fs from 'fs/promises';
 import crypto from 'crypto';
+import express from 'express';
+import request from 'supertest';
 import { buildApp, parseSizeLimit } from '@/server/app';
 import { loadConfig } from '@/config/config';
 import { Logger } from '@/logging/Logger';
@@ -435,6 +435,24 @@ describe('app->buildApp', (): void => {
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'directoryListingMiddleware', 'listDirectoryItemsHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'sub'] });
+    });
+  });
+
+  describe('handles control routes correctly', (): void => {
+    test('stop', async (): Promise<void> => {
+      const app = buildApp();
+
+      await request(app).post('/control/stop');
+
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'stopHandler']);
+    });
+
+    test('reload', async (): Promise<void> => {
+      const app = buildApp();
+
+      await request(app).post('/control/reload');
+
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'reloadHandler']);
     });
   });
 

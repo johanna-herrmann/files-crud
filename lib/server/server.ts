@@ -2,11 +2,11 @@ import http from 'http';
 import https from 'https';
 import http2 from 'http2';
 import fs from 'fs';
+import { v4 } from 'uuid';
 import { buildApp } from '@/server/app';
 import { loadLogger } from '@/logging';
 import { getFullConfig } from '@/config/config';
-import Request from '@/types/server/Request';
-import express from 'express';
+import { setControlToken } from '@/server/middleware/control';
 
 const getFormattedTime = function (time: number): string {
   const units = ['ms', 's', 'm', 'h'];
@@ -37,13 +37,6 @@ const logStartedServer = function (
   logger.info(`Application started as ${serverType} server in ${formattedTime}.`, { host, port, webRoot });
 };
 
-const startRedirectingServer = function (host: string, port: number): void {
-  const app = express();
-  app.use((req: Request, res: express.Response): void => {
-    res.redirect(`https://${host}:${port}${req.path}`);
-  });
-};
-
 const startHttpServer = function (host: string, port: number, webRoot: string | undefined, start: number): void {
   const app = buildApp();
   const server = http.createServer(app);
@@ -53,7 +46,6 @@ const startHttpServer = function (host: string, port: number, webRoot: string | 
 };
 
 const startHttpsServer = function (host: string, port: number, webRoot: string | undefined, start: number): void {
-  startRedirectingServer(host, port);
   const config = getFullConfig();
   const sslKeyPath = config.server?.sslKeyPath as string;
   const sslCertPath = config.server?.sslCertPath as string;
@@ -73,9 +65,14 @@ const startServer = function (start: number): void {
   const port = config.server?.port as number;
   const webRoot = config.webRoot;
   if (useHttps) {
-    return startHttpsServer(host, port, webRoot, start);
+    startHttpsServer(host, port, webRoot, start);
+  } else {
+    startHttpServer(host, port, webRoot, start);
   }
-  startHttpServer(host, port, webRoot, start);
+  const protocol = useHttps ? 'https' : 'http';
+  const token = v4();
+  fs.writeFileSync('./.control.json', JSON.stringify({ port, protocol, token }), 'utf8');
+  setControlToken(token);
 };
 
 export { startServer };

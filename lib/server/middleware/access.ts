@@ -43,11 +43,16 @@ const getContentLength = function (res: express.Response): number | undefined {
 
 const logAccessMiddleware = function (req: Request, res: express.Response, next: express.NextFunction) {
   const start = Date.now();
+  const path = req.path;
+
+  if (path.startsWith('/control/')) {
+    return next();
+  }
+
   const config = getFullConfig();
   const ipLogging = config.logging?.ipLogging as 'full' | 'anonymous' | 'none';
   const ip = getIp(req, ipLogging);
   const method = req.method;
-  const path = req.path;
   const httpVersion = `HTTP/${req.httpVersion}`;
   const referer = req.headers.referer ?? '_';
   const userAgent = req.headers['user-agent'] ?? '_';

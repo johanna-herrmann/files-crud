@@ -24,6 +24,8 @@ import {
   listHandler as listDirectoryItemsHandler
 } from './file';
 
+import { stopHandler, reloadHandler } from './control';
+
 export {
   registerHandler,
   addUserHandler,
@@ -44,5 +46,7 @@ export {
   copyFileHandler,
   moveFileHandler,
   deleteFileHandler,
-  listDirectoryItemsHandler
+  listDirectoryItemsHandler,
+  stopHandler,
+  reloadHandler
 };

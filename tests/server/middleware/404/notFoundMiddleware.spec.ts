@@ -2,6 +2,9 @@ import { assert404, buildSimpleRequest, buildResponse } from '#/server/expressTe
 import { notFoundMiddleware } from '@/server/middleware';
 import { Logger } from '@/logging/Logger';
 
+let mocked_errorMessage = '';
+let mocked_errorMeta: Record<string, unknown> | undefined = undefined;
+
 jest.mock('@/logging/index', () => {
   // noinspection JSUnusedGlobalSymbols
   return {
@@ -17,7 +20,9 @@ jest.mock('@/logging/index', () => {
         warn() {
           return this;
         },
-        error() {
+        error(message: string, meta?: Record<string, unknown>) {
+          mocked_errorMessage = message;
+          mocked_errorMeta = meta;
           return this;
         }
       } as unknown as Logger;
@@ -26,6 +31,11 @@ jest.mock('@/logging/index', () => {
 });
 
 describe('notFoundMiddleware', (): void => {
+  beforeEach(async (): Promise<void> => {
+    mocked_errorMessage = '';
+    mocked_errorMeta = undefined;
+  });
+
   test('response with 404', async (): Promise<void> => {
     const req = buildSimpleRequest();
     const res = buildResponse();
@@ -33,5 +43,7 @@ describe('notFoundMiddleware', (): void => {
     notFoundMiddleware(req, res);
 
     assert404(res);
+    expect(mocked_errorMessage).toBe('Not Found: /test');
+    expect(mocked_errorMeta).toEqual({ statusCode: 404 });
   });
 });

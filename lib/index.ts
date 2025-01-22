@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { description, version } from '../package.json';
 import { start } from '@/command/start';
+import { reload, restart, stop } from '@/command/control';
 import { checkIntegrity } from '@/command/integrity';
 import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
 import { showConfig } from '@/command/config';
@@ -29,6 +30,33 @@ program
     createInitialAdminIfNoAdminExists().then(() => {
       start(startTime);
     });
+  });
+
+// define stop subcommand
+program
+  .command('stop')
+  .description('Stops files-crud application.')
+  .action(() => {
+    setEnvPrefix(program.optsWithGlobals().envPrefix);
+    stop().then();
+  });
+
+// define restart subcommand
+program
+  .command('restart')
+  .description('Restart files-crud application.')
+  .action(() => {
+    setEnvPrefix(program.optsWithGlobals().envPrefix);
+    restart().then();
+  });
+
+// define reload subcommand
+program
+  .command('reload')
+  .description('Reloads config ans some files-crud components based on changed config. Reloads components: Database, Storage, Logger')
+  .action(() => {
+    setEnvPrefix(program.optsWithGlobals().envPrefix);
+    reload().then();
   });
 
 // define integrityCheck subcommand
