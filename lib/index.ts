@@ -1,5 +1,6 @@
 #! /usr/bin/env node
 
+import paths from 'path';
 import { Command } from 'commander';
 import { description, version } from '../package.json';
 import { start } from '@/command/start';
@@ -8,6 +9,8 @@ import { checkIntegrity } from '@/command/integrity';
 import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
 import { showConfig } from '@/command/config';
 import { loadConfig, setEnvPrefix } from '@/config/config';
+
+process.chdir(paths.dirname(paths.dirname(__dirname)));
 
 loadConfig();
 
