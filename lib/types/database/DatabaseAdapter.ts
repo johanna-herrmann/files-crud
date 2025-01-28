@@ -17,7 +17,7 @@ interface DatabaseAdapter {
 
   /**
    * Creates a new table/collection.
-   * Some Adapters use the first property's key of item as key field.
+   * Some Adapters may use the first property's key of item as key field (example: dynamoDB).
    * @param table The name of the table.
    * @param item Dummy Item to derive the fields from.
    *             Example: Provide dummy user item, so fields of user can be derived.
