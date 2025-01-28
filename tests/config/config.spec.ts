@@ -159,7 +159,14 @@ describe('config', (): void => {
     loadConfig();
 
     expect(getFullConfig().database).toEqual({ name: 'in-memory' });
-    expect(getFullConfig().server).toEqual({ host: '127.0.0.1', port: 9000, noRobots: false, fileSizeLimit: '100m', useHttps: false, cors: {} });
+    expect(getFullConfig().server).toEqual({
+      host: '127.0.0.1',
+      port: 9000,
+      noRobots: false,
+      fileSizeLimit: '100m',
+      useHttps: false,
+      cors: undefined
+    });
   });
 
   test('defaults correctly, file with few properties', async (): Promise<void> => {
@@ -174,7 +181,7 @@ describe('config', (): void => {
       noRobots: false,
       fileSizeLimit: '100m',
       useHttps: true,
-      cors: {},
+      cors: undefined,
       useHttp2: false,
       hsts: true,
       sslKeyPath: './privateKey.pem',

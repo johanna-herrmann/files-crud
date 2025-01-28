@@ -50,16 +50,41 @@ const buildRequestForAccessLogging = function (
   } as unknown as Request;
 };
 
-const buildSimpleRequest = function (): Request {
+const buildFileUploadRequest = function (): Request {
+  const boundary = `${'-'.repeat(26)}12345`;
+  const payload = 'abcde';
   return {
-    method: 'GET',
-    path: '/test'
+    method: 'POST',
+    path: '/upload',
+    headers: {
+      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      'Content-Length': payload.length
+    },
+    body: [
+      boundary,
+      'Content-Disposition: form-data; name="file"; filename="image.png"',
+      'Content-Type: application/octet-stream',
+      '',
+      payload,
+      `${boundary}--`,
+      ''
+    ].join('\n')
   } as unknown as Request;
 };
 
-const buildResponse = function (): express.Response {
+const buildSimpleRequest = function (withStream?: boolean): Request {
+  return {
+    method: 'GET',
+    path: '/test',
+    headers: { origin: '127.0.0.1' },
+    stream: withStream ? '-' : undefined
+  } as unknown as Request;
+};
+
+const buildResponse = function (withStream?: boolean): express.Response {
   const res = {
     statusCode: -1,
+    stream: withStream ? '-' : undefined,
     json(obj: unknown) {
       lastMessage = JSON.stringify(obj);
       return this;
@@ -114,6 +139,7 @@ export {
   buildRequestForControlAction,
   buildRequestForFileAction,
   buildRequestForAccessLogging,
+  buildFileUploadRequest,
   buildSimpleRequest,
   buildResponse,
   assertPass,

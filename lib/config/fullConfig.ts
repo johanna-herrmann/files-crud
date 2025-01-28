@@ -110,7 +110,7 @@ const loadServerConfig = function (config: Config) {
     port: config.server?.port ?? 9000,
     useHttps: config.server?.useHttps ?? false,
     noRobots: config.server?.noRobots ?? false,
-    cors: config.server?.cors ?? {},
+    cors: config.server?.cors,
     fileSizeLimit: config.server?.fileSizeLimit ?? FILE_SIZE_LIMIT
   };
   if (conf.useHttps) {

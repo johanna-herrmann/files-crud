@@ -2,7 +2,6 @@ import express from 'express';
 import { authorize, checkPassword } from '@/user';
 import User from '@/types/user/User';
 import Request from '@/types/server/Request';
-import UserActionParams from '@/types/user/UserActionParams';
 import { getToken, sendUnauthorized } from '@/server/util';
 import { getFullConfig } from '@/config/config';
 
@@ -40,7 +39,7 @@ const userMiddleware = async function (req: Request, res: express.Response, next
     return sendUnauthorized(res, 'You have to be logged in');
   }
 
-  const { action, username } = req.params as UserActionParams;
+  const { action, username } = req.params;
   const body = req.body;
   if (isAdminAction(user, action, username ?? (body.username as string) ?? '[]')) {
     return handleAdminAction(user.admin, res, next);

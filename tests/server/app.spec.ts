@@ -1,13 +1,10 @@
 import paths from 'path';
-import fs from 'fs/promises';
-import crypto from 'crypto';
 import express from 'express';
 import request from 'supertest';
-import { buildApp, parseSizeLimit } from '@/server/app';
+import { buildApp } from '@/server/app';
 import { loadConfig } from '@/config/config';
 import { Logger } from '@/logging/Logger';
 import AccessLogEntry from '@/types/logging/AccessLogEntry';
-import UploadRequest from '@/types/server/UploadRequest';
 import Request from '@/types/server/Request';
 
 type Middleware = (_: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
@@ -103,32 +100,16 @@ describe('app->buildApp', (): void => {
     mocked_lastChain.splice(0, mocked_lastChain.length);
   });
 
-  describe('after addCommonMiddlewares it', () => {
-    test('sets headers correctly', async (): Promise<void> => {
-      const app = buildApp(true);
-      app.get('/test', (req: Request, res: express.Response) => {
-        res.status(200).json(req.body);
-      });
+  describe('common middlewares', () => {
+    test('Calls common middlewares in correct order.', async (): Promise<void> => {
+      const app = buildApp();
 
-      await request(app).get('/test');
+      await request(app).get('/nope');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
     });
 
-    test('handles cors correctly', async (): Promise<void> => {
-      loadConfig({ server: { cors: { origin: '*' } } });
-      const app = buildApp(true);
-      app.get('/test', (req: Request, res: express.Response) => {
-        res.status(200).json(req.body);
-      });
-
-      const response = await request(app).get('/test');
-
-      expect(response.statusCode).toEqual(200);
-      expect(response.headers['access-control-allow-origin']).toBe('*');
-    });
-
-    test('handles json correctly', async (): Promise<void> => {
+    test('Handles json correctly.', async (): Promise<void> => {
       const testBody = { someKey: 'someValue' };
       const app = buildApp(true);
       app.post('/test', (req: Request, res: express.Response) => {
@@ -142,7 +123,7 @@ describe('app->buildApp', (): void => {
       expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
     });
 
-    test('logs access correctly', async (): Promise<void> => {
+    test('Logs access correctly.', async (): Promise<void> => {
       const app = buildApp(true);
       app.get('/test', (req: Request, res: express.Response) => {
         res.status(200).json(req.body);
@@ -168,21 +149,7 @@ describe('app->buildApp', (): void => {
       expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
     });
 
-    test('serves webroot if given', async (): Promise<void> => {
-      loadConfig({ webRoot: __dirname });
-      const app = buildApp();
-      const path = `/${paths.basename(__filename)}`;
-
-      const response = await request(app).get(path);
-
-      expect(response.statusCode).toEqual(200);
-      expect(response.headers['content-type']).toBe('video/mp2t'); // express believes ts file is transport stream file
-      expect((response.body as Buffer).toString('utf8')).toMatch(/describe/u);
-      expect((response.body as Buffer).toString('utf8')).toMatch(/test/u);
-      expect((response.body as Buffer).toString('utf8')).toMatch(/serves webroot if given/u);
-    });
-
-    test('falls back to 404 if resource does not exist in given webroot', async (): Promise<void> => {
+    test('Falls back to 404 if resource does not exist in given webRoot.', async (): Promise<void> => {
       loadConfig({ webRoot: __dirname });
       const app = buildApp(true);
 
@@ -191,7 +158,7 @@ describe('app->buildApp', (): void => {
       expect(response.statusCode).toEqual(404);
     });
 
-    test('falls back to 404 if no webroot given', async (): Promise<void> => {
+    test('Falls back to 404 if no webroot given.', async (): Promise<void> => {
       const app = buildApp(true);
       const path = `/${paths.basename(__filename)}`;
 
@@ -199,64 +166,15 @@ describe('app->buildApp', (): void => {
 
       expect(response.statusCode).toEqual(404);
     });
-
-    test('handles file upload correctly, limit not exceeded', async (): Promise<void> => {
-      const app = buildApp(true);
-      app.post('/api/upload', (req: Request, res: express.Response) => {
-        const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
-        res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
-      });
-      const content = (await fs.readFile(__filename)).subarray(0, 16).toString('base64');
-
-      const response = await request(app).post('/api/upload').attach('file', __filename);
-
-      expect(response.statusCode).toBe(200);
-      expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-      expect(response.body.content).toBe(content);
-      expect(response.body.md5).toBe(
-        crypto
-          .createHash('md5')
-          .update(await fs.readFile(__filename))
-          .digest()
-          .toString('hex')
-      );
-      expect(response.body.mimetype).toBe('video/mp2t');
-    });
-
-    test('handles file upload correctly, limit exceeded, 10 bytes', async (): Promise<void> => {
-      loadConfig({ server: { fileSizeLimit: 10 } });
-      const app = buildApp(true);
-      app.post('/api/upload', (req: Request, res: express.Response) => {
-        const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
-        res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
-      });
-
-      const response = await request(app).post('/api/upload').attach('file', __filename);
-
-      expect(response.statusCode).toBe(413);
-    });
-
-    test('handles file upload correctly, limit exceeded, 1k', async (): Promise<void> => {
-      loadConfig({ server: { fileSizeLimit: 10 } });
-      const app = buildApp(true);
-      app.post('/api/upload', (req: Request, res: express.Response) => {
-        const { data, mimetype, md5 } = (req as UploadRequest).files?.file ?? { data: Buffer.from(''), mimetype: '' };
-        res.status(200).json({ mimetype, content: data.subarray(0, 16).toString('base64'), md5 });
-      });
-
-      const response = await request(app).post('/api/upload').attach('file', __filename);
-
-      expect(response.statusCode).toBe(413);
-    });
   });
 
-  describe('handles user routes correctly', (): void => {
+  describe('Handles user routes correctly', (): void => {
     test('register', async (): Promise<void> => {
       const app = buildApp();
 
       await request(app).post('/api/register');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler']);
     });
 
     test('login', async (): Promise<void> => {
@@ -264,7 +182,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/api/login');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'loginHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'loginHandler']);
     });
 
     test('addUser', async (): Promise<void> => {
@@ -272,7 +190,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/api/user/add');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'addUserHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'addUserHandler']);
       expect(mocked_lastAction).toBe('add');
     });
 
@@ -281,7 +199,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/api/user/set-admin');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'setAdminStateHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'setAdminStateHandler']);
       expect(mocked_lastAction).toBe('set-admin');
     });
 
@@ -290,7 +208,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/api/user/change-username');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changeUsernameHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changeUsernameHandler']);
       expect(mocked_lastAction).toBe('change-username');
     });
 
@@ -299,7 +217,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/api/user/change-password');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changePasswordHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changePasswordHandler']);
       expect(mocked_lastAction).toBe('change-password');
     });
 
@@ -308,7 +226,7 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).post('/api/user/save-meta/username');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'saveUserMetaHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'saveUserMetaHandler']);
       expect(mocked_lastAction).toBe('save-meta');
       expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
@@ -319,7 +237,7 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).delete('/api/user/delete/username');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'deleteUserHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'deleteUserHandler']);
       expect(mocked_lastAction).toBe('delete');
       expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
@@ -330,7 +248,7 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).get('/api/user/load-meta/username');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'loadUserMetaHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'loadUserMetaHandler']);
       expect(mocked_lastAction).toBe('load-meta');
       expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
@@ -341,7 +259,7 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).get('/api/user/one/username');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUserHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUserHandler']);
       expect(mocked_lastAction).toBe('one');
       expect(mocked_lastUsername).toBe('username');
       expect(response.body.params).toEqual({ username: 'username' });
@@ -352,7 +270,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).get('/api/user/list');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUsersHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUsersHandler']);
       expect(mocked_lastAction).toBe('list');
     });
   });
@@ -363,7 +281,14 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).post('/api/file/save/dir/file');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileSaveMiddleware', 'saveFileHandler']);
+      expect(mocked_lastChain).toEqual([
+        'headerMiddleware',
+        'corsMiddleware',
+        'logAccessMiddleware',
+        'fileSaveMiddleware',
+        'uploadFileMiddleware',
+        'saveFileHandler'
+      ]);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
@@ -372,7 +297,13 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).post('/api/file/save-meta/dir/file');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileSaveMetaMiddleware', 'saveFileMetaHandler']);
+      expect(mocked_lastChain).toEqual([
+        'headerMiddleware',
+        'corsMiddleware',
+        'logAccessMiddleware',
+        'fileSaveMetaMiddleware',
+        'saveFileMetaHandler'
+      ]);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
@@ -381,7 +312,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/api/file/copy');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileCopyMiddleware', 'copyFileHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileCopyMiddleware', 'copyFileHandler']);
     });
 
     test('moveFile', async (): Promise<void> => {
@@ -389,7 +320,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/api/file/move');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileMoveMiddleware', 'moveFileHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileMoveMiddleware', 'moveFileHandler']);
     });
 
     test('deleteFile', async (): Promise<void> => {
@@ -397,7 +328,7 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).delete('/api/file/delete/dir/file');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileDeleteMiddleware', 'deleteFileHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileDeleteMiddleware', 'deleteFileHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
@@ -406,7 +337,13 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).get('/api/file/load-meta/dir/file');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadMetaMiddleware', 'loadFileMetaHandler']);
+      expect(mocked_lastChain).toEqual([
+        'headerMiddleware',
+        'corsMiddleware',
+        'logAccessMiddleware',
+        'fileLoadMetaMiddleware',
+        'loadFileMetaHandler'
+      ]);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
@@ -415,7 +352,13 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).get('/api/file/load-data/dir/file');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadDataMiddleware', 'loadFileDataHandler']);
+      expect(mocked_lastChain).toEqual([
+        'headerMiddleware',
+        'corsMiddleware',
+        'logAccessMiddleware',
+        'fileLoadDataMiddleware',
+        'loadFileDataHandler'
+      ]);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
@@ -424,7 +367,7 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).get('/api/file/one/dir/file');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'fileLoadMiddleware', 'loadFileHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileLoadMiddleware', 'loadFileHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
@@ -433,7 +376,13 @@ describe('app->buildApp', (): void => {
 
       const response = await request(app).get('/api/file/list/dir/sub');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'directoryListingMiddleware', 'listDirectoryItemsHandler']);
+      expect(mocked_lastChain).toEqual([
+        'headerMiddleware',
+        'corsMiddleware',
+        'logAccessMiddleware',
+        'directoryListingMiddleware',
+        'listDirectoryItemsHandler'
+      ]);
       expect(response.body.params).toEqual({ path: ['dir', 'sub'] });
     });
   });
@@ -444,7 +393,7 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/control/stop');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'stopHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'stopHandler']);
     });
 
     test('reload', async (): Promise<void> => {
@@ -452,7 +401,25 @@ describe('app->buildApp', (): void => {
 
       await request(app).post('/control/reload');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'reloadHandler']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'reloadHandler']);
+    });
+  });
+
+  describe('staticMiddleware', (): void => {
+    test('will be called, if request not handled already', async (): Promise<void> => {
+      const app = buildApp();
+
+      await request(app).get('/image.png');
+
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
+    });
+
+    test('wont be called if request handled already', async (): Promise<void> => {
+      const app = buildApp();
+
+      await request(app).get('/test');
+
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
     });
   });
 
@@ -463,7 +430,7 @@ describe('app->buildApp', (): void => {
       const response = await request(app).get('/nope');
 
       expect(response.statusCode).toBe(404);
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'notFoundMiddleware']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
     });
   });
 
@@ -475,7 +442,7 @@ describe('app->buildApp', (): void => {
       const response = await request(app).post('/api/login').send({ error });
 
       expect(response.statusCode).toBe(500);
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'loginHandler', 'errorMiddleware']);
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'loginHandler', 'errorMiddleware']);
     });
 
     test('on asynchronous handler', async (): Promise<void> => {
@@ -485,63 +452,14 @@ describe('app->buildApp', (): void => {
       const response = await request(app).post('/api/register').send({ error });
 
       expect(response.statusCode).toBe(500);
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler', 'errorMiddleware']);
+      expect(mocked_lastChain).toEqual([
+        'headerMiddleware',
+        'corsMiddleware',
+        'logAccessMiddleware',
+        'registerMiddleware',
+        'registerHandler',
+        'errorMiddleware'
+      ]);
     });
-  });
-});
-
-describe('app->parseSizeLimit', (): void => {
-  test('parses real number correctly', async (): Promise<void> => {
-    const result = parseSizeLimit(42);
-
-    expect(result).toBe(42);
-  });
-
-  test('parses string-number correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('1234');
-
-    expect(result).toBe(1234);
-  });
-
-  test('parses ...k correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('12k');
-
-    expect(result).toBe(12 * 1024);
-  });
-
-  test('parses ...m correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('12m');
-
-    expect(result).toBe(12 * 1024 * 1024);
-  });
-
-  test('parses ...g correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('12g');
-
-    expect(result).toBe(12 * 1024 * 1024 * 1024);
-  });
-
-  test('parses ...t correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('12t');
-
-    expect(result).toBe(12 * 1024 * 1024 * 1024 * 1024);
-  });
-
-  test('parses ...p correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('12p');
-
-    expect(result).toBe(12 * 1024 * 1024 * 1024 * 1024 * 1024);
-  });
-
-  test('parses ...e correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('12e');
-
-    expect(result).toBe(12 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024);
-  });
-
-  test('parses ...G (uppercase) correctly', async (): Promise<void> => {
-    const result = parseSizeLimit('12G');
-
-    expect(result).toBe(12 * 1024 * 1024 * 1024);
   });
 });

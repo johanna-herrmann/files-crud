@@ -26,7 +26,9 @@ const resetDb = function (): void {
 };
 
 const reloadDb = function (): void {
+  const oldDb = db;
   db = new Database();
+  oldDb?.close();
 };
 
 export { loadDb, closeDb, resetDb, reloadDb };

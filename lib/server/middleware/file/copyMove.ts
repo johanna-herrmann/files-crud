@@ -22,13 +22,13 @@ const fileCopyMoveMiddleware = async function (req: Request, res: express.Respon
   (req.params as Record<string, string>)['0'] = '';
 
   // check for source read permission
-  (req.params as Record<string, string>).path = path;
+  (req.params as Record<string, string[]>).path = path.split('/');
   next = async () => {
     // check for target write permission
-    (req.params as Record<string, string>).path = targetPath;
+    (req.params as Record<string, string[]>).path = targetPath.split('/');
     next = async () => {
       // check for source delete permission on move action
-      (req.params as Record<string, string>).path = path;
+      (req.params as Record<string, string[]>).path = path.split('/');
       await fileDeleteMiddleware(req, res, actualNext);
     };
     await fileSaveMiddleware(req, res, action === 'copy' ? actualNext : next);

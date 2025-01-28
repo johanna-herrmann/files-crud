@@ -18,7 +18,7 @@ let mocked_deletePath = '';
 jest.mock('@/server/middleware/file/file', () => {
   return {
     async loadMiddleware(req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-      const path = (req.params as Record<string, string>).path ?? '-';
+      const path = (req.params as Record<string, string[]>).path.join('/');
       mocked_readPath = path;
       if (mocked_passRead) {
         next();
@@ -27,7 +27,7 @@ jest.mock('@/server/middleware/file/file', () => {
       }
     },
     async fileSaveMiddleware(req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-      const path = (req.params as Record<string, string>).path ?? '-';
+      const path = (req.params as Record<string, string[]>).path.join('/');
       mocked_writePath = path;
       if (mocked_passWrite) {
         next();
@@ -36,7 +36,7 @@ jest.mock('@/server/middleware/file/file', () => {
       }
     },
     async fileDeleteMiddleware(req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-      const path = (req.params as Record<string, string>).path ?? '-';
+      const path = (req.params as Record<string, string[]>).path.join('/');
       mocked_deletePath = path;
       if (mocked_passDelete) {
         next();
