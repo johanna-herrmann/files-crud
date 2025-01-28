@@ -1,6 +1,5 @@
 import express from 'express';
 import http2Express from 'http2-express-bridge';
-import cors from 'cors';
 import { getFullConfig } from '@/config/config';
 import {
   registerMiddleware,
