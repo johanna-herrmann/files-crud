@@ -43,6 +43,7 @@ describe('uploadFileMiddleware', (): void => {
     const response = await request(app).post('/api/upload').attach('file', __filename);
 
     expect(response.statusCode).toBe(413);
+    expect(response.body).toEqual({ error: 'Error. File is to big. Limit: 12 bytes' });
   });
 
   describe('app->parseSizeLimit', (): void => {

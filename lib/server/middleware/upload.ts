@@ -3,8 +3,6 @@ import fileUpload from 'express-fileupload';
 import { getFullConfig } from '@/config/config';
 import Request from '@/types/server/Request';
 
-const TIMEOUT = 15 * 1000; // 15 seconds;
-
 const parseSizeLimit = function (input: string | number): number {
   if (typeof input === 'number') {
     return input;
@@ -21,11 +19,14 @@ const parseSizeLimit = function (input: string | number): number {
 const uploadFileMiddleware = function (req: Request, res: express.Response, next: express.NextFunction): void {
   const config = getFullConfig();
   const fileSize = parseSizeLimit(config.server?.fileSizeLimit as string | number);
+  // noinspection JSUnusedGlobalSymbols
   const uploadConfig = {
     abortOnLimit: true,
     responseOnLimit: `uploaded file is to big. Limit: ${fileSize}`,
     limits: { fileSize, files: 1 },
-    uploadTimeout: TIMEOUT
+    limitHandler(_: Request, res: express.Response): void {
+      res.status(413).json({ error: `Error. File is to big. Limit: ${fileSize} bytes` });
+    }
   };
   fileUpload(uploadConfig)(req, res, next);
 };
