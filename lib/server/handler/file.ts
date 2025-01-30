@@ -95,7 +95,7 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
   }
 
   const data = await storage.loadData(path);
-  logger.info('Successfully saved file data.', { path, data });
+  logger.info('Successfully loaded file data.', { path, data });
   sendOK(res, { data });
 };
 
