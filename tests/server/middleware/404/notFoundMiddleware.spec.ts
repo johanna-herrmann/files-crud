@@ -43,7 +43,7 @@ describe('notFoundMiddleware', (): void => {
     notFoundMiddleware(req, res);
 
     assert404(res);
-    expect(mocked_errorMessage).toBe('Not Found: /test');
+    expect(mocked_errorMessage).toBe('Cannot GET /test');
     expect(mocked_errorMeta).toEqual({ statusCode: 404 });
   });
 });

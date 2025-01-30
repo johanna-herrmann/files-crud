@@ -26,11 +26,11 @@ const sendUnauthorized = function (res: express.Response, message: string): void
   res.json({ error: fullMessage });
 };
 
-const sendNotFound = function (res: express.Response, path: string): void {
+const sendNotFound = function (res: express.Response, method: string, path: string): void {
   const logger = loadLogger();
   const statusCode = 404;
   res.statusCode = statusCode;
-  const message = `Not Found: ${path}`;
+  const message = `Cannot ${method.toUpperCase()} ${path}`;
   logger.error(message, { statusCode });
   res.json({ error: message });
 };
