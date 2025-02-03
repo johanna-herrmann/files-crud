@@ -3,15 +3,10 @@ import Request from '@/types/server/Request';
 
 let lastMessage = '{}';
 
-const buildRequestForUserAction = function (
-  token: string,
-  action: string,
-  usernameParam: string | undefined,
-  body: Record<string, unknown>
-): Request {
+const buildRequestForUserAction = function (token: string, action: string, idParam: string | undefined, body: Record<string, unknown>): Request {
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
-    params: { action, username: usernameParam },
+    params: { action, id: idParam },
     body
   } as unknown as Request;
 };
@@ -47,28 +42,6 @@ const buildRequestForAccessLogging = function (
       referer,
       'user-agent': userAgent
     }
-  } as unknown as Request;
-};
-
-const buildFileUploadRequest = function (): Request {
-  const boundary = `${'-'.repeat(26)}12345`;
-  const payload = 'abcde';
-  return {
-    method: 'POST',
-    path: '/upload',
-    headers: {
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
-      'Content-Length': payload.length
-    },
-    body: [
-      boundary,
-      'Content-Disposition: form-data; name="file"; filename="image.png"',
-      'Content-Type: application/octet-stream',
-      '',
-      payload,
-      `${boundary}--`,
-      ''
-    ].join('\n')
   } as unknown as Request;
 };
 
@@ -139,7 +112,6 @@ export {
   buildRequestForControlAction,
   buildRequestForFileAction,
   buildRequestForAccessLogging,
-  buildFileUploadRequest,
   buildSimpleRequest,
   buildResponse,
   assertPass,

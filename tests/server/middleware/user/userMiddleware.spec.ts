@@ -62,12 +62,12 @@ const passesIfAdmin = async function (action: string): Promise<void> {
   assertPass(next, res);
 };
 
-const passesIfSelf = async function (action: string, usernameParam: boolean): Promise<void> {
+const passesIfSelf = async function (action: string, idParam: boolean): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const username = testUser.username;
-  const body = usernameParam ? {} : { username };
-  const req = buildRequestForUserAction('valid_user_token', action, usernameParam ? username : undefined, body);
+  const id = testUser.id;
+  const body = idParam ? {} : { id };
+  const req = buildRequestForUserAction('valid_user_token', action, idParam ? id : undefined, body);
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -78,7 +78,7 @@ const passesIfSelf = async function (action: string, usernameParam: boolean): Pr
 const passesIfSelfAndValidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'passwordOK' });
+  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { id: testUser.id, oldPassword: 'passwordOK' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -89,7 +89,7 @@ const passesIfSelfAndValidPassword = async function (): Promise<void> {
 const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { username: testUser.username, oldPassword: 'invalid' });
+  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { id: testUser.id, oldPassword: 'invalid' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -97,11 +97,11 @@ const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
   assertUnauthorized(next, res, 'You have to provide your password');
 };
 
-const rejectsIfForeign = async function (action: string, usernameParam: boolean): Promise<void> {
+const rejectsIfForeign = async function (action: string, idParam: boolean): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const body = usernameParam ? {} : { username: 'other' };
-  const req = buildRequestForUserAction('valid_user_token', action, usernameParam ? 'other' : undefined, body);
+  const body = idParam ? {} : { id: 'other' };
+  const req = buildRequestForUserAction('valid_user_token', action, idParam ? 'other' : undefined, body);
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));

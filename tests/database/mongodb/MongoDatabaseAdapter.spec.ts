@@ -10,8 +10,8 @@ let mongod: null | MongoMemoryServer;
 let uri = '';
 
 const userSchema = {
+  id: { type: String, default: '' },
   username: { type: String, default: '' },
-  ownerId: { type: String, default: '' },
   hashVersion: { type: String, default: '' },
   salt: { type: String, default: '' },
   hash: { type: String, default: '' },
@@ -90,8 +90,8 @@ describe('MongoDatabaseAdapter', (): void => {
 
     const Model = db.getModel('user_');
     const user = await Model.findOne<User>({ username: testUser.username });
+    expect(user?.id).toBe(testUser.id);
     expect(user?.username).toBe(testUser.username);
-    expect(user?.ownerId).toBe(testUser.ownerId);
     expect(user?.admin).toBe(testUser.admin);
     expect(user?.meta).toEqual(testUser.meta);
     expect(user?.hashVersion).toBe(testUser.hashVersion);

@@ -5,17 +5,17 @@ import Request from '@/types/server/Request';
 import { getToken, sendUnauthorized } from '@/server/util';
 import { getFullConfig } from '@/config/config';
 
-const isSelfAction = function (user: User, username: string): boolean {
-  return user.username === username;
+const isSelfAction = function (user: User, id: string): boolean {
+  return user.id === id;
 };
 
-const isAdminAction = function (user: User, action: string, username: string): boolean {
+const isAdminAction = function (user: User, action: string, id: string): boolean {
   const adminOnlyActions = ['add', 'set-admin', 'list'];
-  return adminOnlyActions.includes(action) || !isSelfAction(user, username);
+  return adminOnlyActions.includes(action) || !isSelfAction(user, id);
 };
 
-const isSelfPasswordChange = function (user: User, action: string, username: string): boolean {
-  return isSelfAction(user, username) && action === 'change-password';
+const isSelfPasswordChange = function (user: User, action: string, id: string): boolean {
+  return isSelfAction(user, id) && action === 'change-password';
 };
 
 const handleAdminAction = function (admin: boolean, res: express.Response, next: express.NextFunction): void {
@@ -39,12 +39,12 @@ const userMiddleware = async function (req: Request, res: express.Response, next
     return sendUnauthorized(res, 'You have to be logged in');
   }
 
-  const { action, username } = req.params;
+  const { action, id } = req.params;
   const body = req.body;
-  if (isAdminAction(user, action, username ?? (body.username as string) ?? '[]')) {
+  if (isAdminAction(user, action, id ?? (body.id as string) ?? '[]')) {
     return handleAdminAction(user.admin, res, next);
   }
-  if (isSelfPasswordChange(user, action, username ?? (body.username as string) ?? '')) {
+  if (isSelfPasswordChange(user, action, id ?? (body.id as string) ?? '')) {
     return await handleSelfPasswordChange(user.username, (body.oldPassword as string) ?? '', res, next);
   }
 

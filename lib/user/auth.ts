@@ -1,37 +1,37 @@
 import { loadDb, closeDb } from '@/database';
 import { versions, current } from './passwordHashing/versions';
 import Database from '@/types/database/Database';
-import { extractUsername, issueToken, verifyToken } from './jwt';
+import { extractId, issueToken, verifyToken } from './jwt';
 import { countAttempt, handleLocking, resetAttempts } from './locking';
 import User from '@/types/user/User';
 
 const invalidCredentials = 'INVALID_CREDENTIALS';
 const attemptsExceeded = 'ATTEMPTS_EXCEEDED';
 
-const updateHash = async function (db: Database, username: string, password: string): Promise<void> {
+const updateHash = async function (db: Database, id: string, password: string): Promise<void> {
   const hashVersion = current.version;
   const [salt, hash] = await current.hashPassword(password);
-  await db.updateHash(username, hashVersion, salt, hash);
+  await db.updateHash(id, hashVersion, salt, hash);
 };
 
-const authenticate = async function (db: Database, username: string, password: string): Promise<boolean> {
-  const user = await db.getUser(username);
+const authenticate = async function (db: Database, username: string, password: string): Promise<User | null> {
+  const user = await db.getUserByUsername(username);
   if (!user) {
     await countAttempt(db, username);
-    return false;
+    return null;
   }
   const { hashVersion, salt, hash } = user;
   const hashing = versions[hashVersion];
   const valid = await hashing.checkPassword(password, salt, hash);
   if (!valid) {
     await countAttempt(db, username);
-    return false;
+    return null;
   }
   if (hashing.version !== current.version) {
     await updateHash(db, username, password);
   }
   await resetAttempts(db, username);
-  return true;
+  return user;
 };
 
 const login = async function (username: string, password: string): Promise<string> {
@@ -41,8 +41,8 @@ const login = async function (username: string, password: string): Promise<strin
     if (locked) {
       return attemptsExceeded;
     }
-    const authenticated = await authenticate(db, username, password);
-    return authenticated ? issueToken(username) : invalidCredentials;
+    const user = await authenticate(db, username, password);
+    return user ? issueToken(user.id) : invalidCredentials;
   } finally {
     await closeDb();
   }
@@ -65,17 +65,17 @@ const authorize = async function (jwt: string | null): Promise<User | null> {
     if (!valid) {
       return null;
     }
-    const username = extractUsername(jwt as string);
-    return await db.getUser(username);
+    const id = extractId(jwt as string);
+    return await db.getUserById(id);
   } finally {
     await closeDb();
   }
 };
 
-const changePassword = async function (username: string, password: string): Promise<string> {
+const changePassword = async function (id: string, password: string): Promise<string> {
   try {
     const db = await loadDb();
-    await updateHash(db, username, password);
+    await updateHash(db, id, password);
     return '';
   } finally {
     await closeDb();

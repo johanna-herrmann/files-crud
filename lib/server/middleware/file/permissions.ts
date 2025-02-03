@@ -70,11 +70,11 @@ const getPermissions = function (user: User | null, path: string, data: FileData
     return ['create', 'read', 'update', 'delete'];
   }
 
-  if (exists && data?.owner === user?.ownerId && isFileOperation(operation)) {
+  if (exists && data?.owner === user?.id && isFileOperation(operation)) {
     return parsePermissions(permissions, 'owner');
   }
 
-  if (path.split('/')[0] === `user_${user?.ownerId}` && isDirectoryOperation(operation)) {
+  if (path.split('/')[0] === `user_${user?.id}` && isDirectoryOperation(operation)) {
     return parsePermissions(permissions, 'owner');
   }
 

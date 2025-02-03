@@ -100,7 +100,7 @@ describe('fileDeleteMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfDeletePermissionIsGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await passesIfDeletePermissionIsGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
   });
@@ -140,7 +140,7 @@ describe('fileDeleteMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await rejectsIfDeletePermissionIsNotGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await rejectsIfDeletePermissionIsNotGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
   });

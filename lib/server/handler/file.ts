@@ -14,7 +14,7 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
   const headerMimetype = req.header('X-Mimetype');
   const actualMimetype = headerMimetype ?? mimetype;
   const size = data.length;
-  const owner = req.body.username as string;
+  const owner = req.body.userId as string;
   const fileData = {
     contentType: actualMimetype,
     size,
@@ -102,7 +102,7 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
 const copyHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath, keepOwner, username } = req.body;
+  const { path, targetPath, keepOwner, userId } = req.body;
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
@@ -113,7 +113,7 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
   if (keepOwner) {
     await storage.copy(sanitizedPath, sanitizedTargetPath);
   } else {
-    await storage.copy(sanitizedPath, sanitizedTargetPath, username as string);
+    await storage.copy(sanitizedPath, sanitizedTargetPath, userId as string);
   }
 
   logger.info('Successfully copied file.', { path: sanitizedPath, targetPath: sanitizedTargetPath });
@@ -123,7 +123,7 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
 const moveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath, keepOwner, username } = req.body;
+  const { path, targetPath, keepOwner, userId } = req.body;
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
@@ -134,7 +134,7 @@ const moveHandler = async function (req: Request, res: express.Response): Promis
   if (keepOwner) {
     await storage.move(sanitizedPath, sanitizedTargetPath);
   } else {
-    await storage.move(sanitizedPath, sanitizedTargetPath, username as string);
+    await storage.move(sanitizedPath, sanitizedTargetPath, userId as string);
   }
 
   logger.info('Successfully moved file.', { path: sanitizedPath, targetPath: sanitizedTargetPath });

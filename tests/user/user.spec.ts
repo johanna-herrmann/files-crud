@@ -8,7 +8,7 @@ const hashVersion = 'v1';
 const salt = 'YWFhYWFhYWFhYWFhYWFhYQ==';
 // noinspection SpellCheckingInspection
 const hash = 'O8fICNHvM2AlfcoaHUamNo5JQJamdZMz0YXMLrnoH/w=';
-const ownerId = 'test-id';
+const id = 'test-id';
 const meta = { k: 'v' };
 
 jest.mock('uuid', () => {
@@ -53,7 +53,7 @@ describe('user', (): void => {
   });
 
   test('addUser rejects if user already exist.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
 
     const added = await addUser(username, password, false, meta);
 
@@ -64,12 +64,12 @@ describe('user', (): void => {
   test('register registers new user.', async (): Promise<void> => {
     const result = await register(username, password, meta);
 
-    expect(data.user_[0]).toEqual({ username, hashVersion, salt, hash, ownerId, admin: false, meta });
+    expect(data.user_[0]).toEqual({ username, hashVersion, salt, hash, id, admin: false, meta });
     expect(result).toBe('');
   });
 
   test('register rejects if user already exists.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
 
     const result = await register(username, password, {});
 
@@ -78,9 +78,9 @@ describe('user', (): void => {
   });
 
   test('changeUsername changes username.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
 
-    const result = await changeUsername(username, 'newUsername');
+    const result = await changeUsername(id, 'newUsername');
 
     expect(data.user_.length).toBe(1);
     expect((data.user_[0] as User)?.username).toBe('newUsername');
@@ -88,10 +88,10 @@ describe('user', (): void => {
   });
 
   test('changeUsername rejects if user with new username already exists.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash: 'a', ownerId, admin: true, meta: {} };
-    data.user_[1] = { username: 'newUsername', hashVersion, salt, hash: 'b', ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash: 'a', id, admin: true, meta: {} };
+    data.user_[1] = { username: 'newUsername', hashVersion, salt, hash: 'b', id, admin: true, meta: {} };
 
-    const result = await changeUsername(username, 'newUsername');
+    const result = await changeUsername(id, 'newUsername');
 
     expect((data.user_[0] as User)?.username).toBe(username);
     expect((data.user_[0] as User)?.hash).toBe('a');
@@ -100,81 +100,81 @@ describe('user', (): void => {
   });
 
   test('setAdminState sets admin to true.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: false, meta };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: false, meta };
 
-    await setAdminState(username, true);
+    await setAdminState(id, true);
 
     expect((data.user_[0] as User)?.admin).toBe(true);
   });
 
   test('setAdminState sets admin to false.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta };
 
-    await setAdminState(username, false);
+    await setAdminState(id, false);
 
     expect((data.user_[0] as User)?.admin).toBe(false);
   });
 
   test('saveMeta saves meta.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { old: 'old' } };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: { old: 'old' } };
 
-    await saveMeta(username, meta);
+    await saveMeta(id, meta);
 
     expect((data.user_[0] as User)?.meta?.k).toBe('v');
     expect((data.user_[0] as User)?.meta?.old).toBeUndefined();
   });
 
   test('loadMeta loads meta.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { k: 'v' } };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: { k: 'v' } };
 
-    const meta = await loadMeta(username);
+    const meta = await loadMeta(id);
 
     expect(meta?.k).toBe('v');
   });
 
   test('loadMeta returns empty object if user does not exist.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true };
 
-    const meta = await loadMeta(username);
+    const meta = await loadMeta(id);
 
     expect(meta).toEqual({});
   });
 
   test('loadMeta returns empty object if user does not exist.', async (): Promise<void> => {
-    const meta = await loadMeta(username);
+    const meta = await loadMeta(id);
 
     expect(meta).toEqual({});
   });
 
   test('getUser gets UserDto.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { k: 'v' } };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: { k: 'v' } };
 
-    const user = await getUser(username);
+    const user = await getUser(id);
 
-    expect(user).toEqual({ username, ownerId, admin: true, meta: { k: 'v' } });
+    expect(user).toEqual({ username, id, admin: true, meta: { k: 'v' } });
   });
 
   test('getUser gets null if user does not exist.', async (): Promise<void> => {
-    const user = await getUser(username);
+    const user = await getUser(id);
 
     expect(user).toBeNull();
   });
 
   test('getUsers gets UserList.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: { k: 'v' } };
-    data.user_[1] = { username: 'other', hashVersion, salt, hash, ownerId, admin: false, meta: { k: 'v' } };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: { k: 'v' } };
+    data.user_[1] = { username: 'other', hashVersion, salt, hash, id: 'id2', admin: false, meta: { k: 'v' } };
 
     const users = await getUsers();
 
     expect(users.length).toBe(2);
-    expect(users[0]).toEqual({ username, admin: true });
-    expect(users[1]).toEqual({ username: 'other', admin: false });
+    expect(users[0]).toEqual({ id, username, admin: true });
+    expect(users[1]).toEqual({ id: 'id2', username: 'other', admin: false });
   });
 
   test('removeUser removes user.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta };
 
-    await deleteUser(username);
+    await deleteUser(id);
 
     expect(data.user_[0]).toBeUndefined();
   });

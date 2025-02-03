@@ -14,14 +14,14 @@ const createAndSaveUser = async function (
   admin: boolean,
   meta: Record<string, unknown>
 ): Promise<boolean> {
-  const exists = await db.userExists(username);
+  const exists = await db.userExistsByUsername(username);
   if (exists) {
     return false;
   }
-  const ownerId = v4();
+  const id = v4();
   const hashVersion = current.version;
   const [salt, hash] = await current.hashPassword(password);
-  const user = { username, hashVersion, salt, hash, ownerId, admin, meta };
+  const user = { id, username, hashVersion, salt, hash, admin, meta };
   await db.addUser(user);
   return true;
 };
@@ -48,55 +48,55 @@ const register = async function (username: string, password: string, meta: Recor
   return '';
 };
 
-const changeUsername = async function (oldUsername: string, newUsername: string): Promise<string> {
+const changeUsername = async function (id: string, newUsername: string): Promise<string> {
   try {
     const db = await loadDb();
-    const exists = await db.userExists(newUsername);
+    const exists = await db.userExistsByUsername(newUsername);
     if (exists) {
       return userAlreadyExists;
     }
-    await db.changeUsername(oldUsername, newUsername);
+    await db.changeUsername(id, newUsername);
     return '';
   } finally {
     await closeDb();
   }
 };
 
-const setAdminState = async function (username: string, admin: boolean): Promise<void> {
+const setAdminState = async function (id: string, admin: boolean): Promise<void> {
   try {
     const db = await loadDb();
     if (admin) {
-      return await db.makeUserAdmin(username);
+      return await db.makeUserAdmin(id);
     }
-    await db.makeUserNormalUser(username);
+    await db.makeUserNormalUser(id);
   } finally {
     await closeDb();
   }
 };
 
-const saveMeta = async function (username: string, meta: Record<string, unknown>): Promise<void> {
+const saveMeta = async function (id: string, meta: Record<string, unknown>): Promise<void> {
   try {
     const db = await loadDb();
-    await db.modifyUserMeta(username, meta);
+    await db.modifyUserMeta(id, meta);
   } finally {
     await closeDb();
   }
 };
 
-const loadMeta = async function (username: string): Promise<Record<string, unknown>> {
+const loadMeta = async function (id: string): Promise<Record<string, unknown>> {
   try {
     const db = await loadDb();
-    const user = await db.getUser(username);
+    const user = await db.getUserById(id);
     return user?.meta ?? {};
   } finally {
     await closeDb();
   }
 };
 
-const getUser = async function (username: string): Promise<UserDto | null> {
+const getUser = async function (id: string): Promise<UserDto | null> {
   try {
     const db = await loadDb();
-    const user = await db.getUser(username);
+    const user = await db.getUserById(id);
     if (!user) {
       return null;
     }
@@ -117,10 +117,10 @@ const getUsers = async function (): Promise<UserListItem[]> {
   }
 };
 
-const deleteUser = async function (username: string): Promise<void> {
+const deleteUser = async function (id: string): Promise<void> {
   try {
     const db = await loadDb();
-    await db.removeUser(username);
+    await db.removeUser(id);
   } finally {
     await closeDb();
   }

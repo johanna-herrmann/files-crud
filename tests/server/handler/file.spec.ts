@@ -65,7 +65,7 @@ const buildFSMock = function (files: DirectoryItem, data: DirectoryItem): void {
 };
 
 const buildUploadRequest = function (data: Buffer, mimetype: string): UploadRequest {
-  const req = buildRequestForFileAction('', 'save', 'dir/file', { username: testUser.username });
+  const req = buildRequestForFileAction('', 'save', 'dir/file', { userId: testUser.id });
   return {
     ...req,
     files: {
@@ -116,7 +116,7 @@ describe('file handlers', (): void => {
   describe('saveHandler', (): void => {
     test('saves file, mimetype from files attribute', async (): Promise<void> => {
       const data = {
-        owner: testUser.username,
+        owner: testUser.id,
         contentType: 'text/plain',
         size: 12,
         meta: {}
@@ -135,7 +135,7 @@ describe('file handlers', (): void => {
 
     test('saves file, mimetype from header', async (): Promise<void> => {
       const data = {
-        owner: testUser.username,
+        owner: testUser.id,
         contentType: 'image/png',
         size: 12,
         meta: {}
@@ -322,7 +322,7 @@ describe('file handlers', (): void => {
     test('copies file, changing the owner', async (): Promise<void> => {
       buildFSMock(
         { dir: { file: contentBuffer } },
-        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
+        { 'dir~file': JSON.stringify({ owner: testUser.id, contentType: 'text/plain', meta: { k: 'v' } }) }
       );
       const req = buildRequestForFileAction('', 'copy', undefined, { path: 'dir/file', targetPath: 'c/copy', username: 'new' });
       const res = buildResponse();
@@ -335,7 +335,7 @@ describe('file handlers', (): void => {
       expect(await exists('./data/c~copy')).toBe(true);
       expect(await fs.readFile('./files/c/copy', 'utf8')).toBe('test content');
       expect(JSON.parse(await fs.readFile('./data/c~copy', 'utf8'))).toEqual({
-        owner: 'new',
+        owner: testUser.id,
         contentType: 'text/plain',
         meta: { k: 'v' }
       });
@@ -397,7 +397,7 @@ describe('file handlers', (): void => {
     test('moves file, changing the owner', async (): Promise<void> => {
       buildFSMock(
         { dir: { file: contentBuffer } },
-        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
+        { 'dir~file': JSON.stringify({ owner: testUser.id, contentType: 'text/plain', meta: { k: 'v' } }) }
       );
       const req = buildRequestForFileAction('', 'move', undefined, { path: 'dir/file', targetPath: 'm/move', username: 'new' });
       const res = buildResponse();
@@ -410,7 +410,7 @@ describe('file handlers', (): void => {
       expect(await exists('./data/m~move')).toBe(true);
       expect(await fs.readFile('./files/m/move', 'utf8')).toBe('test content');
       expect(JSON.parse(await fs.readFile('./data/m~move', 'utf8'))).toEqual({
-        owner: 'new',
+        owner: testUser.id,
         contentType: 'text/plain',
         meta: { k: 'v' }
       });

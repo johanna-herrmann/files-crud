@@ -15,7 +15,7 @@ let mocked_lastLogEntry: Omit<AccessLogEntry, 'timestamp'> | null = null;
 
 const mocked_lastChain: string[] = [];
 let mocked_lastAction = '';
-let mocked_lastUsername = '';
+let mocked_lastId = '';
 
 jest.mock('@/logging/index', () => {
   // noinspection JSUnusedGlobalSymbols
@@ -56,7 +56,7 @@ jest.mock('@/server/middleware', () => {
 
       if (key === 'userMiddleware') {
         mocked_lastAction = (req.params as Record<string, string>).action;
-        mocked_lastUsername = (req.params as Record<string, string>).username;
+        mocked_lastId = (req.params as Record<string, string>).id;
       }
 
       next();
@@ -96,7 +96,7 @@ describe('app->buildApp', (): void => {
     loadConfig();
     mocked_lastLogEntry = null;
     mocked_lastAction = '';
-    mocked_lastUsername = '';
+    mocked_lastId = '';
     mocked_lastChain.splice(0, mocked_lastChain.length);
   });
 
@@ -224,45 +224,45 @@ describe('app->buildApp', (): void => {
     test('saveMeta', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).post('/api/user/save-meta/username');
+      const response = await request(app).post('/api/user/save-meta/id');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'saveUserMetaHandler']);
       expect(mocked_lastAction).toBe('save-meta');
-      expect(mocked_lastUsername).toBe('username');
-      expect(response.body.params).toEqual({ username: 'username' });
+      expect(mocked_lastId).toBe('id');
+      expect(response.body.params).toEqual({ id: 'id' });
     });
 
     test('delete', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).delete('/api/user/delete/username');
+      const response = await request(app).delete('/api/user/delete/id');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'deleteUserHandler']);
       expect(mocked_lastAction).toBe('delete');
-      expect(mocked_lastUsername).toBe('username');
-      expect(response.body.params).toEqual({ username: 'username' });
+      expect(mocked_lastId).toBe('id');
+      expect(response.body.params).toEqual({ id: 'id' });
     });
 
     test('loadMeta', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/api/user/load-meta/username');
+      const response = await request(app).get('/api/user/load-meta/id');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'loadUserMetaHandler']);
       expect(mocked_lastAction).toBe('load-meta');
-      expect(mocked_lastUsername).toBe('username');
-      expect(response.body.params).toEqual({ username: 'username' });
+      expect(mocked_lastId).toBe('id');
+      expect(response.body.params).toEqual({ id: 'id' });
     });
 
     test('one', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/api/user/one/username');
+      const response = await request(app).get('/api/user/one/id');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUserHandler']);
       expect(mocked_lastAction).toBe('one');
-      expect(mocked_lastUsername).toBe('username');
-      expect(response.body.params).toEqual({ username: 'username' });
+      expect(mocked_lastId).toBe('id');
+      expect(response.body.params).toEqual({ id: 'id' });
     });
 
     test('list', async (): Promise<void> => {

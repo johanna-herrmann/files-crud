@@ -102,7 +102,7 @@ describe('directoryListingMiddleware', () => {
       test('for owner, directory.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfReadPermissionIsGiven('owner', 'valid-user-token', `user_${testUser.ownerId}`);
+        await passesIfReadPermissionIsGiven('owner', 'valid-user-token', `user_${testUser.id}`);
       });
     });
   });
@@ -144,7 +144,7 @@ describe('directoryListingMiddleware', () => {
       test('for owner, directory.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await rejectsIfReadPermissionIsNotGiven('owner', 'valid-user-token', `user_${testUser.ownerId}`);
+        await rejectsIfReadPermissionIsNotGiven('owner', 'valid-user-token', `user_${testUser.id}`);
       });
     });
   });

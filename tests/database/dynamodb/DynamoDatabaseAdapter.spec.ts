@@ -174,7 +174,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     await db.init<User>('user_', testUser);
 
     expect(mocked_tables).toEqual([tableName]);
-    expect(mocked_keys[tableName]).toBe('username');
+    expect(mocked_keys[tableName]).toBe('id');
   });
 
   test('DynamoDatabaseAdapter->init initializes user table, specific table name.', async (): Promise<void> => {
@@ -188,7 +188,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     await db.init<User>('user_', testUser);
 
     expect(mocked_tables).toEqual([tableName]);
-    expect(mocked_keys[tableName]).toBe('username');
+    expect(mocked_keys[tableName]).toBe('id');
   });
 
   test('DynamoDatabaseAdapter->init initializes failedLoginAttempts table, default table name.', async (): Promise<void> => {

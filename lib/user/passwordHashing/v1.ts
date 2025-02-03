@@ -1,5 +1,5 @@
-import PasswordHashing from '@/types/user/PasswordHashing';
 import crypto from 'crypto';
+import PasswordHashing from '@/types/user/PasswordHashing';
 
 const N = 131_072;
 const R = 8;

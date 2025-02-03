@@ -79,7 +79,7 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.username).toBe(mocked_user?.username ?? '-');
+        expect(req.body.userId).toBe(mocked_user?.id ?? '-');
       };
 
       test('for public.', async (): Promise<void> => {
@@ -101,7 +101,7 @@ describe('fileSaveMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfUpdatePermissionIsGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await passesIfUpdatePermissionIsGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
 
@@ -126,7 +126,7 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.username).toBe(mocked_user?.username ?? '-');
+        expect(req.body.userId).toBe(mocked_user?.id ?? '-');
       };
 
       test('for public.', async (): Promise<void> => {
@@ -148,7 +148,7 @@ describe('fileSaveMiddleware', () => {
       test('for owner.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfCreatePermissionIsGiven('owner', 'valid-user-token', `user_${testUser.ownerId}`);
+        await passesIfCreatePermissionIsGiven('owner', 'valid-user-token', `user_${testUser.id}`);
       });
     });
   });
@@ -188,7 +188,7 @@ describe('fileSaveMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await rejectsIfUpdatePermissionIsNotGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await rejectsIfUpdatePermissionIsNotGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
 
@@ -228,7 +228,7 @@ describe('fileSaveMiddleware', () => {
       test('for owner.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await rejectsIfCreatePermissionIsNotGiven('owner', 'valid-user-token', `user_${testUser.ownerId}`);
+        await rejectsIfCreatePermissionIsNotGiven('owner', 'valid-user-token', `user_${testUser.id}`);
       });
     });
   });

@@ -59,17 +59,17 @@ const buildApp = function (noFallbacks?: boolean): express.Application {
   app.use(logAccessMiddleware);
 
   // user routes
-  app.use('/api/user/:action{/:username}', userMiddleware);
+  app.use('/api/user/:action{/:id}', userMiddleware);
   app.post('/api/register', registerMiddleware, registerHandler);
   app.post('/api/login', loginHandler);
   app.post('/api/user/add', addUserHandler);
   app.post('/api/user/set-admin', setAdminStateHandler);
   app.post('/api/user/change-username', changeUsernameHandler);
   app.post('/api/user/change-password', changePasswordHandler);
-  app.post('/api/user/save-meta/:username', saveUserMetaHandler);
-  app.delete('/api/user/delete/:username', deleteUserHandler);
-  app.get('/api/user/load-meta/:username', loadUserMetaHandler);
-  app.get('/api/user/one/:username', getUserHandler);
+  app.post('/api/user/save-meta/:id', saveUserMetaHandler);
+  app.delete('/api/user/delete/:id', deleteUserHandler);
+  app.get('/api/user/load-meta/:id', loadUserMetaHandler);
+  app.get('/api/user/one/:id', getUserHandler);
   app.get('/api/user/list', getUsersHandler);
 
   // file routes

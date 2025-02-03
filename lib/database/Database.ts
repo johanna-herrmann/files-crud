@@ -40,7 +40,7 @@ class Database implements DatabaseType {
   }
 
   public async init(): Promise<void> {
-    await this.db.init<User>('user_', { username: '', admin: false, hashVersion: '', salt: '', hash: '', ownerId: '', meta: {} });
+    await this.db.init<User>('user_', { id: '', username: '', admin: false, hashVersion: '', salt: '', hash: '', meta: {} });
     await this.db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
     await this.db.init<JwtKey>('jwtKey', { kid: '', key: '' });
   }
@@ -49,40 +49,48 @@ class Database implements DatabaseType {
     await this.db.add<User>('user_', user);
   }
 
-  public async changeUsername(oldUsername: string, username: string): Promise<void> {
-    await this.db.update('user_', 'username', oldUsername, { username });
+  public async changeUsername(id: string, username: string): Promise<void> {
+    await this.db.update('user_', 'id', id, { username });
   }
 
-  public async updateHash(username: string, hashVersion: string, salt: string, hash: string): Promise<void> {
-    await this.db.update('user_', 'username', username, { hashVersion, salt, hash });
+  public async updateHash(id: string, hashVersion: string, salt: string, hash: string): Promise<void> {
+    await this.db.update('user_', 'id', id, { hashVersion, salt, hash });
   }
 
-  public async makeUserAdmin(username: string): Promise<void> {
-    await this.db.update('user_', 'username', username, { admin: true });
+  public async makeUserAdmin(id: string): Promise<void> {
+    await this.db.update('user_', 'id', id, { admin: true });
   }
 
-  public async makeUserNormalUser(username: string): Promise<void> {
-    await this.db.update('user_', 'username', username, { admin: false });
+  public async makeUserNormalUser(id: string): Promise<void> {
+    await this.db.update('user_', 'id', id, { admin: false });
   }
 
-  public async modifyUserMeta(username: string, meta: Record<string, unknown>): Promise<void> {
-    await this.db.update('user_', 'username', username, { meta });
+  public async modifyUserMeta(id: string, meta: Record<string, unknown>): Promise<void> {
+    await this.db.update('user_', 'id', id, { meta });
   }
 
-  public async removeUser(username: string): Promise<void> {
-    await this.db.delete('user_', 'username', username);
+  public async removeUser(id: string): Promise<void> {
+    await this.db.delete('user_', 'id', id);
   }
 
-  public async getUser(username: string): Promise<User | null> {
+  public async getUserById(id: string): Promise<User | null> {
+    return await this.db.findOne<User>('user_', 'id', id);
+  }
+
+  public async getUserByUsername(username: string): Promise<User | null> {
     return await this.db.findOne<User>('user_', 'username', username);
   }
 
   public async getUsers(): Promise<UserListItem[]> {
     const users = await this.db.findAll<User>('user_');
-    return users.map(({ username, admin }) => ({ username, admin }));
+    return users.map(({ id, username, admin }) => ({ id, username, admin }));
   }
 
-  public async userExists(username: string): Promise<boolean> {
+  public async userExistsById(id: string): Promise<boolean> {
+    return this.db.exists('user_', 'id', id);
+  }
+
+  public async userExistsByUsername(username: string): Promise<boolean> {
     return this.db.exists('user_', 'username', username);
   }
 

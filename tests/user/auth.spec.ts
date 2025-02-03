@@ -11,7 +11,7 @@ const hashVersion = 'v1';
 const salt = 'YWFhYWFhYWFhYWFhYWFhYQ==';
 // noinspection SpellCheckingInspection
 const hash = 'O8fICNHvM2AlfcoaHUamNo5JQJamdZMz0YXMLrnoH/w=';
-const ownerId = 'test-id';
+const id = 'test-id';
 
 let mocked_called_count = false;
 let mocked_called_reset = false;
@@ -22,11 +22,11 @@ jest.mock('@/user/jwt', () => {
   // noinspection JSUnusedGlobalSymbols - used outside
   return {
     ...actual,
-    issueToken(username: string) {
-      if (username.startsWith('real_')) {
-        return actual.issueToken(username.substring(5));
+    issueToken(id: string) {
+      if (id.startsWith('real_')) {
+        return actual.issueToken(id.substring(5));
       }
-      return `token for ${username}`;
+      return `token for ${id}`;
     },
     verifyToken(token: string | null) {
       if (token?.startsWith('valid_')) {
@@ -84,17 +84,17 @@ describe('auth', (): void => {
 
   test('login returns token on valid credentials.', async (): Promise<void> => {
     mocked_locked = false;
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
 
     const result = await login(username, password);
 
-    expect(result).toBe(`token for ${username}`);
+    expect(result).toBe(`token for ${id}`);
     expect(mocked_called_count).toBe(false);
     expect(mocked_called_reset).toBe(true);
   });
 
   test('login returns invalidCredentials on invalid password.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
     mocked_locked = false;
 
     const result = await login(username, 'invalid');
@@ -105,7 +105,7 @@ describe('auth', (): void => {
   });
 
   test('login returns invalidCredentials on invalid username.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
     mocked_locked = false;
 
     const result = await login('invalid', password);
@@ -116,7 +116,7 @@ describe('auth', (): void => {
   });
 
   test('login returns invalidCredentials on invalid credentials.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
     mocked_locked = false;
 
     const result = await login('invalid', 'invalid');
@@ -127,7 +127,7 @@ describe('auth', (): void => {
   });
 
   test('login returns attemptsExceeded if locked.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
     mocked_locked = true;
 
     const result = await login(username, password);
@@ -138,7 +138,7 @@ describe('auth', (): void => {
   });
 
   test('checkPassword returns empty string on valid credentials.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
 
     const result = await checkPassword(username, password);
 
@@ -146,7 +146,7 @@ describe('auth', (): void => {
   });
 
   test('checkPassword returns invalidCredentials on invalid credentials.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
 
     const result = await checkPassword(username, 'invalid');
 
@@ -154,8 +154,8 @@ describe('auth', (): void => {
   });
 
   test('authorize returns user if logged in.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
-    const token = issueToken(`real_${username}`);
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
+    const token = issueToken(`real_${id}`);
 
     const user = await authorize(token);
 
@@ -165,7 +165,7 @@ describe('auth', (): void => {
   });
 
   test('authorize returns null if logged-in user does not exist.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion, salt, hash, ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion, salt, hash, id, admin: true, meta: {} };
     const token = issueToken(`real_other`);
 
     const user = await authorize(token);
@@ -176,7 +176,7 @@ describe('auth', (): void => {
   });
 
   test('authorize returns null if token is invalid.', async (): Promise<void> => {
-    const token = issueToken(`real_${username}`);
+    const token = issueToken(`real_${id}`);
 
     const user = await authorize(token.substring(0, token.length - 2));
 
@@ -202,9 +202,9 @@ describe('auth', (): void => {
   });
 
   test('changePassword changes password.', async (): Promise<void> => {
-    data.user_[0] = { username, hashVersion: '', salt: '', hash: '', ownerId, admin: true, meta: {} };
+    data.user_[0] = { username, hashVersion: '', salt: '', hash: '', id, admin: true, meta: {} };
 
-    await changePassword(username, password);
+    await changePassword(id, password);
 
     expect((data.user_[0] as User)?.hashVersion).toBe(current.version);
     expect((data.user_[0] as User)?.salt).toBe(salt);

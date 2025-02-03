@@ -100,7 +100,7 @@ describe('loadMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfReadPermissionIsGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await passesIfReadPermissionIsGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
   });
@@ -140,7 +140,7 @@ describe('loadMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await rejectsIfReadPermissionIsNotGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await rejectsIfReadPermissionIsNotGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
   });

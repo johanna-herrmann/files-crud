@@ -27,64 +27,78 @@ interface Database {
 
   /**
    * Changes the username
-   * @param oldUsername The current username, used to identify the user
+   * @param id The id of the user to rename
    * @param username The new username
    */
-  changeUsername: (oldUsername: string, username: string) => Promise<void>;
+  changeUsername: (id: string, username: string) => Promise<void>;
 
   /**
    * Updates the hash properties
-   * @param username - the username of the user to update the hash properties of
+   * @param id The id of the user to update the hash of
    * @param hashVersion - new hashVersion
    * @param salt - new salt
    * @param hash - the salt
    */
-  updateHash: (username: string, hashVersion: string, salt: string, hash: string) => Promise<void>;
+  updateHash: (id: string, hashVersion: string, salt: string, hash: string) => Promise<void>;
 
   /**
    * Makes the user to be an admin
-   * @param username the username of the user to make to an admin
+   * @param id the id of the user to make to an admin
    */
-  makeUserAdmin: (username: string) => Promise<void>;
+  makeUserAdmin: (id: string) => Promise<void>;
 
   /**
    * Makes the user to be a normal user (non-admin-user)
-   * @param username the username of the user to make to a normal user
+   * @param id the id of the user to make to a normal user
    */
-  makeUserNormalUser: (username: string) => Promise<void>;
+  makeUserNormalUser: (id: string) => Promise<void>;
 
   /**
    * Modifies the user's metadata
-   * @param username the username of the user to modify the metadata of
+   * @param id the id of the user to modify the metadata of
    * @param meta - new metadata object
    */
-  modifyUserMeta: (username: string, meta: Record<string, unknown>) => Promise<void>;
+  modifyUserMeta: (id: string, meta: Record<string, unknown>) => Promise<void>;
 
   /**
    * Removes the user - This is irreversible
-   * @param username - the username of the user to remove
+   * @param id - the id of the user to remove
    */
-  removeUser: (username: string) => Promise<void>;
+  removeUser: (id: string) => Promise<void>;
+
+  /**
+   * Gets the user with the given id
+   * @param id - id of the user to get
+   * @returns Promise fulfilling with user object or null
+   */
+  getUserById: (id: string) => Promise<User | null>;
 
   /**
    * Gets the user with the given username
    * @param username - username of the user to get
    * @returns Promise fulfilling with user object or null
    */
-  getUser: (username: string) => Promise<User | null>;
+  getUserByUsername: (username: string) => Promise<User | null>;
 
   /**
    * Gets all users (simplified to username and admin state)
    * @returns Promise fulfilling with array of `userListItem`s
    */
-  getUsers: (username: string) => Promise<UserListItem[]>;
+  getUsers: () => Promise<UserListItem[]>;
+
+  /**
+   * Checks if a user exists with the given id
+   * @param id - id of the user to check existence for
+   * @returns Promise fulfilling with boolean, true if user exists
+   */
+  userExistsById: (id: string) => Promise<boolean>;
 
   /**
    * Checks if a user exists with the given username
    * @param username - username of the user to check existence for
    * @returns Promise fulfilling with boolean, true if user exists
    */
-  userExists: (username: string) => Promise<boolean>;
+  userExistsByUsername: (username: string) => Promise<boolean>;
 
   /**
    * Adds new keys used for JWTs

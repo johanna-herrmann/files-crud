@@ -35,10 +35,10 @@ const getRandomKey = function (): JwtKey {
   return keys[index];
 };
 
-const issueToken = function (username: string): string {
+const issueToken = function (id: string): string {
   const { kid, key } = getRandomKey();
   // noinspection JSDeprecatedSymbols - this is not the string.sub function, it's just an object-property.
-  return jwt.sign({ sub: username, iat: Date.now() }, key, { algorithm, keyid: kid });
+  return jwt.sign({ sub: id, iat: Date.now() }, key, { algorithm, keyid: kid });
 };
 
 const verifyToken = function (token: string | null): string {
@@ -64,7 +64,7 @@ const verifyToken = function (token: string | null): string {
   return decoded.payload.sub;
 };
 
-const extractUsername = function (token: string): string {
+const extractId = function (token: string): string {
   const decoded = jwt.decode(token) as jwt.JwtPayload;
   return decoded.sub ?? '';
 };
@@ -79,4 +79,4 @@ const getKeys = function (): JwtKey[] {
 
 initKeys().then();
 
-export { issueToken, verifyToken, extractUsername, getIndex, getKeys, KEYS, TTL, algorithm };
+export { issueToken, verifyToken, extractId, getIndex, getKeys, KEYS, TTL, algorithm };

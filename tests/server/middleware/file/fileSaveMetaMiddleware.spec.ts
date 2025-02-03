@@ -100,7 +100,7 @@ describe('fileSaveMetaMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfUpdatePermissionIsGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await passesIfUpdatePermissionIsGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
   });
@@ -140,7 +140,7 @@ describe('fileSaveMetaMiddleware', () => {
       test('for owner, file.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await rejectsIfUpdatePermissionIsNotGiven('owner', 'valid-user-token', testUser.ownerId, 'dir');
+        await rejectsIfUpdatePermissionIsNotGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
   });

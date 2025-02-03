@@ -18,6 +18,7 @@ import User from '@/types/user/User';
 import { attemptsExceeded, invalidCredentials } from '@/user';
 import { Logger } from '@/logging/Logger';
 
+const id = testUser.id;
 const username = 'testUser';
 const newUsername = 'newUsername';
 const password = '123';
@@ -190,7 +191,7 @@ describe('user handlers', (): void => {
   describe('changeUsernameHandler', (): void => {
     test('changes username if new username is not taken', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'change-username', undefined, { username, newUsername });
+      const req = buildRequestForUserAction('valid_admin_token', 'change-username', undefined, { id, newUsername });
       const res = buildResponse();
 
       await changeUsernameHandler(req, res);
@@ -202,7 +203,7 @@ describe('user handlers', (): void => {
     test('rejects if new username is taken', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
       data.user_[1] = { ...testUser, username: newUsername };
-      const req = buildRequestForUserAction('valid_admin_token', 'change-username', undefined, { username, newUsername });
+      const req = buildRequestForUserAction('valid_admin_token', 'change-username', undefined, { id, newUsername });
       const res = buildResponse();
 
       await changeUsernameHandler(req, res);
@@ -216,7 +217,7 @@ describe('user handlers', (): void => {
   describe('changePasswordHandler', (): void => {
     test('changes password, warning about short password', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { username, newPassword: 'newPasswd' });
+      const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { id, newPassword: 'newPasswd' });
       const res = buildResponse();
 
       await changePasswordHandler(req, res);
@@ -231,7 +232,7 @@ describe('user handlers', (): void => {
 
     test('changes password, not warning about short password', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { username, newPassword: 'newPassword' });
+      const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { id, newPassword: 'newPassword' });
       const res = buildResponse();
 
       await changePasswordHandler(req, res);
@@ -248,7 +249,7 @@ describe('user handlers', (): void => {
   describe('setAdminStateHandler', (): void => {
     test('changes admin state', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'set-admin', undefined, { username, admin: true });
+      const req = buildRequestForUserAction('valid_admin_token', 'set-admin', undefined, { id, admin: true });
       const res = buildResponse();
 
       await setAdminStateHandler(req, res);
@@ -261,7 +262,7 @@ describe('user handlers', (): void => {
   describe('saveMetaHandler', (): void => {
     test('saves meta', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'save-meta', username, { meta: newMeta });
+      const req = buildRequestForUserAction('valid_admin_token', 'save-meta', id, { meta: newMeta });
       const res = buildResponse();
 
       await saveMetaHandler(req, res);
@@ -274,7 +275,7 @@ describe('user handlers', (): void => {
   describe('loadMetaHandler', (): void => {
     test('loads meta', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'load-meta', username, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'load-meta', id, {});
       const res = buildResponse();
 
       await loadMetaHandler(req, res);
@@ -286,7 +287,7 @@ describe('user handlers', (): void => {
   describe('getUserHandler', (): void => {
     test('gets user dto', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'one', username, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'one', id, {});
       const res = buildResponse();
 
       await getUserHandler(req, res);
@@ -298,7 +299,7 @@ describe('user handlers', (): void => {
   describe('getUsersHandler', (): void => {
     test('gets user list', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      data.user_[1] = { ...testUser, username: 'someAdmin', admin: true };
+      data.user_[1] = { ...testUser, id: 'id2', username: 'someAdmin', admin: true };
       const req = buildRequestForUserAction('valid_admin_token', 'list', undefined, {});
       const res = buildResponse();
 
@@ -306,8 +307,8 @@ describe('user handlers', (): void => {
 
       assertOK(res, {
         users: [
-          { username, admin },
-          { username: 'someAdmin', admin: true }
+          { id, username, admin },
+          { id: 'id2', username: 'someAdmin', admin: true }
         ]
       });
     });
@@ -317,7 +318,7 @@ describe('user handlers', (): void => {
     test('deletes user', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
       data.user_[1] = { ...testUser, username: 'other' };
-      const req = buildRequestForUserAction('valid_admin_token', 'one', username, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'one', id, {});
       const res = buildResponse();
 
       await deleteUserHandler(req, res);

@@ -62,49 +62,49 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
 const changeUsernameHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
-  const { username, newUsername } = body;
+  const { id, newUsername } = body;
 
-  const result = await changeUsername(username as string, newUsername as string);
+  const result = await changeUsername(id as string, newUsername as string);
 
   if (result === userAlreadyExists) {
     return sendError(res, `There is always a user with name ${newUsername}`);
   }
 
-  logger.info('Successfully changed username.', { username, newUsername });
+  logger.info('Successfully changed username.', { id, newUsername });
   sendOK(res, { username: newUsername });
 };
 
 const setAdminStateHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
-  const { username, admin } = body;
+  const { id, admin } = body;
 
-  await setAdminState(username as string, admin as boolean);
+  await setAdminState(id as string, admin as boolean);
 
-  logger.info('Successfully set admin state.', { username, admin });
+  logger.info('Successfully set admin state.', { id, admin });
   sendOK(res);
 };
 
 const saveMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
-  const username = (req.params as Record<string, unknown>).username;
+  const id = (req.params as Record<string, unknown>).id;
   const { meta } = body;
 
-  await saveMeta(username as string, (meta ?? {}) as Record<string, unknown>);
+  await saveMeta(id as string, (meta ?? {}) as Record<string, unknown>);
 
-  logger.info('Successfully saved user meta data.', { username, meta });
+  logger.info('Successfully saved user meta data.', { id, meta });
   sendOK(res);
 };
 
 const changePasswordHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
-  const { username, newPassword } = body;
+  const { id, newPassword } = body;
 
-  await changePassword(username as string, newPassword as string);
+  await changePassword(id as string, newPassword as string);
 
-  logger.info('Successfully changed password.', { username });
+  logger.info('Successfully changed password.', { id });
 
   if ((newPassword as string).length < 10) {
     logger.warn('Password is a bit short. Consider password rules implementation.', { length: (newPassword as string).length });
@@ -115,31 +115,35 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
 
 const deleteUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const username = (req.params as Record<string, unknown>).username;
+  const id = (req.params as Record<string, unknown>).id;
 
-  await deleteUser(username as string);
+  await deleteUser(id as string);
 
-  logger.info('Successfully removed user.', { username });
+  logger.info('Successfully removed user.', { id });
   sendOK(res);
 };
 
 const loadMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const username = (req.params as Record<string, unknown>).username;
+  const id = (req.params as Record<string, unknown>).id;
 
-  const meta = await loadMeta(username as string);
+  const meta = await loadMeta(id as string);
 
-  logger.info('Successfully loaded user meta data.', { username, meta });
+  logger.info('Successfully loaded user meta data.', { id, meta });
   sendOK(res, { meta });
 };
 
 const getUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const username = (req.params as Record<string, unknown>).username;
+  const id = (req.params as Record<string, unknown>).id ?? '-';
 
-  const user = await getUser(username as string);
+  const user = await getUser(id as string);
 
-  logger.info('Successfully loaded user.', { username });
+  if (!user) {
+    sendError(res, `User with id ${id} does not exist.`);
+  }
+
+  logger.info('Successfully loaded user.', { username: user?.username });
   sendOK(res, { user });
 };
 

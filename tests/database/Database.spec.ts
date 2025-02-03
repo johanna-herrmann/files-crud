@@ -31,12 +31,12 @@ describe('Database', (): void => {
     jest.useFakeTimers();
     jest.setSystemTime(fakeDate);
     mocked_index = 0;
-  });
-
-  afterEach((): void => {
     data.user_ = [];
     data.jwtKey = [];
     data.failedLoginAttempts = [];
+  });
+
+  afterEach((): void => {
     jest.useRealTimers();
   });
 
@@ -108,7 +108,7 @@ describe('Database', (): void => {
     const db = new Database();
     await db.addUser(testUser);
 
-    await db.changeUsername(testUser.username, 'newName');
+    await db.changeUsername(testUser.id, 'newName');
 
     const user = data.user_.find((item) => (item as User)?.username === 'newName') as User | undefined;
     expect(user?.username).toBe('newName');
@@ -118,7 +118,7 @@ describe('Database', (): void => {
     const db = new Database();
     await db.addUser(testUser);
 
-    await db.updateHash(testUser.username, 'newVersion', 'newSalt', 'newHash');
+    await db.updateHash(testUser.id, 'newVersion', 'newSalt', 'newHash');
 
     const user = data.user_.find((item) => (item as User)?.username === testUser.username) as User | undefined;
     expect(user?.hashVersion).toBe('newVersion');
@@ -130,7 +130,7 @@ describe('Database', (): void => {
     const db = new Database();
     await db.addUser(testUser);
 
-    await db.makeUserAdmin(testUser.username);
+    await db.makeUserAdmin(testUser.id);
 
     const user = data.user_.find((item) => (item as User)?.username === testUser.username) as User | undefined;
     expect(user?.admin).toBe(true);
@@ -141,7 +141,7 @@ describe('Database', (): void => {
     await db.addUser(testUser);
     (data.user_[0] as User).admin = true;
 
-    await db.makeUserNormalUser(testUser.username);
+    await db.makeUserNormalUser(testUser.id);
 
     const user = data.user_.find((item) => (item as User)?.username === testUser.username) as User | undefined;
     expect(user?.admin).toBe(false);
@@ -151,7 +151,7 @@ describe('Database', (): void => {
     const db = new Database();
     await db.addUser(testUser);
 
-    await db.modifyUserMeta(testUser.username, { k: 'v' });
+    await db.modifyUserMeta(testUser.id, { k: 'v' });
 
     const user = data.user_.find((item) => (item as User)?.username === testUser.username) as User | undefined;
     expect(user?.meta?.k).toBe('v');
@@ -163,7 +163,7 @@ describe('Database', (): void => {
     await db.addUser(testUser);
     await db.addUser({ ...testUser, username: 'other' });
 
-    await db.removeUser(testUser.username);
+    await db.removeUser(testUser.id);
 
     const user = data.user_.find((item) => (item as User)?.username === testUser.username) as User | undefined;
     const other = data.user_.find((item) => (item as User)?.username === 'other') as User | undefined;
@@ -172,11 +172,20 @@ describe('Database', (): void => {
     expect(data.user_.length).toBe(1);
   });
 
-  test('Database->getUser gets user.', async (): Promise<void> => {
+  test('Database->getUserByUsername gets user by username.', async (): Promise<void> => {
     const db = new Database();
     await db.addUser(testUser);
 
-    const user = await db.getUser(testUser.username);
+    const user = await db.getUserByUsername(testUser.username);
+
+    expect(user?.username).toBe(testUser.username);
+  });
+
+  test('Database->getUserById gets user by id.', async (): Promise<void> => {
+    const db = new Database();
+    await db.addUser(testUser);
+
+    const user = await db.getUserById(testUser.id);
 
     expect(user?.username).toBe(testUser.username);
   });
@@ -184,28 +193,46 @@ describe('Database', (): void => {
   test('Database->getUsers gets users.', async (): Promise<void> => {
     const db = new Database();
     await db.addUser(testUser);
-    await db.addUser({ ...testUser, username: 'user2', admin: true });
+    await db.addUser({ ...testUser, id: 'id2', username: 'user2', admin: true });
 
     const userList = await db.getUsers();
 
-    expect(userList[0]).toEqual({ username: testUser.username, admin: false });
-    expect(userList[1]).toEqual({ username: 'user2', admin: true });
+    expect(userList[0]).toEqual({ id: testUser.id, username: testUser.username, admin: false });
+    expect(userList[1]).toEqual({ id: 'id2', username: 'user2', admin: true });
   });
 
-  test('Database->userExists returns true if user exists.', async (): Promise<void> => {
+  test('Database->userExistsById returns true if user exists.', async (): Promise<void> => {
     const db = new Database();
     await db.addUser(testUser);
 
-    const exists = await db.userExists(testUser.username);
+    const exists = await db.userExistsById(testUser.id);
 
     expect(exists).toBe(true);
   });
 
-  test('Database->userExists returns false if user does not exist.', async (): Promise<void> => {
+  test('Database->userExistsById returns false if user does not exist.', async (): Promise<void> => {
     const db = new Database();
     await db.addUser(testUser);
 
-    const exists = await db.userExists('other');
+    const exists = await db.userExistsById('other');
+
+    expect(exists).toBe(false);
+  });
+
+  test('Database->userExistsByUsername returns true if user exists.', async (): Promise<void> => {
+    const db = new Database();
+    await db.addUser(testUser);
+
+    const exists = await db.userExistsByUsername(testUser.username);
+
+    expect(exists).toBe(true);
+  });
+
+  test('Database->userExistsByUsername returns false if user does not exist.', async (): Promise<void> => {
+    const db = new Database();
+    await db.addUser(testUser);
+
+    const exists = await db.userExistsByUsername('other');
 
     expect(exists).toBe(false);
   });
