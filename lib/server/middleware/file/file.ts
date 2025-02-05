@@ -9,7 +9,7 @@ import User from '@/types/user/User';
 import Right from '@/types/config/Right';
 import FileData from '@/types/storage/FileData';
 
-const nullData: FileData = { owner: '', meta: {}, contentType: '', size: -1, md5: '0'.repeat(32) };
+const nullData: FileData = { owner: '', contentType: '', size: -1, md5: '0'.repeat(32) };
 
 const ensureRights = function (rightsSet: Right[], requiredRight: Right, path: string, res: express.Response): boolean {
   if (!rightsSet.includes(requiredRight)) {
@@ -71,7 +71,9 @@ const fileSaveMetaMiddleware = async function (req: Request, res: express.Respon
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
   const exists = await storage.exists(path);
-  const allowed = await checkForSingleFile(user, path, exists, storage, res, 'update');
+  const data = await storage.loadData(path);
+  const meta = data?.meta;
+  const allowed = await checkForSingleFile(user, path, exists, storage, res, meta ? 'update' : 'create');
   if (allowed) {
     next();
   }

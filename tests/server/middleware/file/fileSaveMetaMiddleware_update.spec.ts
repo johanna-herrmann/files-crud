@@ -1,7 +1,7 @@
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
 import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
-import { fileSaveMiddleware } from '@/server/middleware/file/file';
+import { fileSaveMetaMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import User from '@/types/user/User';
 import { testUser } from '#/testItems';
@@ -46,7 +46,7 @@ jest.mock('@/logging/index', () => {
   };
 });
 
-describe('fileSaveMetaMiddleware', () => {
+describe('fileSaveMetaMiddleware - update', () => {
   beforeEach(async (): Promise<void> => {
     loadConfig();
   });
@@ -76,7 +76,7 @@ describe('fileSaveMetaMiddleware', () => {
         const req = buildRequestForFileAction(token, 'save-meta', `${directory}/file`, {});
         const res = buildResponse();
 
-        await fileSaveMiddleware(req, res, () => (next = true));
+        await fileSaveMetaMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
       };
@@ -122,7 +122,7 @@ describe('fileSaveMetaMiddleware', () => {
           './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
 
-        await fileSaveMiddleware(req, res, () => (next = true));
+        await fileSaveMetaMiddleware(req, res, () => (next = true));
 
         assertUnauthorized(next, res, `You are not allowed to update ${directory}/file`);
       };

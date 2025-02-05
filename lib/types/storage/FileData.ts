@@ -3,7 +3,7 @@ interface FileData {
   contentType: string;
   size: number;
   md5: string;
-  meta: Record<string, unknown>;
+  meta?: Record<string, unknown>;
 }
 
 export default FileData;

@@ -19,8 +19,7 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
     contentType: actualMimetype,
     size,
     md5,
-    owner,
-    meta: {}
+    owner
   };
 
   await storage.save(path, data, fileData);
@@ -82,7 +81,7 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 
   const { meta } = await storage.loadData(path);
   logger.info('Successfully loaded file meta data.', { path, meta });
-  sendOK(res, { meta });
+  sendOK(res, { meta: meta ?? {} });
 };
 
 const loadDataHandler = async function (req: Request, res: express.Response): Promise<void> {
@@ -94,7 +93,8 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
     return sendError(res, `File ${path} does not exist`);
   }
 
-  const data = await storage.loadData(path);
+  const { meta, ...rest } = await storage.loadData(path);
+  const data = { ...rest, meta: meta ?? {} };
   logger.info('Successfully loaded file data.', { path, data });
   sendOK(res, { data });
 };

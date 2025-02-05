@@ -118,8 +118,7 @@ describe('file handlers', (): void => {
       const data = {
         owner: testUser.id,
         contentType: 'text/plain',
-        size: 12,
-        meta: {}
+        size: 12
       };
       const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
       const res = buildResponse();
@@ -137,8 +136,7 @@ describe('file handlers', (): void => {
       const data = {
         owner: testUser.id,
         contentType: 'image/png',
-        size: 12,
-        meta: {}
+        size: 12
       };
       const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
       const res = buildResponse();
@@ -286,6 +284,16 @@ describe('file handlers', (): void => {
       assertOK(res, { meta: { k: 'v' } });
     });
 
+    test('loads undefined meta', async (): Promise<void> => {
+      buildFSMock({ dir: { file: '' } }, { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain' }) });
+      const req = buildRequestForFileAction('', 'load-meta', 'dir/file', {});
+      const res = buildResponse();
+
+      await loadMetaHandler(req, res);
+
+      assertOK(res, { meta: {} });
+    });
+
     test('returns error if file does not exist', async (): Promise<void> => {
       const req = buildRequestForFileAction('', 'load-meta', 'dir/file', {});
       const res = buildResponse();
@@ -306,6 +314,17 @@ describe('file handlers', (): void => {
       await loadDataHandler(req, res);
 
       assertOK(res, { data });
+    });
+
+    test('loads data with undefined meta', async (): Promise<void> => {
+      const data = { owner: testUser.username, contentType: 'text/plain', size: 12 };
+      buildFSMock({ dir: { file: 'test content' } }, { 'dir~file': JSON.stringify(data) });
+      const req = buildRequestForFileAction('', 'load-data', 'dir/file', {});
+      const res = buildResponse();
+
+      await loadDataHandler(req, res);
+
+      assertOK(res, { data: { ...data, meta: {} } });
     });
 
     test('returns error if file does not exist', async (): Promise<void> => {
