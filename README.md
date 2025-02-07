@@ -25,21 +25,17 @@ Written in Typescript
 * registration for new users can be open, restricted or disabled
 
 ## Install
-```bash
+```sh
 npm install -g files-crud
 ```
 
-## Usage/CLI
-[Wiki &rarr; CLI](https://https://github.com/johanna-herrmann/files-crud/wiki/cli)
+## Start
+```sh
+filescrud start
+```
 
-## Permissions
-[Wiki &rarr; Permissions](https://https://github.com/johanna-herrmann/files-crud/wiki/permissions)
-
-## Configuration
-[Wiki &rarr; Configuration](https://https://github.com/johanna-herrmann/files-crud/wiki/configuration)
-
-## API
-[Wiki &rarr; API](https://https://github.com/johanna-herrmann/files-crud/wiki/api)
+## Documentation
+[Documentation](https://files-crud.johanna-dev.de/)
 
 ## License
 This product is licensed via a [MIT License](./LICENSE.md)
