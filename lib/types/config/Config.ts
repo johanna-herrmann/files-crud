@@ -16,7 +16,7 @@ interface Config {
   directoryPermissions?: Record<string, string>;
   defaultPermissions?: string;
   server?: ServerConfig;
-  tokenExpiresInMinutes?: number;
+  tokenExpiresInSeconds?: number;
   webRoot?: string;
 }
 

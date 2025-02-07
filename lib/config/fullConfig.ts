@@ -147,7 +147,7 @@ const loadFullConfig = function (config: Config): Config {
     directoryPermissions: loadDirectoryPermissions(config),
     defaultPermissions: config.defaultPermissions ?? 'crudcr------',
     server: loadServerConfig(config),
-    tokenExpiresInMinutes: config.tokenExpiresInMinutes ?? 30,
+    tokenExpiresInSeconds: config.tokenExpiresInSeconds ?? 1_800,
     webRoot: config.webRoot
   };
 };

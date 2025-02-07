@@ -38,16 +38,16 @@ const getRandomKey = function (): JwtKey {
 const issueToken = function (id: string): string {
   const { kid, key } = getRandomKey();
   const config = getFullConfig();
-  const iat = Date.now();
-  const exp = iat + (config.tokenExpiresInMinutes as number) * 60 * 1000;
+  const iat = Math.round(Date.now() / 1000);
+  const validity = config.tokenExpiresInSeconds as number;
+  const exp = validity ? iat + validity : undefined;
   const sub = id;
-  const payload = { sub, iat, exp } as Record<string, unknown>;
+  const payload = exp ? ({ sub, iat, exp } as Record<string, unknown>) : ({ sub, iat } as Record<string, unknown>);
   const header = { algorithm, keyid: kid } as SignOptions;
   return jwt.sign(payload, key, header);
 };
 
 const verifyToken = function (token: string | null): string {
-  const config = getFullConfig();
   if (!token) {
     return '';
   }
@@ -62,9 +62,6 @@ const verifyToken = function (token: string | null): string {
   try {
     jwt.verify(token, key.key, { complete: true });
   } catch {
-    return '';
-  }
-  if (decoded.payload.exp < Date.now()) {
     return '';
   }
   return decoded.payload.sub;
