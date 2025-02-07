@@ -66,8 +66,8 @@ jest.mock('@/user/jwt', () => {
   const actual = jest.requireActual('@/user/jwt');
   return {
     ...actual,
-    extractExp() {
-      return 42;
+    getExpiresAt() {
+      return 42_000;
     }
   };
 });
@@ -346,7 +346,7 @@ describe('user handlers', (): void => {
 
       await loginHandler(req, res);
 
-      assertOK(res, { token: `token.${username}.${password}`, expiresAt: 42 });
+      assertOK(res, { token: `token.${username}.${password}`, expiresAt: 42_000 });
     });
 
     test('rejects if password is invalid', async (): Promise<void> => {

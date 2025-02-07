@@ -39,7 +39,7 @@ const issueToken = function (id: string): string {
   const { kid, key } = getRandomKey();
   const config = getFullConfig();
   const iat = Math.round(Date.now() / 1000);
-  const validity = config.tokenExpiresInSeconds as number;
+  const validity = Math.abs(config.tokenExpiresInSeconds as number);
   const exp = validity ? iat + validity : undefined;
   const sub = id;
   const payload = exp ? ({ sub, iat, exp } as Record<string, unknown>) : ({ sub, iat } as Record<string, unknown>);
@@ -47,24 +47,24 @@ const issueToken = function (id: string): string {
   return jwt.sign(payload, key, header);
 };
 
-const verifyToken = function (token: string | null): string {
+const verifyToken = function (token: string | null): boolean {
   if (!token) {
-    return '';
+    return false;
   }
   const decoded = jwt.decode(token, { complete: true }) as jwt.JwtPayload;
   if (decoded?.header.alg !== algorithm) {
-    return '';
+    return false;
   }
   const key = keys.find((key) => key.kid === decoded.header.kid);
   if (!key) {
-    return '';
+    return false;
   }
   try {
     jwt.verify(token, key.key, { complete: true });
   } catch {
-    return '';
+    return false;
   }
-  return decoded.payload.sub;
+  return true;
 };
 
 const extractSub = function (token: string): string {
@@ -72,9 +72,10 @@ const extractSub = function (token: string): string {
   return decoded.sub ?? '';
 };
 
-const extractExp = function (token: string): number {
+const getExpiresAt = function (token: string): number {
   const decoded = jwt.decode(token) as jwt.JwtPayload;
-  return decoded.exp ?? 0;
+  const exp = decoded.exp ?? 0;
+  return exp * 1000;
 };
 
 const getIndex = function (): number {
@@ -87,4 +88,4 @@ const getKeys = function (): JwtKey[] {
 
 initKeys().then();
 
-export { issueToken, verifyToken, extractSub, extractExp, getIndex, getKeys, KEYS, algorithm };
+export { issueToken, verifyToken, extractSub, getExpiresAt, getIndex, getKeys, KEYS, algorithm };

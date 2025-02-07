@@ -1,4 +1,4 @@
-import { issueToken, verifyToken, getIndex, getKeys, KEYS, algorithm, extractSub, extractExp } from '@/user/jwt';
+import { issueToken, verifyToken, getIndex, getKeys, KEYS, algorithm, extractSub, getExpiresAt } from '@/user/jwt';
 import jwt from 'jsonwebtoken';
 import { loadConfig } from '@/config/config';
 
@@ -8,7 +8,7 @@ describe('jwt', (): void => {
   const fakeTime = iat * 1000;
   const validity = 42;
   const exp = iat + validity;
-  const fakeTimeExpired = exp * 1000 + 1;
+  const fakeTimeExpired = exp * 1000;
 
   beforeEach(async (): Promise<void> => {
     jest.useFakeTimers();
@@ -68,12 +68,34 @@ describe('jwt', (): void => {
     expect(decoded.signature).toBe(checkDecoded.signature);
   });
 
+  test('issueToken issues token correctly, negative expiring.', async (): Promise<void> => {
+    loadConfig({ tokenExpiresInSeconds: -validity });
+
+    const token = issueToken(sub);
+
+    const decoded = jwt.decode(token, { complete: true }) as jwt.JwtPayload;
+    const index = getIndex();
+    const key = getKeys()[index];
+    const checkToken = jwt.sign({ sub, iat, exp } as Record<string, unknown>, key.key, {
+      algorithm,
+      keyid: key.kid
+    });
+    const checkDecoded = jwt.decode(checkToken, { complete: true }) as jwt.JwtPayload;
+    expect(decoded.header.alg).toBe('HS256');
+    expect(decoded.header.typ).toBe('JWT');
+    expect(decoded.header.kid).toBe(getKeys()[index].kid);
+    expect(decoded.payload.sub).toBe(sub);
+    expect(decoded.payload.iat).toBe(iat);
+    expect(decoded.payload.exp).toBe(exp);
+    expect(decoded.signature).toBe(checkDecoded.signature);
+  });
+
   test('verifyToken returns sub of valid token.', async (): Promise<void> => {
     const token = issueToken(sub);
 
-    const result = verifyToken(token);
+    const valid = verifyToken(token);
 
-    expect(result).toBe(sub);
+    expect(valid).toBe(true);
   });
 
   test('verifyToken returns sub of valid token, no expiration.', async (): Promise<void> => {
@@ -82,26 +104,26 @@ describe('jwt', (): void => {
 
     const token = issueToken(sub);
 
-    const result = verifyToken(token);
+    const valid = verifyToken(token);
 
-    expect(result).toBe(sub);
+    expect(valid).toBe(true);
   });
 
   test('verifyToken returns empty string on expired token.', async (): Promise<void> => {
     const token = issueToken(sub);
     jest.setSystemTime(fakeTimeExpired);
 
-    const result = verifyToken(token);
+    const valid = verifyToken(token);
 
-    expect(result).toBe('');
+    expect(valid).toBe(false);
   });
 
   test('verifyToken returns empty string on invalid token.', async (): Promise<void> => {
     const token = issueToken(sub);
 
-    const result = verifyToken(token.substring(0, token.length - 2));
+    const valid = verifyToken(token.substring(0, token.length - 2));
 
-    expect(result).toBe('');
+    expect(valid).toBe(false);
   });
 
   test('verifyToken returns empty string on token with invalid algo.', async (): Promise<void> => {
@@ -112,21 +134,21 @@ describe('jwt', (): void => {
     const changedHeader = Buffer.from(JSON.stringify(changedHeaderObject), 'utf8').toString('base64url');
     const changedToken = [changedHeader, payload, signature].join('.');
 
-    const result = verifyToken(changedToken);
+    const valid = verifyToken(changedToken);
 
-    expect(result).toBe('');
+    expect(valid).toBe(false);
   });
 
   test('verifyToken returns empty string on empty token.', async (): Promise<void> => {
-    const result = verifyToken('');
+    const valid = verifyToken('');
 
-    expect(result).toBe('');
+    expect(valid).toBe(false);
   });
 
   test('verifyToken returns empty string on nullish token.', async (): Promise<void> => {
-    const result = verifyToken(null);
+    const valid = verifyToken(null);
 
-    expect(result).toBe('');
+    expect(valid).toBe(false);
   });
 
   test('extractSub returns id.', async (): Promise<void> => {
@@ -137,20 +159,20 @@ describe('jwt', (): void => {
     expect(id).toBe(sub);
   });
 
-  test('extractExp returns expiration time.', async (): Promise<void> => {
+  test('getExpiresAt returns expiration time in millis.', async (): Promise<void> => {
     const token = issueToken(sub);
 
-    const exp = extractExp(token);
+    const expiresAt = getExpiresAt(token);
 
-    expect(exp).toBe(exp);
+    expect(expiresAt).toBe(exp * 1000);
   });
 
-  test('extractExp returns expiration time, fallback to 0.', async (): Promise<void> => {
+  test('getExpiresAt returns 0 if no expiration.', async (): Promise<void> => {
     loadConfig({ tokenExpiresInSeconds: 0 });
 
     const token = issueToken(sub);
 
-    const exp = extractExp(token);
+    const exp = getExpiresAt(token);
 
     expect(exp).toBe(0);
   });

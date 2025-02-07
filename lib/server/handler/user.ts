@@ -18,7 +18,7 @@ import {
   invalidCredentials
 } from '@/user';
 import { loadLogger } from '@/logging';
-import { extractExp } from '@/user/jwt';
+import { getExpiresAt } from '@/user/jwt';
 
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
@@ -172,7 +172,7 @@ const loginHandler = async function (req: Request, res: express.Response): Promi
     return sendUnauthorized(res, 'invalid credentials provided');
   }
 
-  const expiresAt = extractExp(tokenOrError);
+  const expiresAt = getExpiresAt(tokenOrError);
 
   logger.info('Successfully logged in user.', { username });
   sendOK(res, { token: tokenOrError, expiresAt });
