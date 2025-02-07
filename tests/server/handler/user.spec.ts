@@ -62,6 +62,16 @@ jest.mock('@/user/auth', () => {
   };
 });
 
+jest.mock('@/user/jwt', () => {
+  const actual = jest.requireActual('@/user/jwt');
+  return {
+    ...actual,
+    extractExp() {
+      return 42;
+    }
+  };
+});
+
 jest.mock('@/logging/index', () => {
   // noinspection JSUnusedGlobalSymbols
   return {
@@ -336,7 +346,7 @@ describe('user handlers', (): void => {
 
       await loginHandler(req, res);
 
-      assertOK(res, { token: `token.${username}.${password}` });
+      assertOK(res, { token: `token.${username}.${password}`, expiresAt: 42 });
     });
 
     test('rejects if password is invalid', async (): Promise<void> => {

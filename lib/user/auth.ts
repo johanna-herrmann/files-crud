@@ -1,7 +1,7 @@
 import { loadDb, closeDb } from '@/database';
 import { versions, current } from './passwordHashing/versions';
 import Database from '@/types/database/Database';
-import { extractId, issueToken, verifyToken } from './jwt';
+import { extractSub, issueToken, verifyToken } from './jwt';
 import { countAttempt, handleLocking, resetAttempts } from './locking';
 import User from '@/types/user/User';
 
@@ -65,7 +65,7 @@ const authorize = async function (jwt: string | null): Promise<User | null> {
     if (!valid) {
       return null;
     }
-    const id = extractId(jwt as string);
+    const id = extractSub(jwt as string);
     return await db.getUserById(id);
   } finally {
     await closeDb();

@@ -1,11 +1,11 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { loadDb, closeDb } from '@/database';
 import JwtKey from '@/types/user/JwtKey';
+import { getFullConfig } from '@/config/config';
 
 const KEY_LENGTH = 32;
 const KEYS = 20;
-const TTL = 30 * 60 * 1000; // 30 minutes;
 
 const algorithm = 'HS256';
 
@@ -37,11 +37,17 @@ const getRandomKey = function (): JwtKey {
 
 const issueToken = function (id: string): string {
   const { kid, key } = getRandomKey();
-  // noinspection JSDeprecatedSymbols - this is not the string.sub function, it's just an object-property.
-  return jwt.sign({ sub: id, iat: Date.now() }, key, { algorithm, keyid: kid });
+  const config = getFullConfig();
+  const iat = Date.now();
+  const exp = iat + (config.tokenExpiresInMinutes as number) * 60 * 1000;
+  const sub = id;
+  const payload = { sub, iat, exp } as Record<string, unknown>;
+  const header = { algorithm, keyid: kid } as SignOptions;
+  return jwt.sign(payload, key, header);
 };
 
 const verifyToken = function (token: string | null): string {
+  const config = getFullConfig();
   if (!token) {
     return '';
   }
@@ -58,15 +64,20 @@ const verifyToken = function (token: string | null): string {
   } catch {
     return '';
   }
-  if (decoded.payload.iat + TTL < Date.now()) {
+  if (decoded.payload.exp < Date.now()) {
     return '';
   }
   return decoded.payload.sub;
 };
 
-const extractId = function (token: string): string {
+const extractSub = function (token: string): string {
   const decoded = jwt.decode(token) as jwt.JwtPayload;
   return decoded.sub ?? '';
+};
+
+const extractExp = function (token: string): number {
+  const decoded = jwt.decode(token) as jwt.JwtPayload;
+  return decoded.exp ?? 0;
 };
 
 const getIndex = function (): number {
@@ -79,4 +90,4 @@ const getKeys = function (): JwtKey[] {
 
 initKeys().then();
 
-export { issueToken, verifyToken, extractId, getIndex, getKeys, KEYS, TTL, algorithm };
+export { issueToken, verifyToken, extractSub, extractExp, getIndex, getKeys, KEYS, algorithm };
