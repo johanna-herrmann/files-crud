@@ -51,12 +51,12 @@ const loadDbConfig = function (config: Config): DatabaseConfig {
 };
 
 const loadStorageConfig = function (config: Config): StorageConfig {
-  const conf = { name: config.storage?.name ?? 'fs' };
+  const conf = {
+    name: config.storage?.name || 'fs',
+    path: config.storage?.path || './'
+  };
   if (conf.name === 'fs') {
-    return {
-      ...conf,
-      path: config.storage?.path ?? config.path ?? './'
-    };
+    return conf;
   }
   return {
     ...conf,
@@ -137,7 +137,6 @@ const loadFullConfig = function (config: Config): Config {
     database: loadDbConfig(config),
     storage: loadStorageConfig(config),
     logging: loadLoggingConfig(config),
-    path: config.path ?? './',
     accessKeyId: config.database?.name === 'dynamodb' || config.storage?.name === 's3' ? (config.accessKeyId ?? 'fallback-key') : undefined,
     secretAccessKey:
       config.database?.name === 'dynamodb' || config.storage?.name === 's3' ? (config.secretAccessKey ?? 'fallback-secret') : undefined,

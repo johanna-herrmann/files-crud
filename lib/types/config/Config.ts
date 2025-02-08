@@ -7,7 +7,6 @@ interface Config {
   database?: DatabaseConfig;
   storage?: StorageConfig;
   logging?: LoggingConfig;
-  path?: string;
   accessKeyId?: string;
   secretAccessKey?: string;
   region?: string;

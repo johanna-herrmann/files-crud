@@ -19,7 +19,7 @@ class Storage implements StorageType {
 
   public constructor() {
     const config = getFullConfig();
-    const directory = paths.resolve((config.storage?.path ?? config.path) as string);
+    const directory = paths.resolve(config.storage?.path as string);
     this.directory = paths.resolve(paths.sep, directory);
     this.storageType = config.storage?.name as 'fs' | 's3';
     this.dataStorage = new FsStorageAdapter(this.directory);

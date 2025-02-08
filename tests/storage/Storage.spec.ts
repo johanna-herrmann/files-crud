@@ -33,20 +33,12 @@ describe('Storage', (): void => {
     expect(storage.getConf()[1]).toBe(paths.resolve('./'));
   });
 
-  test('Storage->constructor creates path correctly, specific path.', async (): Promise<void> => {
-    loadConfig({ storage: { name: 'fs', path: '/var/specific' }, path: '/var/global' });
+  test('Storage->constructor creates path correctly.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 'fs', path: '/var/specific' } });
 
     const storage = new Storage();
 
     expect(storage.getConf()[1]).toBe('/var/specific');
-  });
-
-  test('Storage->constructor creates path correctly, global path.', async (): Promise<void> => {
-    loadConfig({ storage: { name: 'fs' }, path: '/var/global' });
-
-    const storage = new Storage();
-
-    expect(storage.getConf()[1]).toBe('/var/global');
   });
 
   test('Storage->constructor creates adapters correctly, fs.', async (): Promise<void> => {
