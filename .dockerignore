@@ -1,0 +1,9 @@
+node_modules
+tests
+ssl
+dynamodb-schemas
+.idea
+.github
+.git
+.gitignore
+.npmignore
