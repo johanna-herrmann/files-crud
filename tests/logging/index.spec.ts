@@ -2,7 +2,6 @@ import { loadLogger, resetLogger } from '@/logging';
 import { loadConfig } from '@/config/config';
 import { setConsoleTest, unsetConsoleTest } from '@/logging/Logger';
 import process from 'process';
-import paths from 'path';
 
 let logSpy: jest.Spied<typeof console.log>;
 let errorSpy: jest.Spied<typeof console.error>;
