@@ -1,6 +1,7 @@
 FROM node:22-alpine
 
-RUN mkdir /data
+RUN mkdir -p /data/data
+RUN mkdir -p /data/files
 RUN chown -R node:node /data
 
 USER node
