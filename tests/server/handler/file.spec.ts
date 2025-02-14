@@ -64,14 +64,15 @@ const buildFSMock = function (files: DirectoryItem, data: DirectoryItem): void {
   });
 };
 
-const buildUploadRequest = function (data: Buffer, mimetype: string): UploadRequest {
+const buildUploadRequest = function (data: Buffer, mimetype: string, md5: string): UploadRequest {
   const req = buildRequestForFileAction('', 'save', 'dir/file', { userId: testUser.id });
   return {
     ...req,
     files: {
       file: {
         data,
-        mimetype
+        mimetype,
+        md5
       }
     },
     header(name: string) {
@@ -114,14 +115,36 @@ describe('file handlers', (): void => {
   });
 
   describe('saveHandler', (): void => {
-    test('saves file, mimetype from files attribute', async (): Promise<void> => {
+    test('saves file, mimetype from files attribute, create', async (): Promise<void> => {
       const data = {
         owner: testUser.id,
         contentType: 'text/plain',
-        size: 12
+        size: 12,
+        md5: 'testMD5'
       };
-      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
+      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain', 'testMD5');
       const res = buildResponse();
+
+      await saveHandler(req, res);
+
+      expect(await exists('./files/dir/file')).toBe(true);
+      expect(await exists('./data/dir~file')).toBe(true);
+      expect(await fs.readFile('./files/dir/file', 'utf8')).toBe('test content');
+      expect(JSON.parse(await fs.readFile('./data/dir~file', 'utf8'))).toEqual(data);
+      assertOK(res, { path: 'dir/file' });
+    });
+
+    test('saves file, mimetype from files attribute, update', async (): Promise<void> => {
+      const data = {
+        owner: 'owner',
+        contentType: 'text/plain',
+        size: 12,
+        md5: 'testMD5',
+        meta: {}
+      };
+      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain', 'testMD5');
+      const res = buildResponse();
+      buildFSMock({ dir: { file: '' } }, { 'dir~file': JSON.stringify(data) });
 
       await saveHandler(req, res);
 
@@ -136,9 +159,10 @@ describe('file handlers', (): void => {
       const data = {
         owner: testUser.id,
         contentType: 'image/png',
-        size: 12
+        size: 12,
+        md5: 'testMD5'
       };
-      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
+      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain', 'testMD5');
       const res = buildResponse();
       req.headers['X-Mimetype'] = 'image/png';
 
@@ -152,7 +176,7 @@ describe('file handlers', (): void => {
     });
 
     test('saves file, without jailbreak', async (): Promise<void> => {
-      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain');
+      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain', 'testMD5');
       (req.params as Record<string, string | string[]>).path = ['..', '..', 'file'];
       const res = buildResponse();
       req.headers['X-Mimetype'] = 'image/png';

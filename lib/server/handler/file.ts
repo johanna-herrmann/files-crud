@@ -10,25 +10,27 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
   const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
-  const { data, mimetype, md5 } = (req as UploadRequest).files.file;
+  const { meta, owner } = await storage.loadData(path);
+  const { data: content, mimetype, md5 } = (req as UploadRequest).files.file;
   const headerMimetype = req.header('X-Mimetype');
   const actualMimetype = headerMimetype ?? mimetype;
-  const size = data.length;
-  const owner = req.body.userId as string;
+  const size = content.length;
   const fileData = {
     contentType: actualMimetype,
     size,
     md5,
-    owner
+    owner: owner ?? (req.body.userId as string),
+    meta
   };
 
-  await storage.save(path, data, fileData);
+  await storage.save(path, content, fileData);
 
   logger.info('Successfully saved file.', {
     path,
     size,
     mimetype: actualMimetype,
-    mimetypeFrom: headerMimetype ? 'header' : 'files attribute'
+    mimetypeFrom: headerMimetype ? 'header' : 'files attribute',
+    owner
   });
   sendOK(res, { path });
 };

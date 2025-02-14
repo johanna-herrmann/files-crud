@@ -81,6 +81,9 @@ class Storage implements StorageType {
   }
 
   public async loadData(path: string): Promise<FileData> {
+    if (!(await this.exists(path))) {
+      return { size: -1, md5: '', contentType: '' };
+    }
     const data = await this.dataStorage.read(this.resolveDataPath(path), 'utf8');
     return JSON.parse(data as string) as FileData;
   }
