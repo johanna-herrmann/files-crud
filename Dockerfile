@@ -17,7 +17,6 @@ RUN ln -sn /home/node/built/lib/index.js /home/node/filescrud
 RUN chmod a+x /home/node/built/lib/index.js
 
 ENV PATH="$PATH:/home/node"
-ENV FILES_CRUD_SERVER__HOST=0.0.0.0
 
 WORKDIR /data
 

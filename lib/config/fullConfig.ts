@@ -107,7 +107,7 @@ const loadLoggingConfig = function (config: Config) {
 
 const loadServerConfig = function (config: Config) {
   let conf: ServerConfig = {
-    host: config.server?.host ?? '127.0.0.1',
+    host: config.server?.host ?? '0.0.0.0',
     port: config.server?.port ?? 9000,
     useHttps: config.server?.useHttps ?? false,
     noRobots: config.server?.noRobots ?? false,

@@ -158,14 +158,38 @@ describe('config', (): void => {
 
     loadConfig();
 
-    expect(getFullConfig().database).toEqual({ name: 'in-memory' });
-    expect(getFullConfig().server).toEqual({
-      host: '127.0.0.1',
+    const { database, storage, logging, server, ...rest } = getFullConfig();
+    expect(database).toEqual({ name: 'in-memory' });
+    expect(storage).toEqual({ name: 'fs', path: './' });
+    expect(logging).toEqual({
+      accessLogFile: './access.log',
+      accessLoggingFormat: 'json',
+      enableAccessLogging: true,
+      enableErrorFileLogging: true,
+      enableLogFileRotation: true,
+      errorFileLoggingFormat: 'json',
+      errorLogFile: './error.log',
+      fileLoggingFormat: 'json',
+      ipLogging: 'anonymous',
+      level: 'info',
+      logFileRotationEnableCompression: true,
+      logFileRotationFrequencyUnit: 'd',
+      logFileRotationMaxFiles: '14d',
+      ttyLoggingFormat: 'coloredHumanReadableLine'
+    });
+    expect(server).toEqual({
+      host: '0.0.0.0',
       port: 9000,
       noRobots: false,
       fileSizeLimit: '100m',
       useHttps: false,
       cors: undefined
+    });
+    expect(rest).toEqual({
+      register: 'admin',
+      directoryPermissions: {},
+      defaultPermissions: 'crudcr------',
+      tokenExpiresInSeconds: 1_800
     });
   });
 
@@ -176,7 +200,7 @@ describe('config', (): void => {
 
     expect(getFullConfig().database).toEqual({ name: 'in-memory' });
     expect(getFullConfig().server).toEqual({
-      host: '127.0.0.1',
+      host: '0.0.0.0',
       port: 9000,
       noRobots: false,
       fileSizeLimit: '100m',
