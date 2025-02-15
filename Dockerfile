@@ -11,7 +11,7 @@ ADD --chown=node:node ./package-lock.json /home/node/package-lock.json
 
 RUN npm install
 
-ADD --chown=node:node . /home/node/
+ADD --chown=node:node ./built/ /home/node/built/
 
 RUN ln -sn /home/node/built/lib/index.js /home/node/filescrud
 RUN chmod a+x /home/node/built/lib/index.js
