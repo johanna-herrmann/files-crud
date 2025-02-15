@@ -31,6 +31,7 @@ describe('PostgresDatabaseAdapter', (): void => {
       const client = newDb.getClient();
       let connected = false;
       connectSpy = jest.spyOn(client, 'connect').mockImplementation(() => (connected = true));
+      await newDb.close();
 
       await newDb.open();
 

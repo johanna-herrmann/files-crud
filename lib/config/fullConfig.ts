@@ -89,6 +89,7 @@ const loadLoggingConfig = function (config: Config) {
   if (conf.enableErrorFileLogging) {
     conf = {
       ...conf,
+      errorFileLoggingFormat: config.logging?.errorFileLoggingFormat ?? 'json',
       errorLogFile: config.logging?.errorLogFile ?? './error.log',
       enableLogFileRotation: config.logging?.enableLogFileRotation ?? true
     };

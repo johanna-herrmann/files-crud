@@ -8,6 +8,7 @@ interface LoggingConfig {
   errorLogFile?: string;
   ttyLoggingFormat?: LoggingFormat;
   fileLoggingFormat?: LoggingFormat;
+  errorFileLoggingFormat?: LoggingFormat;
   accessLoggingFormat?: AccessLoggingFormat;
   enableErrorFileLogging?: boolean;
   enableAccessLogging?: boolean;

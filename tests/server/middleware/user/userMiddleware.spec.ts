@@ -131,6 +131,10 @@ const rejectsIfPublic = async function (action: string): Promise<void> {
 };
 
 describe('userMiddleware', (): void => {
+  beforeEach(async () => {
+    data.user_ = [];
+  });
+
   afterEach(async () => {
     data.user_ = [];
     mocked_token = null;

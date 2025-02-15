@@ -3,11 +3,31 @@ import { start } from '@/command/start';
 
 let mocked_startTime = 0;
 let mocked_lastLoggedMessage = '';
+let mocked_adminInitialized = false;
+let mocked_keysInitialized = false;
 
 jest.mock('@/server/server', () => {
   return {
     startServer(start: number) {
       mocked_startTime = start;
+    }
+  };
+});
+
+jest.mock('@/user/jwt', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    async initKeys() {
+      mocked_keysInitialized = true;
+    }
+  };
+});
+
+jest.mock('@/command/admin', () => {
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    async createInitialAdminIfNoAdminExists() {
+      mocked_adminInitialized = true;
     }
   };
 });
@@ -37,12 +57,16 @@ describe('command: start', (): void => {
     jest.useRealTimers();
     mocked_startTime = 0;
     mocked_lastLoggedMessage = '';
+    mocked_adminInitialized = false;
+    mocked_keysInitialized = false;
   });
 
   test('loads config, logs start line and calls startServer correctly.', async (): Promise<void> => {
-    start(42);
+    await start(42);
 
     expect(mocked_startTime).toBe(42);
     expect(mocked_lastLoggedMessage).toBe('Starting application...');
+    expect(mocked_adminInitialized).toBe(true);
+    expect(mocked_keysInitialized).toBe(true);
   });
 });

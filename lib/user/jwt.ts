@@ -1,6 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
-import { loadDb, closeDb } from '@/database';
+import { loadDb } from '@/database';
 import JwtKey from '@/types/user/JwtKey';
 import { getFullConfig } from '@/config/config';
 
@@ -13,20 +13,21 @@ const keys: JwtKey[] = [];
 
 let index = 0;
 
+const resetKeys = function () {
+  keys.splice(0, KEYS);
+};
+
 const initKeys = async function (): Promise<void> {
-  try {
-    const db = await loadDb();
-    keys.push(...(await db.getJwtKeys()));
-    if (keys.length === 0) {
-      const newKeys: string[] = [];
-      for (let i = 1; i <= KEYS; i++) {
-        newKeys.push(crypto.randomBytes(KEY_LENGTH).toString('base64'));
-      }
-      await db.addJwtKeys(...newKeys);
-      keys.push(...(await db.getJwtKeys()));
+  const db = await loadDb();
+  const givenKeys = await db.getJwtKeys();
+  keys.push(...givenKeys);
+  if (keys.length === 0) {
+    const newKeys: string[] = [];
+    for (let i = 1; i <= KEYS; i++) {
+      newKeys.push(crypto.randomBytes(KEY_LENGTH).toString('base64'));
     }
-  } finally {
-    await closeDb();
+    await db.addJwtKeys(...newKeys);
+    keys.push(...(await db.getJwtKeys()));
   }
 };
 
@@ -86,6 +87,4 @@ const getKeys = function (): JwtKey[] {
   return keys;
 };
 
-initKeys().then();
-
-export { issueToken, verifyToken, extractSub, getExpiresAt, getIndex, getKeys, KEYS, algorithm };
+export { initKeys, issueToken, verifyToken, extractSub, getExpiresAt, getIndex, getKeys, resetKeys, KEYS, algorithm };

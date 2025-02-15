@@ -1,5 +1,5 @@
 import { login, invalidCredentials, attemptsExceeded, authorize, changePassword, checkPassword } from '@/user/auth';
-import { issueToken } from '@/user/jwt';
+import { initKeys, issueToken, resetKeys } from '@/user/jwt';
 import { current } from '@/user/passwordHashing/versions';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import Database from '@/types/database/Database';
@@ -77,9 +77,14 @@ jest.mock('crypto', () => {
 describe('auth', (): void => {
   beforeEach(async (): Promise<void> => {
     data.user_ = [];
+    await initKeys();
     mocked_called_count = false;
     mocked_called_reset = false;
     mocked_locked = false;
+  });
+
+  afterEach(async (): Promise<void> => {
+    resetKeys();
   });
 
   test('login returns token on valid credentials.', async (): Promise<void> => {
