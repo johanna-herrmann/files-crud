@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { loadDb } from '@/database';
 import JwtKey from '@/types/user/JwtKey';
 import { getFullConfig } from '@/config/config';
+import { getLogger } from '@/logging';
 
 const KEY_LENGTH = 32;
 const KEYS = 20;
@@ -19,16 +20,19 @@ const resetKeys = function () {
 
 const initKeys = async function (): Promise<void> {
   const db = await loadDb();
+  const logger = getLogger();
+  logger?.info(`Initialize jwt keys, generating upto ${KEYS} random keys, if not done already.`);
   const givenKeys = await db.getJwtKeys();
   keys.push(...givenKeys);
-  if (keys.length === 0) {
-    const newKeys: string[] = [];
-    for (let i = 1; i <= KEYS; i++) {
+  const newKeys: string[] = [];
+  if (keys.length < KEYS) {
+    for (let i = 1; i <= KEYS - keys.length; i++) {
       newKeys.push(crypto.randomBytes(KEY_LENGTH).toString('base64'));
     }
     await db.addJwtKeys(...newKeys);
     keys.push(...(await db.getJwtKeys()));
   }
+  logger?.info(`Keys initialized, generating ${newKeys.length} new key(s).`);
 };
 
 const getRandomKey = function (): JwtKey {

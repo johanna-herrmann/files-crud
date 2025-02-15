@@ -1,10 +1,12 @@
 import DatabaseType from '@/types/database/Database';
 import DatabaseAdapter from '@/types/database/DatabaseAdapter';
-import { getConfig } from '@/config/config';
+import { getFullConfig } from '@/config/config';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
 import { MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
+import { getLogger } from '@/logging';
+import { Logger } from '@/logging/Logger';
 import User from '@/types/user/User';
 import UserListItem from '@/types/user/UserListItem';
 import { v4 } from 'uuid';
@@ -13,9 +15,12 @@ import FailedLoginAttempts from '@/types/user/FailedLoginAttempts';
 
 class Database implements DatabaseType {
   private readonly db: DatabaseAdapter;
+  private readonly logger: Logger | null;
 
   constructor() {
-    const config = getConfig();
+    const config = getFullConfig();
+    this.logger = getLogger();
+    this.logger?.info('Initializing DB.', { db: config.database?.name as string });
     if (config.database?.name === 'mongodb') {
       this.db = new MongoDatabaseAdapter();
     } else if (config.database?.name === 'postgresql') {
@@ -43,6 +48,7 @@ class Database implements DatabaseType {
     await this.db.init<User>('user_', { id: '', username: '', admin: false, hashVersion: '', salt: '', hash: '', meta: {} });
     await this.db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
     await this.db.init<JwtKey>('jwtKey', { kid: '', key: '' });
+    this.logger?.info('DB initialized.');
   }
 
   public async addUser(user: User): Promise<void> {

@@ -17,4 +17,8 @@ const reloadLogger = function () {
   logger = new Logger();
 };
 
-export { loadLogger, resetLogger, reloadLogger };
+const getLogger = function (): Logger | null {
+  return logger;
+};
+
+export { loadLogger, resetLogger, reloadLogger, getLogger };

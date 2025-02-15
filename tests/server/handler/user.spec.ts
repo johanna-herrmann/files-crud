@@ -64,6 +64,7 @@ jest.mock('@/user/auth', () => {
 
 jest.mock('@/user/jwt', () => {
   const actual = jest.requireActual('@/user/jwt');
+  // noinspection JSUnusedGlobalSymbols
   return {
     ...actual,
     getExpiresAt() {
@@ -73,28 +74,32 @@ jest.mock('@/user/jwt', () => {
 });
 
 jest.mock('@/logging/index', () => {
+  const logger: Logger = {
+    debug() {
+      return this;
+    },
+    info() {
+      return this;
+    },
+    warn(message: string, meta?: Record<string, unknown>) {
+      mock_loggedWarnMessage = message;
+      mock_loggedWarnMeta = meta;
+      return this;
+    },
+    error(message: string, meta?: Record<string, unknown>) {
+      mock_loggedErrorMessage = message;
+      mock_loggedErrorMeta = meta;
+      return this;
+    }
+  } as unknown as Logger;
   // noinspection JSUnusedGlobalSymbols
   return {
     resetLogger() {},
     loadLogger(): Logger {
-      return {
-        debug() {
-          return this;
-        },
-        info() {
-          return this;
-        },
-        warn(message: string, meta?: Record<string, unknown>) {
-          mock_loggedWarnMessage = message;
-          mock_loggedWarnMeta = meta;
-          return this;
-        },
-        error(message: string, meta?: Record<string, unknown>) {
-          mock_loggedErrorMessage = message;
-          mock_loggedErrorMeta = meta;
-          return this;
-        }
-      } as unknown as Logger;
+      return logger;
+    },
+    getLogger(): Logger {
+      return logger;
     }
   };
 });

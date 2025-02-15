@@ -29,9 +29,10 @@ const loadDbConfig = function (config: Config): DatabaseConfig {
     user: config.database?.user,
     pass: config.database?.pass
   };
+
   if (config.database?.name === 'dynamodb') {
     return {
-      name: 'in-memory',
+      name: 'dynamodb',
       ...dynamodbConfig
     };
   }
