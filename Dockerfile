@@ -20,5 +20,7 @@ ENV PATH="$PATH:/home/node"
 
 WORKDIR /data
 
+EXPOSE 9000/tcp
+
 ENTRYPOINT ["filescrud"]
 CMD ["start"]
