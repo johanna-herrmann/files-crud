@@ -104,7 +104,7 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
 const copyHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath, keepOwner, userId } = req.body;
+  const { path, targetPath, copyOwner, userId } = req.body;
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
@@ -112,7 +112,7 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
     return sendError(res, `File ${sanitizedPath} does not exist`);
   }
 
-  if (keepOwner) {
+  if (copyOwner) {
     await storage.copy(sanitizedPath, sanitizedTargetPath);
   } else {
     await storage.copy(sanitizedPath, sanitizedTargetPath, userId as string);
@@ -125,7 +125,7 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
 const moveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath, keepOwner, userId } = req.body;
+  const { path, targetPath, copyOwner, userId } = req.body;
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
@@ -133,7 +133,7 @@ const moveHandler = async function (req: Request, res: express.Response): Promis
     return sendError(res, `File ${path} does not exist`);
   }
 
-  if (keepOwner) {
+  if (copyOwner) {
     await storage.move(sanitizedPath, sanitizedTargetPath);
   } else {
     await storage.move(sanitizedPath, sanitizedTargetPath, userId as string);

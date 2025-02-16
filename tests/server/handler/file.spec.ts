@@ -394,7 +394,7 @@ describe('file handlers', (): void => {
         { dir: { file: contentBuffer } },
         { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
       );
-      const req = buildRequestForFileAction('', 'copy', undefined, { path: 'dir/file', targetPath: 'c/copy', username: 'new', keepOwner: true });
+      const req = buildRequestForFileAction('', 'copy', undefined, { path: 'dir/file', targetPath: 'c/copy', username: 'new', copyOwner: true });
       const res = buildResponse();
 
       await copyHandler(req, res);
@@ -416,7 +416,7 @@ describe('file handlers', (): void => {
         path: '../dir/file',
         targetPath: '../c/copy',
         username: 'new',
-        keepOwner: true
+        copyOwner: true
       });
       const res = buildResponse();
 
@@ -469,7 +469,7 @@ describe('file handlers', (): void => {
         { dir: { file: contentBuffer } },
         { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
       );
-      const req = buildRequestForFileAction('', 'move', undefined, { path: 'dir/file', targetPath: 'm/move', username: 'new', keepOwner: true });
+      const req = buildRequestForFileAction('', 'move', undefined, { path: 'dir/file', targetPath: 'm/move', username: 'new', copyOwner: true });
       const res = buildResponse();
 
       await moveHandler(req, res);
@@ -491,7 +491,7 @@ describe('file handlers', (): void => {
         path: '../dir/file',
         targetPath: '../m/move',
         username: 'new',
-        keepOwner: true
+        copyOwner: true
       });
       const res = buildResponse();
 
