@@ -20,7 +20,7 @@ describe('logging', (): void => {
     process.stdout.isTTY = true;
     process.stderr.isTTY = true;
     jest.useFakeTimers();
-    jest.setSystemTime(42);
+    jest.setSystemTime(42 + new Date().getTimezoneOffset() * 60 * 1000);
   });
 
   afterEach(async (): Promise<void> => {
@@ -37,8 +37,6 @@ describe('logging', (): void => {
     const logger = loadLogger();
     logger.info('test message');
 
-    expect(loggedMessage).toBe(
-      '1970-01-01T01:00:00.042 [/home/johanna/IT/files-crud/repos/files-crud/tests/logging/index.spec.ts] INFO: test message'
-    );
+    expect(loggedMessage).toBe(`1970-01-01T00:00:00.042 [${__filename}] INFO: test message`);
   });
 });

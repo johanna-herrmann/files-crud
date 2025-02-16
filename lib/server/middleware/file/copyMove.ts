@@ -10,10 +10,10 @@ const fileCopyMoveMiddleware = async function (req: Request, res: express.Respon
   const body = req.body;
   const path = (body.path as string) ?? '-';
   const targetPath = (body.targetPath as string) ?? '--';
-  const keepOwner = (body.keepOwner as boolean) ?? false;
+  const copyOwner = (body.copyOwner as boolean) ?? false;
   const user = await authorize(getToken(req));
-  if (!user?.admin && keepOwner) {
-    return sendUnauthorized(res, 'Keeping the owner is restricted to admins');
+  if (!user?.admin && copyOwner) {
+    return sendUnauthorized(res, 'Only admins are allowed to copy the owner');
   }
   if (!!user) {
     req.body.user = user;

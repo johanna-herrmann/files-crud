@@ -50,6 +50,7 @@ class Logger {
   private readonly level: 'debug' | 'info' | 'warn' | 'error';
   private readonly ttyLoggingFormat: LoggingFormat;
   private readonly fileLoggingFormat: LoggingFormat;
+  private readonly errorFileLoggingFormat: LoggingFormat;
   private readonly accessLoggingFormat: AccessLoggingFormat;
   private ttyLogger: WinstonLogger | null = null;
   private errorFileLogger: WinstonLogger | null = null;
@@ -101,7 +102,7 @@ class Logger {
         format: combine(
           timestamp({ format: dateFormatter }),
           printf(({ level, message, timestamp, sourcePath, meta }) => {
-            return logFormats[this.fileLoggingFormat]({ level, message, timestamp, sourcePath, meta });
+            return logFormats[this.errorFileLoggingFormat]({ level, message, timestamp, sourcePath, meta });
           })
         ),
         transports: [
@@ -150,6 +151,7 @@ class Logger {
     this.ttyLoggingFormat = config.logging?.ttyLoggingFormat as LoggingFormat;
     this.fileLoggingFormat = config.logging?.fileLoggingFormat as LoggingFormat;
     this.accessLoggingFormat = config.logging?.accessLoggingFormat as AccessLoggingFormat;
+    this.errorFileLoggingFormat = config.logging?.errorFileLoggingFormat as LoggingFormat;
     this.errorLogFile = config.logging?.errorLogFile as string;
     this.accessLogFile = config.logging?.accessLogFile as string;
     this.errorFileLoggingEnabled = config.logging?.enableErrorFileLogging as boolean;

@@ -124,6 +124,7 @@ describe('Logger rotation', (): void => {
       enableAccessLogging: false,
       logFileRotationMaxFiles: '3',
       fileLoggingFormat: 'humanReadableLine',
+      errorFileLoggingFormat: 'humanReadableLine',
       logFileRotationFrequencyUnit: 's'
     } as LoggingConfig;
 

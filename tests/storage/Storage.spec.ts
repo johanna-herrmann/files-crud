@@ -33,20 +33,12 @@ describe('Storage', (): void => {
     expect(storage.getConf()[1]).toBe(paths.resolve('./'));
   });
 
-  test('Storage->constructor creates path correctly, specific path.', async (): Promise<void> => {
-    loadConfig({ storage: { name: 'fs', path: '/var/specific' }, path: '/var/global' });
+  test('Storage->constructor creates path correctly.', async (): Promise<void> => {
+    loadConfig({ storage: { name: 'fs', path: '/var/specific' } });
 
     const storage = new Storage();
 
     expect(storage.getConf()[1]).toBe('/var/specific');
-  });
-
-  test('Storage->constructor creates path correctly, global path.', async (): Promise<void> => {
-    loadConfig({ storage: { name: 'fs' }, path: '/var/global' });
-
-    const storage = new Storage();
-
-    expect(storage.getConf()[1]).toBe('/var/global');
   });
 
   test('Storage->constructor creates adapters correctly, fs.', async (): Promise<void> => {
@@ -179,8 +171,18 @@ describe('Storage', (): void => {
   });
 
   test('Storage->loadData loads Data correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { data: { 'a~file': JSON.stringify(data) } } });
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42, md5: 'testMD5' };
+    mockFS({ '/base': { files: { a: { file: '' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const storage = new Storage();
+
+    const actualData = await storage.loadData('a/file');
+
+    expect(actualData).toEqual(data);
+  });
+
+  test('Storage->loadData returns nullObject if file soes not exist.', async (): Promise<void> => {
+    const data = { size: -1, md5: '', contentType: '' };
+    mockFS({ '/base': {} });
     const storage = new Storage();
 
     const actualData = await storage.loadData('a/file');

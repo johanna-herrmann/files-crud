@@ -60,7 +60,7 @@ const restart = async function () {
     return;
   }
   printer.printLine('Starting...');
-  start(Date.now());
+  await start(Date.now());
 };
 
 export { stop, reload, restart, doFetch, getControlProperties };

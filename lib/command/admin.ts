@@ -1,6 +1,31 @@
 import crypto from 'crypto';
 import { addUser, getUsers } from '@/user';
 import { printer } from '@/printing/printer';
+import { getLogger } from '@/logging';
+
+const printLine = function (line: string): void {
+  const logger = getLogger();
+  if (!logger) {
+    printer.printLine(line);
+    return;
+  }
+  logger.info(line);
+};
+
+const printError = function (message: string): void {
+  const logger = getLogger();
+  if (!logger) {
+    printer.printError(message);
+    return;
+  }
+  logger.error(message);
+};
+
+const printFailed = function (): void {
+  if (!getLogger()) {
+    printer.printFailed();
+  }
+};
 
 const getRandomString = function (length: number): string {
   return crypto.randomBytes(length).toString('base64url');
@@ -10,17 +35,17 @@ const createAdmin = async function ({ username, password }: { username?: string;
   try {
     username = username ?? getRandomString(6);
     password = password ?? getRandomString(15);
-    printer.printLine(`Creating user...`);
+    printLine(`Creating user...`);
     await addUser(username, password, true, {});
-    printer.printLine(`Successfully created user. username: ${username}; password: ${password}`);
+    printLine(`Successfully created user. username: ${username}; password: ${password}`);
   } catch (err: unknown) {
     const error = err as Error;
-    printer.printError(
+    printError(
       JSON.stringify(error.stack ?? `Error: ${error.message ?? 'Unknown error'}`)
         .replace(/"/g, '')
         .replace(/\\n/g, '\n')
     );
-    printer.printFailed();
+    printFailed();
   }
 };
 
@@ -28,7 +53,7 @@ const createInitialAdminIfNoAdminExists = async function (): Promise<void> {
   const users = await getUsers();
   const admin = users.find((user) => user.admin);
   if (!admin) {
-    printer.printLine('There is no admin user. Initial admin will be created.');
+    printLine('There is no admin user. Initial admin will be created.');
     await createAdmin({});
   }
 };

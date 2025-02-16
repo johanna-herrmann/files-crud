@@ -132,7 +132,7 @@ describe('startServer', (): void => {
     });
 
     test('with default config', async (): Promise<void> => {
-      const host = '127.0.0.1';
+      const host = '0.0.0.0';
       const port = 9000;
 
       startServer(0);
@@ -146,7 +146,7 @@ describe('startServer', (): void => {
     });
 
     test('with specific config', async (): Promise<void> => {
-      const host = '0.0.0.0';
+      const host = '127.0.0.1';
       const port = 9000;
       const webRoot = '/var/www';
       loadConfig({ server: { host, port }, webRoot });
@@ -184,7 +184,7 @@ describe('startServer', (): void => {
     });
 
     test('with default config', async (): Promise<void> => {
-      const host = '127.0.0.1';
+      const host = '0.0.0.0';
       const port = 9000;
       loadConfig({ server: { useHttps: true } });
 
@@ -201,7 +201,7 @@ describe('startServer', (): void => {
     });
 
     test('with specific config', async (): Promise<void> => {
-      const host = '0.0.0.0';
+      const host = '127.0.0.1';
       const port = 9000;
       const webRoot = '/var/www';
       loadConfig({
@@ -250,7 +250,7 @@ describe('startServer', (): void => {
     });
 
     test('with default config', async (): Promise<void> => {
-      const host = '127.0.0.1';
+      const host = '0.0.0.0';
       const port = 9000;
       loadConfig({ server: { useHttps: true, useHttp2: true } });
 
@@ -268,7 +268,7 @@ describe('startServer', (): void => {
     });
 
     test('with specific config', async (): Promise<void> => {
-      const host = '0.0.0.0';
+      const host = '127.0.0.1';
       const port = 9000;
       const webRoot = '/var/www';
       loadConfig({

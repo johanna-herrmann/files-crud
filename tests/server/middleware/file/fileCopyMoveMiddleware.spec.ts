@@ -105,12 +105,12 @@ describe('fileCopyMoveMiddleware', (): void => {
     passRead: boolean,
     passWrite: boolean,
     passDelete: boolean,
-    keepOwner?: boolean
+    copyOwner?: boolean
   ): [req: Request, res: express.Response] {
     mocked_passRead = passRead;
     mocked_passWrite = passWrite;
     mocked_passDelete = passDelete;
-    const req = buildRequestForFileAction('', action, undefined, { path: 'src/file', targetPath: 'target/copy', keepOwner: keepOwner ?? false });
+    const req = buildRequestForFileAction('', action, undefined, { path: 'src/file', targetPath: 'target/copy', copyOwner: copyOwner ?? false });
     const res = buildResponse();
     return [req, res];
   };
@@ -170,7 +170,7 @@ describe('fileCopyMoveMiddleware', (): void => {
 
       await fileCopyMoveMiddleware(req, res, () => (next = true));
 
-      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
+      assertUnauthorized(next, res, 'Only admins are allowed to copy the owner');
     });
 
     test('rejects keep owner for public.', async (): Promise<void> => {
@@ -179,7 +179,7 @@ describe('fileCopyMoveMiddleware', (): void => {
 
       await fileCopyMoveMiddleware(req, res, () => (next = true));
 
-      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
+      assertUnauthorized(next, res, 'Only admins are allowed to copy the owner');
     });
   });
 
@@ -254,7 +254,7 @@ describe('fileCopyMoveMiddleware', (): void => {
 
       await fileCopyMoveMiddleware(req, res, () => (next = true));
 
-      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
+      assertUnauthorized(next, res, 'Only admins are allowed to copy the owner');
     });
 
     test('rejects keep owner for public.', async (): Promise<void> => {
@@ -263,7 +263,7 @@ describe('fileCopyMoveMiddleware', (): void => {
 
       await fileCopyMoveMiddleware(req, res, () => (next = true));
 
-      assertUnauthorized(next, res, 'Keeping the owner is restricted to admins');
+      assertUnauthorized(next, res, 'Only admins are allowed to copy the owner');
     });
   });
 });

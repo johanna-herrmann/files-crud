@@ -67,7 +67,9 @@ describe('Logger logs to error file', (): void => {
 
   describe('with specified format', (): void => {
     test('humanReadableLine', (done): void => {
-      loadConfig({ logging: { enableAccessLogging: false, errorLogFile, fileLoggingFormat: 'humanReadableLine', enableLogFileRotation: false } });
+      loadConfig({
+        logging: { enableAccessLogging: false, errorLogFile, errorFileLoggingFormat: 'humanReadableLine', enableLogFileRotation: false }
+      });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger?.on('finish', () => {
@@ -85,7 +87,9 @@ describe('Logger logs to error file', (): void => {
     });
 
     test('humanReadableBlock', (done): void => {
-      loadConfig({ logging: { enableAccessLogging: false, errorLogFile, fileLoggingFormat: 'humanReadableBlock', enableLogFileRotation: false } });
+      loadConfig({
+        logging: { enableAccessLogging: false, errorLogFile, errorFileLoggingFormat: 'humanReadableBlock', enableLogFileRotation: false }
+      });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
       errorLogger?.on('finish', () => {
@@ -105,7 +109,7 @@ describe('Logger logs to error file', (): void => {
 
     test('coloredHumanReadableLine', (done): void => {
       loadConfig({
-        logging: { enableAccessLogging: false, errorLogFile, fileLoggingFormat: 'coloredHumanReadableLine', enableLogFileRotation: false }
+        logging: { enableAccessLogging: false, errorLogFile, errorFileLoggingFormat: 'coloredHumanReadableLine', enableLogFileRotation: false }
       });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();
@@ -125,7 +129,7 @@ describe('Logger logs to error file', (): void => {
 
     test('coloredHumanReadableBlock', (done): void => {
       loadConfig({
-        logging: { enableAccessLogging: false, errorLogFile, fileLoggingFormat: 'coloredHumanReadableBlock', enableLogFileRotation: false }
+        logging: { enableAccessLogging: false, errorLogFile, errorFileLoggingFormat: 'coloredHumanReadableBlock', enableLogFileRotation: false }
       });
       const logger = new Logger();
       const errorLogger = logger.getErrorLogger();

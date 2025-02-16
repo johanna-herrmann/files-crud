@@ -6,6 +6,7 @@ import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import StorageType from '@/types/storage/StorageType';
 import FileData from '@/types/storage/FileData';
+import { getLogger } from '@/logging';
 
 const removeTilde = function (path: string): string {
   return path.replace(/~/gu, '-');
@@ -19,11 +20,14 @@ class Storage implements StorageType {
 
   public constructor() {
     const config = getFullConfig();
-    const directory = paths.resolve((config.storage?.path ?? config.path) as string);
+    const logger = getLogger();
+    logger?.info('Loading storage', { store: config.storage?.name as string });
+    const directory = paths.resolve(config.storage?.path as string);
     this.directory = paths.resolve(paths.sep, directory);
     this.storageType = config.storage?.name as 'fs' | 's3';
     this.dataStorage = new FsStorageAdapter(this.directory);
     this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(this.directory);
+    logger?.info('Successfully loaded storage');
   }
 
   private resolvePath(path: string, sub: string): string {
@@ -81,6 +85,9 @@ class Storage implements StorageType {
   }
 
   public async loadData(path: string): Promise<FileData> {
+    if (!(await this.exists(path))) {
+      return { size: -1, md5: '', contentType: '' };
+    }
     const data = await this.dataStorage.read(this.resolveDataPath(path), 'utf8');
     return JSON.parse(data as string) as FileData;
   }

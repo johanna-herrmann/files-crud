@@ -1,5 +1,5 @@
 interface FileData {
-  owner: string;
+  owner?: string;
   contentType: string;
   size: number;
   md5: string;

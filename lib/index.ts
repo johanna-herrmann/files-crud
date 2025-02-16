@@ -1,16 +1,13 @@
 #! /usr/bin/env node
 
-import paths from 'path';
 import { Command } from 'commander';
 import { description, version } from '../package.json';
 import { start } from '@/command/start';
 import { reload, restart, stop } from '@/command/control';
 import { checkIntegrity } from '@/command/integrity';
-import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
+import { createAdmin } from '@/command/admin';
 import { showConfig } from '@/command/config';
 import { loadConfig, setEnvPrefix } from '@/config/config';
-
-process.chdir(paths.dirname(paths.dirname(__dirname)));
 
 loadConfig();
 
@@ -27,39 +24,37 @@ program
 program
   .command('start')
   .description('Starts files-crud application.')
-  .action(() => {
+  .action(async () => {
     const startTime = Date.now();
     setEnvPrefix(program.optsWithGlobals().envPrefix);
-    createInitialAdminIfNoAdminExists().then(() => {
-      start(startTime);
-    });
+    await start(startTime);
   });
 
 // define stop subcommand
 program
   .command('stop')
   .description('Stops files-crud application.')
-  .action(() => {
+  .action(async () => {
     setEnvPrefix(program.optsWithGlobals().envPrefix);
-    stop().then();
+    await stop();
   });
 
 // define restart subcommand
 program
   .command('restart')
   .description('Restart files-crud application.')
-  .action(() => {
+  .action(async () => {
     setEnvPrefix(program.optsWithGlobals().envPrefix);
-    restart().then();
+    await restart();
   });
 
 // define reload subcommand
 program
   .command('reload')
   .description('Reloads config ans some files-crud components based on changed config. Reloads components: Database, Storage, Logger')
-  .action(() => {
+  .action(async () => {
     setEnvPrefix(program.optsWithGlobals().envPrefix);
-    reload().then();
+    await reload();
   });
 
 // define integrityCheck subcommand
@@ -67,9 +62,9 @@ program
   .command('integrity')
   .description('Checks the integrity of all files, using their md5 checksums.')
   .argument('[path]', 'Path to the directory or file to check the integrity for. Storage root directory if not specified', '')
-  .action((path) => {
+  .action(async (path) => {
     setEnvPrefix(program.optsWithGlobals().envPrefix);
-    checkIntegrity(path).then();
+    await checkIntegrity(path);
   });
 
 // define admin subcommand
