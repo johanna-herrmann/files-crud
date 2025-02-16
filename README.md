@@ -1,5 +1,7 @@
 # files-crud
 
+<img src="./logo.svg" width="100" height="100" alt="" />
+
 REST file storage with CRUD based permissions on directory-level. \
 Written in Typescript
 
