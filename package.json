@@ -82,7 +82,7 @@
     "http2-express-bridge": "^1.0.7",
     "jsonwebtoken": "^9.0.2",
     "mock-express-response": "^0.3.0",
-    "mongoose": "^8.8.3",
+    "mongoose": "^8.10.1",
     "on-finished": "^2.4.1",
     "pg": "^8.13.1",
     "read-env": "^2.0.0",
