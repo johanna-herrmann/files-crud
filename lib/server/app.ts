@@ -81,7 +81,7 @@ const buildApp = function (noFallbacks?: boolean): express.Application {
   app.get('/api/file/load-meta/*path', fileLoadMetaMiddleware, loadFileMetaHandler);
   app.get('/api/file/load-data/*path', fileLoadDataMiddleware, loadFileDataHandler);
   app.get('/api/file/one/*path', fileLoadMiddleware, loadFileHandler);
-  app.get('/api/file/list/*path', directoryListingMiddleware, listDirectoryItemsHandler);
+  app.get('/api/file/list/{*path}', directoryListingMiddleware, listDirectoryItemsHandler);
 
   // control routes
   app.use('/control/', controlMiddleware);

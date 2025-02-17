@@ -18,7 +18,7 @@ const buildRequestForControlAction = function (ip: string, xForwardedFor?: strin
 const buildRequestForFileAction = function (token: string, action: string, pathParam: string | undefined, body: Record<string, unknown>): Request {
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
-    params: { action, path: pathParam?.split('/') },
+    params: { action, path: pathParam ? pathParam?.split('/') : undefined },
     body
   } as unknown as Request;
 };

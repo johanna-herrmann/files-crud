@@ -552,6 +552,16 @@ describe('file handlers', (): void => {
       assertOK(res, { items: ['dir1/', 'dir2/', 'file1', 'file2'] });
     });
 
+    test('lists items, root', async (): Promise<void> => {
+      buildFSMock({ file2: '', dir2: {}, dir1: {}, file1: '' }, {});
+      const req = buildRequestForFileAction('', 'list', undefined, {});
+      const res = buildResponse();
+
+      await listHandler(req, res);
+
+      assertOK(res, { items: ['dir1/', 'dir2/', 'file1', 'file2'] });
+    });
+
     test('returns error if directory does not exist', async (): Promise<void> => {
       const req = buildRequestForFileAction('', 'list', 'dir', {});
       const res = buildResponse();

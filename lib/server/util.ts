@@ -9,6 +9,9 @@ const sanitizePath = function (path: string): string {
 
 const resolvePath = function (req: Request): string {
   const params = req.params as Record<string, string[]>;
+  if (!params.path) {
+    return '';
+  }
   const path = params.path.join('/');
   return sanitizePath(path);
 };

@@ -385,6 +385,21 @@ describe('app->buildApp', (): void => {
       ]);
       expect(response.body.params).toEqual({ path: ['dir', 'sub'] });
     });
+
+    test('listDirectory, root', async (): Promise<void> => {
+      const app = buildApp();
+
+      const response = await request(app).get('/api/file/list/');
+
+      expect(mocked_lastChain).toEqual([
+        'headerMiddleware',
+        'corsMiddleware',
+        'logAccessMiddleware',
+        'directoryListingMiddleware',
+        'listDirectoryItemsHandler'
+      ]);
+      expect(response.body.params).toEqual({});
+    });
   });
 
   describe('handles control routes correctly', (): void => {
