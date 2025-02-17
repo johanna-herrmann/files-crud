@@ -24,7 +24,11 @@ const getDirectoryPermissions = function (directoryPermissions: Record<string, s
     }
     return 0;
   });
-  const key = sortedKeys.find((key) => path.replace(/^user_[^\/]*/, '$user') === key || path === key);
+  const key = sortedKeys.find((key) => {
+    const suffixedPath = path.replace('/+$', '') + '/';
+    const suffixedKey = key.replace('/+$', '') + '/';
+    return suffixedPath.startsWith(suffixedKey) || suffixedPath.replace(/^user_[^\/]*/, '$user').startsWith(suffixedKey);
+  });
   return key ? directoryPermissions[key] : undefined;
 };
 

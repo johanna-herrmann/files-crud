@@ -232,5 +232,13 @@ describe('getPermissions', (): void => {
       };
       await runTest(config, testUser, 'user_id42/sub/sub2/file', nullData, false, 'read', ['read']);
     });
+
+    test('with inheritance', async (): Promise<void> => {
+      const config = {
+        defaultPermissions: '000',
+        directoryPermissions: { dir: '040', 'dir/sub2': '000' }
+      };
+      await runTest(config, testUser, 'dir/sub', nullData, false, 'list', ['read']);
+    });
   });
 });
