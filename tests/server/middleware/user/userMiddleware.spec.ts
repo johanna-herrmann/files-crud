@@ -55,45 +55,51 @@ jest.mock('@/logging/index', () => {
   };
 });
 
-const passesIfAdmin = async function (action: string): Promise<void> {
+const passesIfAdmin = async function (action: string, idParam: string | undefined, idInBody: string | undefined): Promise<void> {
   data.user_[0] = { ...testUser, admin: true };
   let next = false;
-  const req = buildRequestForUserAction('valid_admin_token', action, undefined, {});
+  const req = buildRequestForUserAction('valid_admin_token', action, idParam, { id: idInBody });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
 
   assertPass(next, res);
+  if (idParam || !!idInBody) {
+    const id = idParam ?? idInBody ?? [];
+    expect(req.body.id).toBe(id === 'self' ? testUser.id : id);
+  }
 };
 
-const passesIfSelf = async function (action: string, idParam: boolean): Promise<void> {
+const passesIfSelf = async function (action: string, idParam: string | undefined, idInBody: string | undefined): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const id = testUser.id;
-  const body = idParam ? {} : { id };
-  const req = buildRequestForUserAction('valid_user_token', action, idParam ? id : undefined, body);
+  const req = buildRequestForUserAction('valid_user_token', action, idParam, { id: idInBody });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
 
   assertPass(next, res);
+  if (!!idParam || !!idInBody) {
+    expect(req.body.id).toBe(testUser.id);
+  }
 };
 
 const passesIfSelfAndValidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { id: testUser.id, oldPassword: 'passwordOK' });
+  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { id: 'self', oldPassword: 'passwordOK' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
 
   assertPass(next, res);
+  expect(req.body.id).toBe(testUser.id);
 };
 
 const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
   data.user_[0] = { ...testUser, admin: false };
   let next = false;
-  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { id: testUser.id, oldPassword: 'invalid' });
+  const req = buildRequestForUserAction('valid_user_token', 'change-password', undefined, { id: 'self', oldPassword: 'invalid' });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
@@ -150,7 +156,7 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('add');
+      await passesIfAdmin('add', undefined, undefined);
     });
 
     test('rejects if logged-in user is not admin.', async (): Promise<void> => {
@@ -168,7 +174,7 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('set-admin');
+      await passesIfAdmin('set-admin', undefined, testUser.id);
     });
 
     test('rejects if logged-in user is not admin.', async (): Promise<void> => {
@@ -186,7 +192,7 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('list');
+      await passesIfAdmin('list', undefined, undefined);
     });
 
     test('rejects if logged-in user is not admin.', async (): Promise<void> => {
@@ -204,13 +210,13 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('change-username');
+      await passesIfAdmin('change-username', undefined, testUser.id);
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('change-username', false);
+      await passesIfSelf('change-username', undefined, 'self');
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
@@ -228,13 +234,13 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('save-meta');
+      await passesIfAdmin('save-meta', testUser.id, undefined);
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('save-meta', false);
+      await passesIfSelf('save-meta', 'self', undefined);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
@@ -252,13 +258,13 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('load-meta');
+      await passesIfAdmin('load-meta', testUser.id, undefined);
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('load-meta', false);
+      await passesIfSelf('load-meta', 'self', undefined);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
@@ -276,13 +282,13 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('one');
+      await passesIfAdmin('one', testUser.id, undefined);
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('one', true);
+      await passesIfSelf('one', 'self', undefined);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
@@ -300,13 +306,13 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('delete');
+      await passesIfAdmin('delete', testUser.id, undefined);
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('delete', true);
+      await passesIfSelf('delete', 'self', undefined);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
@@ -324,7 +330,7 @@ describe('userMiddleware', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('change-password');
+      await passesIfAdmin('change-password', undefined, 'other');
     });
 
     test('passes if self and valid password.', async (): Promise<void> => {

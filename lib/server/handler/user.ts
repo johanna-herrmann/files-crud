@@ -89,7 +89,7 @@ const setAdminStateHandler = async function (req: Request, res: express.Response
 const saveMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
-  const id = (req.params as Record<string, unknown>).id;
+  const id = body.id ?? '';
   const { meta } = body;
 
   await saveMeta(id as string, (meta ?? {}) as Record<string, unknown>);
@@ -116,7 +116,7 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
 
 const deleteUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const id = (req.params as Record<string, unknown>).id;
+  const id = req.body.id ?? '';
 
   await deleteUser(id as string);
 
@@ -126,7 +126,7 @@ const deleteUserHandler = async function (req: Request, res: express.Response): 
 
 const loadMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const id = (req.params as Record<string, unknown>).id;
+  const id = req.body.id ?? '';
 
   const meta = await loadMeta(id as string);
 
@@ -136,7 +136,7 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 
 const getUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const id = (req.params as Record<string, unknown>).id ?? '-';
+  const id = req.body.id ?? '';
 
   const user = await getUser(id as string);
 

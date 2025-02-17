@@ -5,6 +5,13 @@ import Request from '@/types/server/Request';
 import { getToken, sendUnauthorized } from '@/server/util';
 import { getFullConfig } from '@/config/config';
 
+const getActualId = function (user: User, req: Request): string {
+  const idFromParams = req.params.id as string | undefined;
+  const idFromBody = req.body.id as string | undefined;
+  const idOrSelf = idFromParams ?? idFromBody ?? '[]';
+  return idOrSelf === 'self' ? user.id : idOrSelf;
+};
+
 const isSelfAction = function (user: User, id: string): boolean {
   return user.id === id;
 };
@@ -39,13 +46,14 @@ const userMiddleware = async function (req: Request, res: express.Response, next
     return sendUnauthorized(res, 'You have to be logged in');
   }
 
-  const { action, id } = req.params;
-  const body = req.body;
-  if (isAdminAction(user, action, id ?? (body.id as string) ?? '[]')) {
+  const { action } = req.params;
+  const id = getActualId(user, req);
+  req.body.id = id;
+  if (isAdminAction(user, action, id)) {
     return handleAdminAction(user.admin, res, next);
   }
-  if (isSelfPasswordChange(user, action, id ?? (body.id as string) ?? '')) {
-    return await handleSelfPasswordChange(user.username, (body.oldPassword as string) ?? '', res, next);
+  if (isSelfPasswordChange(user, action, id)) {
+    return await handleSelfPasswordChange(user.username, (req.body.oldPassword as string) ?? '', res, next);
   }
 
   next();

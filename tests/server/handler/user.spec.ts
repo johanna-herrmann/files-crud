@@ -277,7 +277,7 @@ describe('user handlers', (): void => {
   describe('saveMetaHandler', (): void => {
     test('saves meta', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'save-meta', id, { meta: newMeta });
+      const req = buildRequestForUserAction('valid_admin_token', 'save-meta', id, { id, meta: newMeta });
       const res = buildResponse();
 
       await saveMetaHandler(req, res);
@@ -290,7 +290,7 @@ describe('user handlers', (): void => {
   describe('loadMetaHandler', (): void => {
     test('loads meta', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'load-meta', id, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'load-meta', id, { id });
       const res = buildResponse();
 
       await loadMetaHandler(req, res);
@@ -302,7 +302,7 @@ describe('user handlers', (): void => {
   describe('getUserHandler', (): void => {
     test('gets user dto', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'one', id, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'one', id, { id });
       const res = buildResponse();
 
       await getUserHandler(req, res);
@@ -333,7 +333,7 @@ describe('user handlers', (): void => {
     test('deletes user', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
       data.user_[1] = { ...testUser, username: 'other' };
-      const req = buildRequestForUserAction('valid_admin_token', 'one', id, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'one', id, { id });
       const res = buildResponse();
 
       await deleteUserHandler(req, res);
