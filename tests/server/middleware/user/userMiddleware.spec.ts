@@ -278,51 +278,51 @@ describe('userMiddleware', (): void => {
     });
   });
 
-  describe('route one', (): void => {
+  describe('route load', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('one', testUser.id, undefined);
+      await passesIfAdmin('load', testUser.id, undefined);
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('one', 'self', undefined);
+      await passesIfSelf('load', 'self', undefined);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await rejectsIfForeign('one', true);
+      await rejectsIfForeign('load', true);
     });
 
     test('rejects on public call.', async (): Promise<void> => {
-      await rejectsIfPublic('one');
+      await rejectsIfPublic('load');
     });
   });
 
-  describe('route delete', (): void => {
+  describe('route remove', (): void => {
     test('passes if logged-in user is admin.', async (): Promise<void> => {
       mocked_token = 'valid_admin_token';
       mocked_user = { ...testUser, admin: true };
-      await passesIfAdmin('delete', testUser.id, undefined);
+      await passesIfAdmin('remove', testUser.id, undefined);
     });
 
     test('passes if self.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await passesIfSelf('delete', 'self', undefined);
+      await passesIfSelf('remove', 'self', undefined);
     });
 
     test('rejects if foreign.', async (): Promise<void> => {
       mocked_token = 'valid_user_token';
       mocked_user = { ...testUser, admin: false };
-      await rejectsIfForeign('delete', true);
+      await rejectsIfForeign('remove', true);
     });
 
     test('rejects on public call.', async (): Promise<void> => {
-      await rejectsIfPublic('delete');
+      await rejectsIfPublic('remove');
     });
   });
 

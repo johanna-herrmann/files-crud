@@ -232,13 +232,13 @@ describe('app->buildApp', (): void => {
       expect(response.body.params).toEqual({ id: 'id' });
     });
 
-    test('delete', async (): Promise<void> => {
+    test('remove', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).delete('/api/user/delete/id');
+      const response = await request(app).delete('/api/user/remove/id');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'deleteUserHandler']);
-      expect(mocked_lastAction).toBe('delete');
+      expect(mocked_lastAction).toBe('remove');
       expect(mocked_lastId).toBe('id');
       expect(response.body.params).toEqual({ id: 'id' });
     });
@@ -254,13 +254,13 @@ describe('app->buildApp', (): void => {
       expect(response.body.params).toEqual({ id: 'id' });
     });
 
-    test('one', async (): Promise<void> => {
+    test('load', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/api/user/one/id');
+      const response = await request(app).get('/api/user/load/id');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUserHandler']);
-      expect(mocked_lastAction).toBe('one');
+      expect(mocked_lastAction).toBe('load');
       expect(mocked_lastId).toBe('id');
       expect(response.body.params).toEqual({ id: 'id' });
     });
@@ -276,10 +276,10 @@ describe('app->buildApp', (): void => {
   });
 
   describe('handles file routes correctly', (): void => {
-    test('saveFile', async (): Promise<void> => {
+    test('upload', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).post('/api/file/save/dir/file');
+      const response = await request(app).post('/api/file/upload/dir/file');
 
       expect(mocked_lastChain).toEqual([
         'headerMiddleware',
@@ -323,10 +323,10 @@ describe('app->buildApp', (): void => {
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileMoveMiddleware', 'moveFileHandler']);
     });
 
-    test('deleteFile', async (): Promise<void> => {
+    test('removeFile', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).delete('/api/file/delete/dir/file');
+      const response = await request(app).delete('/api/file/remove/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileDeleteMiddleware', 'deleteFileHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
@@ -362,10 +362,10 @@ describe('app->buildApp', (): void => {
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });
     });
 
-    test('loadFile', async (): Promise<void> => {
+    test('download', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/api/file/one/dir/file');
+      const response = await request(app).get('/api/file/download/dir/file');
 
       expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileLoadMiddleware', 'loadFileHandler']);
       expect(response.body.params).toEqual({ path: ['dir', 'file'] });

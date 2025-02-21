@@ -77,7 +77,7 @@ describe('fileDeleteMiddleware', () => {
           './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'delete', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'remove', `${directory}/file`, {});
         const res = buildResponse();
 
         await fileDeleteMiddleware(req, res, () => (next = true));
@@ -119,7 +119,7 @@ describe('fileDeleteMiddleware', () => {
         };
         loadConfig({ defaultPermissions: levels[level] });
         let next = false;
-        const req = buildRequestForFileAction(token, 'delete', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'remove', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
           './files': { [directory]: { file: '' } },

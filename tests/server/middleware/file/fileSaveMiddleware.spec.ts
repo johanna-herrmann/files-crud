@@ -77,7 +77,7 @@ describe('fileSaveMiddleware', () => {
           './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
         const res = buildResponse();
 
         await fileSaveMiddleware(req, res, () => (next = true));
@@ -124,7 +124,7 @@ describe('fileSaveMiddleware', () => {
           }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
         const res = buildResponse();
 
         await fileSaveMiddleware(req, res, () => (next = true));
@@ -167,7 +167,7 @@ describe('fileSaveMiddleware', () => {
         };
         loadConfig({ defaultPermissions: levels[level] });
         let next = false;
-        const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
           './files': { [directory]: { file: '' } },
@@ -199,7 +199,7 @@ describe('fileSaveMiddleware', () => {
     describe('if create permission is not given', (): void => {
       const rejectsIfCreatePermissionIsNotGiven = async function (level: string, token: string, directory: string) {
         let next = false;
-        const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
         const res = buildResponse();
         const levels: Record<string, string> = {
           owner: '7ff',

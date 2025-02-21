@@ -77,7 +77,7 @@ describe('loadMiddleware', () => {
           './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'load', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'download', `${directory}/file`, {});
         const res = buildResponse();
 
         await loadMiddleware(req, res, () => (next = true));
@@ -119,7 +119,7 @@ describe('loadMiddleware', () => {
         };
         loadConfig({ defaultPermissions: levels[level] });
         let next = false;
-        const req = buildRequestForFileAction(token, 'load', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'download', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
           './files': { [directory]: { file: '' } },

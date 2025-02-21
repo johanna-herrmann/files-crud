@@ -67,20 +67,20 @@ const buildApp = function (noFallbacks?: boolean): express.Application {
   app.post('/api/user/change-username', changeUsernameHandler);
   app.post('/api/user/change-password', changePasswordHandler);
   app.post('/api/user/save-meta/:id', saveUserMetaHandler);
-  app.delete('/api/user/delete/:id', deleteUserHandler);
+  app.delete('/api/user/remove/:id', deleteUserHandler);
   app.get('/api/user/load-meta/:id', loadUserMetaHandler);
-  app.get('/api/user/one/:id', getUserHandler);
+  app.get('/api/user/load/:id', getUserHandler);
   app.get('/api/user/list', getUsersHandler);
 
   // file routes
-  app.post('/api/file/save/*path', fileSaveMiddleware, uploadFileMiddleware, saveFileHandler);
+  app.post('/api/file/upload/*path', fileSaveMiddleware, uploadFileMiddleware, saveFileHandler);
   app.post('/api/file/save-meta/*path', fileSaveMetaMiddleware, saveFileMetaHandler);
   app.post('/api/file/copy', fileCopyMiddleware, copyFileHandler);
   app.post('/api/file/move', fileMoveMiddleware, moveFileHandler);
-  app.delete('/api/file/delete/*path', fileDeleteMiddleware, deleteFileHandler);
+  app.delete('/api/file/remove/*path', fileDeleteMiddleware, deleteFileHandler);
   app.get('/api/file/load-meta/*path', fileLoadMetaMiddleware, loadFileMetaHandler);
   app.get('/api/file/load-data/*path', fileLoadDataMiddleware, loadFileDataHandler);
-  app.get('/api/file/one/*path', fileLoadMiddleware, loadFileHandler);
+  app.get('/api/file/download/*path', fileLoadMiddleware, loadFileHandler);
   app.get('/api/file/list/{*path}', directoryListingMiddleware, listDirectoryItemsHandler);
 
   // control routes
