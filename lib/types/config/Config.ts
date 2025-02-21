@@ -14,6 +14,7 @@ interface Config {
   tokens?: string[];
   directoryPermissions?: Record<string, string>;
   defaultPermissions?: string;
+  publicFileOwner?: 'all' | 'none';
   server?: ServerConfig;
   tokenExpiresInSeconds?: number;
   webRoot?: string;

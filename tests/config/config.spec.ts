@@ -189,6 +189,7 @@ describe('config', (): void => {
       register: 'admin',
       directoryPermissions: {},
       defaultPermissions: 'crudcr------',
+      publicFileOwner: 'all',
       tokenExpiresInSeconds: 1_800
     });
   });

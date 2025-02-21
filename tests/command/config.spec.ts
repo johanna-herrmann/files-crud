@@ -151,7 +151,7 @@ describe('command: config', (): void => {
 
     showConfig('properties', true);
 
-    expect((printings[0] as string).split('\n').length).toBe(28);
+    expect((printings[0] as string).split('\n').length).toBe(29);
     expect(channels).toEqual(['out']);
   });
 });

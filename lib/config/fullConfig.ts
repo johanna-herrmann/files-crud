@@ -147,6 +147,7 @@ const loadFullConfig = function (config: Config): Config {
     tokens: register === 'token' ? (config.tokens ?? []) : undefined,
     directoryPermissions: loadDirectoryPermissions(config),
     defaultPermissions: config.defaultPermissions ?? 'crudcr------',
+    publicFileOwner: config.publicFileOwner ?? 'all',
     server: loadServerConfig(config),
     tokenExpiresInSeconds: config.tokenExpiresInSeconds ?? 1_800,
     webRoot: config.webRoot

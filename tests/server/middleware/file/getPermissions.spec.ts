@@ -66,8 +66,12 @@ describe('getPermissions', (): void => {
       await runTest({}, testUser, 'file', ownerData, true, 'update', ['create', 'read', 'update', 'delete']);
     });
 
-    test('returns [create, read, update, delete] for owner, file, public', async (): Promise<void> => {
+    test('returns [create, read, update, delete] for owner, file, public=all', async (): Promise<void> => {
       await runTest({}, null, 'file', publicOwnerData, true, 'update', ['create', 'read', 'update', 'delete']);
+    });
+
+    test('returns [create, read, update, delete] for owner, file, public=none', async (): Promise<void> => {
+      await runTest({ publicFileOwner: 'none' }, null, 'file', publicOwnerData, true, 'update', []);
     });
 
     test('returns [create, read] for user', async (): Promise<void> => {
