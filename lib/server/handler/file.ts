@@ -11,7 +11,8 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
   const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
-  const { meta, owner } = await storage.loadData(path);
+  const { meta, owner: givenOwner } = await storage.loadData(path);
+  const owner = givenOwner ?? (req.body.userId as string);
   const files = (req as UploadRequest).files as Files;
   const key = Object.keys(files).at(0) ?? 'file';
   const { data: content, mimetype, md5 } = files[key];
@@ -22,7 +23,7 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
     contentType: actualMimetype,
     size,
     md5,
-    owner: owner ?? (req.body.userId as string),
+    owner,
     meta
   };
 

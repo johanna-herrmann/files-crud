@@ -74,7 +74,7 @@ const getPermissions = function (user: User | null, path: string, data: FileData
     return ['create', 'read', 'update', 'delete'];
   }
 
-  if (exists && data?.owner === user?.id && isFileOperation(operation)) {
+  if (exists && (data?.owner === 'public' || data?.owner === user?.id) && isFileOperation(operation)) {
     return parsePermissions(permissions, 'owner');
   }
 

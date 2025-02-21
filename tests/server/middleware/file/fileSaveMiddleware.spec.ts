@@ -83,11 +83,11 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.userId).toBe(mocked_user?.id ?? '-');
+        expect(req.body.userId).toBe(mocked_user?.id ?? 'public');
       };
 
       test('for public.', async (): Promise<void> => {
-        await passesIfUpdatePermissionIsGiven('public', 'token', 'owner', 'dir');
+        await passesIfUpdatePermissionIsGiven('public', 'public', 'owner', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {
@@ -130,11 +130,11 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.userId).toBe(mocked_user?.id ?? '-');
+        expect(req.body.userId).toBe(mocked_user?.id ?? 'public');
       };
 
       test('for public.', async (): Promise<void> => {
-        await passesIfCreatePermissionIsGiven('public', 'token', 'dir');
+        await passesIfCreatePermissionIsGiven('public', 'public', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {
@@ -180,7 +180,7 @@ describe('fileSaveMiddleware', () => {
       };
 
       test('for public.', async (): Promise<void> => {
-        await rejectsIfUpdatePermissionIsNotGiven('public', 'token', 'owner', 'dir');
+        await rejectsIfUpdatePermissionIsNotGiven('public', 'public', 'owner', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {
@@ -220,7 +220,7 @@ describe('fileSaveMiddleware', () => {
       };
 
       test('for public.', async (): Promise<void> => {
-        await rejectsIfCreatePermissionIsNotGiven('public', 'token', 'dir');
+        await rejectsIfCreatePermissionIsNotGiven('public', 'public', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {

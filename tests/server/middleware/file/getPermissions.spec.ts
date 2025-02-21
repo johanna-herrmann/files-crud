@@ -9,6 +9,7 @@ import Right from '@/types/config/Right';
 
 const ownerPath = `user_${testUser.id}/file`;
 const ownerData = { owner: testUser.id, meta: {}, contentType: '', size: 42, md5: '0'.repeat(32) };
+const publicOwnerData = { ...ownerData, owner: 'public' };
 const nullData: FileData = { owner: '', meta: {}, contentType: '', size: -1, md5: '' };
 const admin = { ...testUser, admin: true };
 
@@ -65,6 +66,10 @@ describe('getPermissions', (): void => {
       await runTest({}, testUser, 'file', ownerData, true, 'update', ['create', 'read', 'update', 'delete']);
     });
 
+    test('returns [create, read, update, delete] for owner, file, public', async (): Promise<void> => {
+      await runTest({}, null, 'file', publicOwnerData, true, 'update', ['create', 'read', 'update', 'delete']);
+    });
+
     test('returns [create, read] for user', async (): Promise<void> => {
       await runTest({}, testUser, 'file', nullData, false, 'read', ['create', 'read']);
     });
@@ -88,6 +93,10 @@ describe('getPermissions', (): void => {
       await runTest({ defaultPermissions: '100' }, testUser, 'file', ownerData, true, 'update', ['delete']);
     });
 
+    test('returns [delete] for owner, file, public', async (): Promise<void> => {
+      await runTest({ defaultPermissions: '100' }, null, 'file', publicOwnerData, true, 'update', ['delete']);
+    });
+
     test('returns [delete] for user', async (): Promise<void> => {
       await runTest({ defaultPermissions: '010' }, testUser, 'file', nullData, false, 'read', ['delete']);
     });
@@ -109,6 +118,10 @@ describe('getPermissions', (): void => {
 
     test('returns [delete] for owner, file', async (): Promise<void> => {
       await runTest(buildDirectoryPermissions(0), testUser, 'dir/file', ownerData, true, 'update', ['delete']);
+    });
+
+    test('returns [delete] for owner, file, public', async (): Promise<void> => {
+      await runTest(buildDirectoryPermissions(0), null, 'dir/file', publicOwnerData, true, 'update', ['delete']);
     });
 
     test('returns [delete] for user', async (): Promise<void> => {
