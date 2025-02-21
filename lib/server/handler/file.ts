@@ -5,13 +5,16 @@ import { loadStorage } from '@/storage';
 import { loadLogger } from '@/logging';
 import Request from '@/types/server/Request';
 import UploadRequest from '@/types/server/UploadRequest';
+import Files from '@/types/server/Files';
 
 const saveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
   const { meta, owner } = await storage.loadData(path);
-  const { data: content, mimetype, md5 } = (req as UploadRequest).files.file;
+  const files = (req as UploadRequest).files as Files;
+  const key = Object.keys(files).at(0) ?? 'file';
+  const { data: content, mimetype, md5 } = files[key];
   const headerMimetype = req.header('X-Mimetype');
   const actualMimetype = headerMimetype ?? mimetype;
   const size = content.length;

@@ -68,21 +68,24 @@ const buildFSMock = function (files: DirectoryItem, data: DirectoryItem): void {
   });
 };
 
-const buildUploadRequest = function (data: Buffer, mimetype: string, md5: string): UploadRequest {
+const buildUploadRequest = function (data: Buffer, mimetype: string, md5: string, key?: string): UploadRequest {
   const req = buildRequestForFileAction('', 'save', 'dir/file', { userId: testUser.id });
-  return {
+  const reqWithHeaders = {
     ...req,
+    header(name: string) {
+      return this.headers[name];
+    }
+  };
+  return {
+    ...reqWithHeaders,
     files: {
-      file: {
+      [key ?? 'file']: {
         data,
         mimetype,
         md5
       }
-    },
-    header(name: string) {
-      return this.headers[name];
     }
-  } as UploadRequest;
+  } as unknown as UploadRequest;
 };
 
 const buildDownloadRequest = function (): UploadRequest {
@@ -119,7 +122,7 @@ describe('file handlers', (): void => {
   });
 
   describe('saveHandler', (): void => {
-    test('saves file, mimetype from files attribute, create', async (): Promise<void> => {
+    test('saves file, mimetype from files attribute, create, default key', async (): Promise<void> => {
       const data = {
         owner: testUser.id,
         contentType: 'text/plain',
@@ -127,6 +130,25 @@ describe('file handlers', (): void => {
         md5: 'testMD5'
       };
       const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain', 'testMD5');
+      const res = buildResponse();
+
+      await saveHandler(req, res);
+
+      expect(await exists('./files/dir/file')).toBe(true);
+      expect(await exists('./data/dir~file')).toBe(true);
+      expect(await fs.readFile('./files/dir/file', 'utf8')).toBe('test content');
+      expect(JSON.parse(await fs.readFile('./data/dir~file', 'utf8'))).toEqual(data);
+      assertOK(res, { path: 'dir/file' });
+    });
+
+    test('saves file, mimetype from files attribute, create, custom key', async (): Promise<void> => {
+      const data = {
+        owner: testUser.id,
+        contentType: 'text/plain',
+        size: 12,
+        md5: 'testMD5'
+      };
+      const req = buildUploadRequest(Buffer.from('test content', 'utf8'), 'text/plain', 'testMD5', 'custom');
       const res = buildResponse();
 
       await saveHandler(req, res);
