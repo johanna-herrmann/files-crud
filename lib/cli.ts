@@ -74,10 +74,10 @@ program
   .description('Creates an admin user.')
   .option('-u, --username <username>', 'Username of the user to create. Will be chosen randomly if not provided')
   .option('-p, --password <password>', 'Password of the user to create. Will be chosen randomly if not provided')
-  .action(({ username, password }: { username?: string; password?: string }) => {
+  .action(async ({ username, password }: { username?: string; password?: string }) => {
     setEnvPrefix(program.optsWithGlobals().envPrefix);
     loadConfig();
-    createAdmin({ username, password }).then();
+    await createAdmin({ username, password });
   });
 
 // define config subcommand
