@@ -1,12 +1,13 @@
 import paths from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
+import fse from 'fs-extra';
 import { getFullConfig } from '@/config/config';
+import { getLogger } from '@/logging';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import StorageType from '@/types/storage/StorageType';
 import FileData from '@/types/storage/FileData';
-import { getLogger } from '@/logging';
 
 const removeTilde = function (path: string): string {
   return path.replace(/~/gu, '-');
@@ -109,6 +110,8 @@ class Storage implements StorageType {
   }
 
   public async isDirectory(path: string): Promise<boolean> {
+    await fse.ensureDir(paths.join(this.directory, 'files'));
+    await fse.ensureDir(paths.join(this.directory, 'data'));
     if (!(await this.exists(path))) {
       return false;
     }

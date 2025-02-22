@@ -51,8 +51,7 @@ const checkPathIntegrity = async function (path: string): Promise<undefined | 1>
     return await checkDirectoryIntegrity(path);
   }
 
-  const message = path ? `${path} does not exist` : 'Storage not initialized or not found';
-  printer.printError(`Error: ${message}.`);
+  printer.printError(`Error: ${path} does not exist.`);
   return 1;
 };
 

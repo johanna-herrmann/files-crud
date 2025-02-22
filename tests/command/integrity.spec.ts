@@ -129,13 +129,17 @@ describe('command: integrity', (): void => {
     expect(channels).toEqual(['out', 'err']);
   });
 
-  test('gives error, if it does not exist, default path', async (): Promise<void> => {
+  test('gives empty result on empty storage', async (): Promise<void> => {
     mockFS({});
 
     await checkIntegrity('');
 
-    expect(printings).toEqual(['Starting check...\n', `${RED_START}Error: Storage not initialized or not found.${END}\n`]);
-    expect(channels).toEqual(['out', 'err']);
+    expect(printings).toEqual([
+      'Starting check...\n',
+      'Finished check\n',
+      `total: 0\nvalid: ${GREEN_START}0${END}\ninvalid: ${RED_START}0${END}\nerrors: ${RED_START}0${END}\n`
+    ]);
+    expect(channels).toEqual(['out', 'out', 'out']);
   });
 
   test('fails correctly on errors', async (): Promise<void> => {
