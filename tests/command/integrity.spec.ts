@@ -134,11 +134,11 @@ describe('command: integrity', (): void => {
 
     await checkIntegrity('');
 
-    expect(printings).toEqual(['Starting check...\n', `${RED_START}Error: . does not exist.${END}\n`]);
+    expect(printings).toEqual(['Starting check...\n', `${RED_START}Error: Storage not initialized or not found.${END}\n`]);
     expect(channels).toEqual(['out', 'err']);
   });
 
-  test('fails correctly', async (): Promise<void> => {
+  test('fails correctly on errors', async (): Promise<void> => {
     const error = new Error('failed successfully');
     outSpy = jest.spyOn(stdout, 'write').mockImplementation((message: string | Uint8Array): boolean => {
       printings.push(message);
