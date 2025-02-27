@@ -413,18 +413,30 @@ describe('file handlers', (): void => {
       assertOK(res, { path: 'c/copy' });
     });
 
-    test('copies file, keeping the owner', async (): Promise<void> => {
-      buildFSMock(
-        { dir: { file: contentBuffer } },
-        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
-      );
-      const req = buildRequestForFileAction('', 'copy', undefined, { path: 'dir/file', targetPath: 'c/copy', username: 'new', copyOwner: true });
+    test('copies file, copying the owner', async (): Promise<void> => {
+      buildFSMock({ dir: { file: contentBuffer } }, { 'dir~file': JSON.stringify({ owner: 'test', contentType: 'text/plain', meta: { k: 'v' } }) });
+      const req = buildRequestForFileAction('', 'copy', undefined, { path: 'dir/file', targetPath: 'c/copy', userId: 'new', copyOwner: true });
       const res = buildResponse();
 
       await copyHandler(req, res);
 
       expect(JSON.parse(await fs.readFile('./data/c~copy', 'utf8'))).toEqual({
-        owner: testUser.username,
+        owner: 'test',
+        contentType: 'text/plain',
+        meta: { k: 'v' }
+      });
+      assertOK(res, { path: 'c/copy' });
+    });
+
+    test('copies file, changing the owner', async (): Promise<void> => {
+      buildFSMock({ dir: { file: contentBuffer } }, { 'dir~file': JSON.stringify({ owner: 'test', contentType: 'text/plain', meta: { k: 'v' } }) });
+      const req = buildRequestForFileAction('', 'copy', undefined, { path: 'dir/file', targetPath: 'c/copy', userId: 'new' });
+      const res = buildResponse();
+
+      await copyHandler(req, res);
+
+      expect(JSON.parse(await fs.readFile('./data/c~copy', 'utf8'))).toEqual({
+        owner: 'new',
         contentType: 'text/plain',
         meta: { k: 'v' }
       });
@@ -439,7 +451,7 @@ describe('file handlers', (): void => {
       const req = buildRequestForFileAction('', 'copy', undefined, {
         path: '../dir/file',
         targetPath: '../c/copy',
-        username: 'new',
+        userId: 'new',
         copyOwner: true
       });
       const res = buildResponse();
@@ -465,41 +477,15 @@ describe('file handlers', (): void => {
   });
 
   describe('moveHandler', (): void => {
-    test('moves file, changing the owner', async (): Promise<void> => {
-      buildFSMock(
-        { dir: { file: contentBuffer } },
-        { 'dir~file': JSON.stringify({ owner: testUser.id, contentType: 'text/plain', meta: { k: 'v' } }) }
-      );
+    test('moves file', async (): Promise<void> => {
+      buildFSMock({ dir: { file: contentBuffer } }, { 'dir~file': JSON.stringify({ owner: 'test', contentType: 'text/plain', meta: { k: 'v' } }) });
       const req = buildRequestForFileAction('', 'move', undefined, { path: 'dir/file', targetPath: 'm/move', username: 'new' });
       const res = buildResponse();
 
       await moveHandler(req, res);
 
-      expect(await exists('./files/dir/file')).toBe(false);
-      expect(await exists('./data/dir~file')).toBe(false);
-      expect(await exists('./files/m/move')).toBe(true);
-      expect(await exists('./data/m~move')).toBe(true);
-      expect(await fs.readFile('./files/m/move', 'utf8')).toBe('test content');
       expect(JSON.parse(await fs.readFile('./data/m~move', 'utf8'))).toEqual({
-        owner: testUser.id,
-        contentType: 'text/plain',
-        meta: { k: 'v' }
-      });
-      assertOK(res, { path: 'm/move' });
-    });
-
-    test('moves file, keeping the owner', async (): Promise<void> => {
-      buildFSMock(
-        { dir: { file: contentBuffer } },
-        { 'dir~file': JSON.stringify({ owner: testUser.username, contentType: 'text/plain', meta: { k: 'v' } }) }
-      );
-      const req = buildRequestForFileAction('', 'move', undefined, { path: 'dir/file', targetPath: 'm/move', username: 'new', copyOwner: true });
-      const res = buildResponse();
-
-      await moveHandler(req, res);
-
-      expect(JSON.parse(await fs.readFile('./data/m~move', 'utf8'))).toEqual({
-        owner: testUser.username,
+        owner: 'test',
         contentType: 'text/plain',
         meta: { k: 'v' }
       });

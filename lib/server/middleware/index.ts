@@ -8,7 +8,7 @@ import {
   directoryListingMiddleware,
   existsMiddleware
 } from './file/file';
-import { fileCopyMoveMiddleware } from './file/copyMove';
+import { fileCopyMiddleware, fileMoveMiddleware } from './file/copyMove';
 import { logAccessMiddleware } from './access';
 import { corsMiddleware } from './cors';
 import { staticMiddleware } from './static';
@@ -20,8 +20,6 @@ import { errorMiddleware } from './error';
 const fileLoadMiddleware = loadMiddleware;
 const fileLoadMetaMiddleware = loadMiddleware;
 const fileLoadDataMiddleware = loadMiddleware;
-const fileCopyMiddleware = fileCopyMoveMiddleware;
-const fileMoveMiddleware = fileCopyMoveMiddleware;
 
 export {
   userMiddleware,
