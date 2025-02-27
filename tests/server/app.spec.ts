@@ -400,6 +400,24 @@ describe('app->buildApp', (): void => {
       ]);
       expect(response.body.params).toEqual({});
     });
+
+    test('file-exists', async (): Promise<void> => {
+      const app = buildApp();
+
+      const response = await request(app).get('/api/file/file-exists/dir/file');
+
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'existsMiddleware', 'fileExistsHandler']);
+      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
+    });
+
+    test('directory-exists', async (): Promise<void> => {
+      const app = buildApp();
+
+      const response = await request(app).get('/api/file/directory-exists/dir');
+
+      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'existsMiddleware', 'directoryExistsHandler']);
+      expect(response.body.params).toEqual({ path: ['dir'] });
+    });
   });
 
   describe('handles control routes correctly', (): void => {

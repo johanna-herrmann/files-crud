@@ -11,7 +11,9 @@ import {
   loadMetaHandler,
   moveHandler,
   saveHandler,
-  saveMetaHandler
+  saveMetaHandler,
+  directoryExistsHandler,
+  fileExistsHandler
 } from '@/server/handler/file';
 import { DirectoryItem } from 'mock-fs/lib/filesystem';
 import fs from 'fs/promises';
@@ -591,6 +593,50 @@ describe('file handlers', (): void => {
       await listHandler(req, res);
 
       assertError(res, 'Directory dir does not exist');
+    });
+  });
+
+  describe('fileExistsHandler', (): void => {
+    test('says, file exists, if it exists.', async (): Promise<void> => {
+      buildFSMock({ dir: { file: '' } }, {});
+      const req = buildRequestForFileAction('', 'list', 'dir/file', {});
+      const res = buildResponse();
+
+      await fileExistsHandler(req, res);
+
+      assertOK(res, { path: 'dir/file', exists: true });
+    });
+
+    test('says, file does not exist, if it does not exist.', async (): Promise<void> => {
+      buildFSMock({ dir: { file: '' } }, {});
+      const req = buildRequestForFileAction('', 'list', 'dir/other', {});
+      const res = buildResponse();
+
+      await fileExistsHandler(req, res);
+
+      assertOK(res, { path: 'dir/other', exists: false });
+    });
+  });
+
+  describe('directoryExistsHandler', (): void => {
+    test('says, directory exists, if it exists.', async (): Promise<void> => {
+      buildFSMock({ dir: { file: '' } }, {});
+      const req = buildRequestForFileAction('', 'list', 'dir', {});
+      const res = buildResponse();
+
+      await directoryExistsHandler(req, res);
+
+      assertOK(res, { path: 'dir', exists: true });
+    });
+
+    test('says, directory does not exist, if it does not exist.', async (): Promise<void> => {
+      buildFSMock({ dir: { file: '' } }, {});
+      const req = buildRequestForFileAction('', 'list', 'other', {});
+      const res = buildResponse();
+
+      await directoryExistsHandler(req, res);
+
+      assertOK(res, { path: 'other', exists: false });
     });
   });
 });

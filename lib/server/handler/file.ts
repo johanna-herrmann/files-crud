@@ -176,4 +176,38 @@ const listHandler = async function (req: Request, res: express.Response): Promis
   sendOK(res, { items });
 };
 
-export { saveHandler, loadHandler, saveMetaHandler, loadMetaHandler, loadDataHandler, copyHandler, moveHandler, deleteHandler, listHandler };
+const fileExistsHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
+  const storage = loadStorage();
+  const path = resolvePath(req);
+
+  const exists = await storage.isFile(path);
+
+  logger.info('Successfully checked if file exists.', { path, exists });
+  sendOK(res, { path, exists });
+};
+
+const directoryExistsHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
+  const storage = loadStorage();
+  const path = resolvePath(req);
+
+  const exists = await storage.isDirectory(path);
+
+  logger.info('Successfully checked if directory exists.', { path, exists });
+  sendOK(res, { path, exists });
+};
+
+export {
+  saveHandler,
+  loadHandler,
+  saveMetaHandler,
+  loadMetaHandler,
+  loadDataHandler,
+  copyHandler,
+  moveHandler,
+  deleteHandler,
+  listHandler,
+  fileExistsHandler,
+  directoryExistsHandler
+};

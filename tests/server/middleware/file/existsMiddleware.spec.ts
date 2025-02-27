@@ -1,10 +1,10 @@
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
 import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
-import { directoryListingMiddleware } from '@/server/middleware/file/file';
+import { existsMiddleware } from '@/server/middleware/file/file';
+import { Logger } from '@/logging/Logger';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import { Logger } from '@/logging/Logger';
 import User from '@/types/user/User';
 
 let mocked_token: string | null;
@@ -50,7 +50,7 @@ jest.mock('@/logging/index', () => {
   };
 });
 
-describe('directoryListingMiddleware', () => {
+describe('existsMiddleware', () => {
   beforeEach(async (): Promise<void> => {
     loadConfig();
   });
@@ -79,10 +79,10 @@ describe('directoryListingMiddleware', () => {
           }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'list', directory, {});
+        const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
         const res = buildResponse();
 
-        await directoryListingMiddleware(req, res, () => (next = true));
+        await existsMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
       };
@@ -121,7 +121,7 @@ describe('directoryListingMiddleware', () => {
         };
         loadConfig({ defaultPermissions: levels[level] });
         let next = false;
-        const req = buildRequestForFileAction(token, 'list', directory, {});
+        const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
           '/opt/files-crud': {
@@ -130,9 +130,9 @@ describe('directoryListingMiddleware', () => {
           }
         });
 
-        await directoryListingMiddleware(req, res, () => (next = true));
+        await existsMiddleware(req, res, () => (next = true));
 
-        assertUnauthorized(next, res, `You are not allowed to read ${directory}`);
+        assertUnauthorized(next, res, `You are not allowed to read ${directory}/file`);
       };
 
       test('for public.', async (): Promise<void> => {

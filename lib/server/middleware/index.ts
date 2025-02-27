@@ -1,6 +1,13 @@
 import { userMiddleware, registerMiddleware } from './user';
 import { uploadFileMiddleware } from './upload';
-import { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware } from './file/file';
+import {
+  loadMiddleware,
+  fileSaveMiddleware,
+  fileDeleteMiddleware,
+  fileSaveMetaMiddleware,
+  directoryListingMiddleware,
+  existsMiddleware
+} from './file/file';
 import { fileCopyMoveMiddleware } from './file/copyMove';
 import { logAccessMiddleware } from './access';
 import { corsMiddleware } from './cors';
@@ -27,6 +34,7 @@ export {
   fileLoadDataMiddleware,
   fileDeleteMiddleware,
   directoryListingMiddleware,
+  existsMiddleware,
   fileCopyMiddleware,
   fileMoveMiddleware,
   corsMiddleware,

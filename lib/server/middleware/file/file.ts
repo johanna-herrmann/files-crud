@@ -8,6 +8,7 @@ import { getPermissions } from '@/server/middleware/file/permissions';
 import User from '@/types/user/User';
 import Right from '@/types/config/Right';
 import FileData from '@/types/storage/FileData';
+import paths from 'path';
 
 const nullData: FileData = { owner: '', contentType: '', size: -1, md5: '0'.repeat(32) };
 
@@ -30,6 +31,19 @@ const checkForSingleFile = async function (
   const data = exists ? await storage.loadData(path) : nullData;
   const permissions = getPermissions(user, path, data, exists, requiredRight);
   return ensureRights(permissions, requiredRight, path, res);
+};
+
+const checkForListing = async function (req: Request, res: express.Response, next: express.NextFunction, parent: boolean): Promise<void> {
+  const storage = loadStorage();
+  const user = await authorize(getToken(req));
+  const path = resolvePath(req);
+  const directory = parent ? paths.dirname(paths.join(paths.sep, path)).substring(1) : path;
+  const exists = await storage.exists(path);
+  const permissions = getPermissions(user, directory, nullData, exists, 'list');
+  const allowed = ensureRights(permissions, 'read', path, res);
+  if (allowed) {
+    next();
+  }
 };
 
 const loadMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
@@ -80,15 +94,11 @@ const fileSaveMetaMiddleware = async function (req: Request, res: express.Respon
 };
 
 const directoryListingMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-  const storage = loadStorage();
-  const user = await authorize(getToken(req));
-  const path = resolvePath(req);
-  const exists = await storage.exists(path);
-  const permissions = getPermissions(user, path, nullData, exists, 'list');
-  const allowed = ensureRights(permissions, 'read', path, res);
-  if (allowed) {
-    next();
-  }
+  await checkForListing(req, res, next, false);
 };
 
-export { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware };
+const existsMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  await checkForListing(req, res, next, true);
+};
+
+export { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware, existsMiddleware };
