@@ -44,11 +44,16 @@ const checkDirectoryIntegrity = async function (directory: string): Promise<unde
 
 const checkPathIntegrity = async function (path: string): Promise<undefined | 1> {
   const storage: Storage = loadStorage();
-  if (await storage.isFile(path)) {
+  if (await storage.fileExists(path)) {
     return await checkFileIntegrity(path);
   }
-  if (await storage.isDirectory(path)) {
+  if (await storage.directoryExists(path)) {
     return await checkDirectoryIntegrity(path);
+  }
+
+  if (path === '') {
+    // at this place we know, storage is not initialized, so just get outta here, so integrity check can be just empty
+    return;
   }
 
   printer.printError(`Error: ${path} does not exist.`);

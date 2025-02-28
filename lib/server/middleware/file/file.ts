@@ -38,7 +38,7 @@ const checkForListing = async function (req: Request, res: express.Response, nex
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
   const directory = parent ? paths.dirname(paths.join(paths.sep, path)).substring(1) : path;
-  const exists = await storage.exists(path);
+  const exists = await storage.directoryExists(path);
   const permissions = getPermissions(user, directory, nullData, exists, 'list');
   const allowed = ensureRights(permissions, 'read', path, res);
   if (allowed) {
@@ -50,7 +50,7 @@ const loadMiddleware = async function (req: Request, res: express.Response, next
   const storage = loadStorage();
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
-  const exists = await storage.exists(path);
+  const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'read');
   if (allowed) {
     next();
@@ -61,7 +61,7 @@ const fileSaveMiddleware = async function (req: Request, res: express.Response, 
   const storage = loadStorage();
   const user = (req.body.user ?? (await authorize(getToken(req)))) as User;
   const path = resolvePath(req);
-  const exists = await storage.exists(path);
+  const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, exists ? 'update' : 'create');
   if (allowed) {
     req.body.userId = user?.id ?? 'public';
@@ -73,7 +73,7 @@ const fileDeleteMiddleware = async function (req: Request, res: express.Response
   const storage = loadStorage();
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
-  const exists = await storage.exists(path);
+  const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'delete');
   if (allowed) {
     next();
@@ -84,7 +84,7 @@ const fileSaveMetaMiddleware = async function (req: Request, res: express.Respon
   const storage = loadStorage();
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
-  const exists = await storage.exists(path);
+  const exists = await storage.fileExists(path);
   const data = await storage.loadData(path);
   const meta = data?.meta;
   const allowed = await checkForSingleFile(user, path, exists, storage, res, meta ? 'update' : 'create');

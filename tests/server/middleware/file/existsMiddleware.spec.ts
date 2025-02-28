@@ -71,11 +71,11 @@ describe('existsMiddleware', () => {
           user: '040',
           public: '004'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: '', meta: {}, contentType: '' }) }
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', meta: {}, contentType: '', key: 'ke/key' }) } }
           }
         });
         let next = false;
@@ -119,14 +119,14 @@ describe('existsMiddleware', () => {
           user: 'fbf',
           public: 'ffb'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         let next = false;
         const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: '', meta: {}, contentType: '' }) }
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', meta: {}, contentType: '', key: 'ke/key' }) } }
           }
         });
 

@@ -74,8 +74,8 @@ describe('directoryListingMiddleware', () => {
         loadConfig({ defaultPermissions: levels[level] });
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: '', meta: {}, contentType: '' }) }
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', meta: {}, contentType: '', key: 'ke/key' }) } }
           }
         });
         let next = false;
@@ -125,8 +125,8 @@ describe('directoryListingMiddleware', () => {
         const res = buildResponse();
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: '', meta: {}, contentType: '' }) }
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', meta: {}, contentType: '', key: 'ke/key' }) } }
           }
         });
 

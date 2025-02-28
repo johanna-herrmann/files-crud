@@ -19,14 +19,11 @@ jest.mock('@/storage', () => {
           }
           return await actualStorage.load(path);
         },
-        async exists(path: string): Promise<boolean> {
-          return await actualStorage.exists(path);
+        async fileExists(path: string): Promise<boolean> {
+          return await actualStorage.fileExists(path);
         },
-        async isFile(path: string): Promise<boolean> {
-          return await actualStorage.isFile(path);
-        },
-        async isDirectory(path: string): Promise<boolean> {
-          return await actualStorage.isDirectory(path);
+        async directoryExists(path: string): Promise<boolean> {
+          return await actualStorage.directoryExists(path);
         },
         async list(path: string): Promise<string[]> {
           return await actualStorage.list(path);
@@ -46,12 +43,14 @@ describe('command: integrity', (): void => {
   let channels: ('out' | 'err')[] = [];
 
   beforeEach(async (): Promise<void> => {
-    const dataFile: FileData = { md5: '098f6bcd4621d373cade4e832627b4f6', owner: '', contentType: '', size: 0, meta: {} };
-    const dataFile2: FileData = { md5: 'ad0234829205b9033196ba818f7a872b', owner: '', contentType: '', size: 0, meta: {} };
-    const dataFileSub: FileData = { md5: '0'.repeat(32), owner: '', contentType: '', size: 0, meta: {} };
+    const dataFile: FileData = { md5: '098f6bcd4621d373cade4e832627b4f6', owner: '', contentType: '', size: 0, meta: {}, key: 'ke/key1' };
+    const dataFile2: FileData = { md5: 'ad0234829205b9033196ba818f7a872b', owner: '', contentType: '', size: 0, meta: {}, key: 'ke/key2' };
+    const dataFileSub: FileData = { md5: '0'.repeat(32), owner: '', contentType: '', size: 0, meta: {}, key: 'ke/key3' };
     mockFS({
-      './files': { dir: { file: 'test', file2: 'test2', subDir: { subFile: 'subTest', error: '' } } },
-      './data': { 'dir~file': JSON.stringify(dataFile), 'dir~file2': JSON.stringify(dataFile2), 'dir~subDir~subFile': JSON.stringify(dataFileSub) }
+      './files': { ke: { key1: 'test', key2: 'test2', key3: 'subTest' } },
+      './data': {
+        dir: { file: JSON.stringify(dataFile), file2: JSON.stringify(dataFile2), subDir: { subFile: JSON.stringify(dataFileSub), error: '' } }
+      }
     });
     outSpy = jest.spyOn(stdout, 'write').mockImplementation((message: string | Uint8Array): boolean => {
       printings.push(message);

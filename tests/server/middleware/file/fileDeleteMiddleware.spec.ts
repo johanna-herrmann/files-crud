@@ -71,10 +71,12 @@ describe('fileDeleteMiddleware', () => {
           user: '010',
           public: '001'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '', key: 'ke/key' }) } }
+          }
         });
         let next = false;
         const req = buildRequestForFileAction(token, 'remove', `${directory}/file`, {});
@@ -117,13 +119,15 @@ describe('fileDeleteMiddleware', () => {
           user: 'fef',
           public: 'ffe'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         let next = false;
         const req = buildRequestForFileAction(token, 'remove', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '', key: 'ke/key' }) } }
+          }
         });
 
         await fileDeleteMiddleware(req, res, () => (next = true));

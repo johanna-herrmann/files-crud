@@ -16,6 +16,16 @@ const exists = async function (path: string): Promise<boolean> {
   }
 };
 
+jest.mock('uuid', () => {
+  const actual = jest.requireActual('uuid');
+  return {
+    ...actual,
+    v4(): string {
+      return 'testUUID';
+    }
+  };
+});
+
 describe('Storage', (): void => {
   beforeEach(async (): Promise<void> => {
     loadConfig({ storage: { name: 'fs', path: '/base' } });
@@ -46,8 +56,8 @@ describe('Storage', (): void => {
     const storage = new Storage();
 
     expect(storage.getConf()[0]).toBe('fs');
-    expect(storage.getConf()[2].getDirectory()).toBe(paths.resolve('./'));
-    expect((storage.getConf()[3] as FsStorageAdapter).getDirectory()).toBe(paths.resolve('./'));
+    expect(storage.getConf()[2].getDirectory()).toBe(paths.resolve('./data'));
+    expect((storage.getConf()[3] as FsStorageAdapter).getDirectory()).toBe(paths.resolve('./files'));
   });
 
   test('Storage->constructor creates adapters correctly, s3.', async (): Promise<void> => {
@@ -56,7 +66,7 @@ describe('Storage', (): void => {
     const storage = new Storage();
 
     expect(storage.getConf()[0]).toBe('s3');
-    expect(storage.getConf()[2].getDirectory()).toBe(paths.resolve('./'));
+    expect(storage.getConf()[2].getDirectory()).toBe(paths.resolve('./data'));
     expect((storage.getConf()[3] as S3StorageAdapter)?.getConf()[1]).toBe('files-crud');
   });
 
@@ -67,15 +77,15 @@ describe('Storage', (): void => {
 
     await storage.save('sub/file', Buffer.from('content', 'utf8'), data);
 
-    expect(await exists('/base/files/sub/file')).toBe(true);
-    expect(await exists('/base/data/sub~file')).toBe(true);
-    expect(await fs.readFile('/base/files/sub/file', 'utf8')).toBe('content');
-    expect(JSON.parse(await fs.readFile('/base/data/sub~file', 'utf8'))).toEqual(data);
+    expect(await exists('/base/files/te/testUUID')).toBe(true);
+    expect(await exists('/base/data/sub/file')).toBe(true);
+    expect(await fs.readFile('/base/files/te/testUUID', 'utf8')).toBe('content');
+    expect(JSON.parse(await fs.readFile('/base/data/sub/file', 'utf8'))).toEqual({ ...data, key: 'te/testUUID' });
   });
 
   test('Storage->load loads file correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', key: 'te/test' };
+    mockFS({ '/base': { files: { te: { test: 'content' } }, data: { a: { file: JSON.stringify(data) } } } });
     const storage = new Storage();
 
     const [content, actualData] = await storage.load('a/file');
@@ -85,94 +95,67 @@ describe('Storage', (): void => {
   });
 
   test('Storage->delete deletes file correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', key: 'te/test' };
+    mockFS({ '/base': { files: { te: { test: 'content' } }, data: { a: { file: JSON.stringify(data) } } } });
     const storage = new Storage();
 
     await storage.delete('a/file');
 
-    expect(await exists('/base/files/a/file')).toBe(false);
-    expect(await exists('/base/data/a~file')).toBe(false);
+    expect(await exists('/base/files/te/test')).toBe(false);
+    expect(await exists('/base/data/a/file')).toBe(false);
   });
 
-  test('Storage->copy copies file correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+  test('Storage->copy copies file correctly, keeping owner.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', key: 'so/sourceKey' };
+    mockFS({ '/base': { files: { so: { sourceKey: 'content' } }, data: { a: { file: JSON.stringify(data) } } } });
     const storage = new Storage();
 
     await storage.copy('a/file', 'c/copy');
 
-    expect(await exists('/base/files/a/file')).toBe(true);
-    expect(await exists('/base/files/c/copy')).toBe(true);
-    expect(await fs.readFile('/base/files/a/file', 'utf8')).toBe('content');
-    expect(await fs.readFile('/base/files/c/copy', 'utf8')).toBe('content');
+    expect(await exists('/base/files/so/sourceKey')).toBe(true);
+    expect(await exists('/base/files/te/testUUID')).toBe(true);
+    expect(await exists('/base/data/a/file')).toBe(true);
+    expect(await exists('/base/data/c/copy')).toBe(true);
+    expect(await fs.readFile('/base/files/so/sourceKey', 'utf8')).toBe('content');
+    expect(await fs.readFile('/base/files/te/testUUID', 'utf8')).toBe('content');
+    expect(JSON.parse(await fs.readFile('/base/data/a/file', 'utf8'))).toEqual(data);
+    expect(JSON.parse(await fs.readFile('/base/data/c/copy', 'utf8'))).toEqual({ ...data, key: 'te/testUUID' });
   });
 
-  test('Storage->copy keeps owner.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+  test('Storage->copy copies file correctly, changing owner.', async (): Promise<void> => {
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', key: 'so/sourceKey' };
+    mockFS({ '/base': { files: { so: { sourceKey: 'content' } }, data: { a: { file: JSON.stringify(data) } } } });
     const storage = new Storage();
 
-    await storage.copy('a/file', 'c/copy');
+    await storage.copy('a/file', 'c/copy', 'newOwner');
 
-    expect(await exists('/base/data/a~file')).toBe(true);
-    expect(await exists('/base/data/c~copy')).toBe(true);
-    expect(JSON.parse(await fs.readFile('/base/data/a~file', 'utf8'))).toEqual(data);
-    expect(JSON.parse(await fs.readFile('/base/data/c~copy', 'utf8'))).toEqual(data);
-  });
-
-  test('Storage->copy changes owner.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
-    const storage = new Storage();
-
-    await storage.copy('a/file', 'c/copy', 'other');
-
-    expect(await exists('/base/data/a~file')).toBe(true);
-    expect(await exists('/base/data/c~copy')).toBe(true);
-    expect(JSON.parse(await fs.readFile('/base/data/a~file', 'utf8'))).toEqual(data);
-    expect(JSON.parse(await fs.readFile('/base/data/c~copy', 'utf8'))).toEqual({ ...data, owner: 'other' });
+    expect(await exists('/base/files/so/sourceKey')).toBe(true);
+    expect(await exists('/base/files/te/testUUID')).toBe(true);
+    expect(await exists('/base/data/a/file')).toBe(true);
+    expect(await exists('/base/data/c/copy')).toBe(true);
+    expect(await fs.readFile('/base/files/so/sourceKey', 'utf8')).toBe('content');
+    expect(await fs.readFile('/base/files/te/testUUID', 'utf8')).toBe('content');
+    expect(JSON.parse(await fs.readFile('/base/data/a/file', 'utf8'))).toEqual(data);
+    expect(JSON.parse(await fs.readFile('/base/data/c/copy', 'utf8'))).toEqual({ ...data, key: 'te/testUUID', owner: 'newOwner' });
   });
 
   test('Storage->move moves file correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', key: 'so/sourceKey' };
+    mockFS({ '/base': { files: { so: { sourceKey: 'content' } }, data: { a: { file: JSON.stringify(data) } } } });
     const storage = new Storage();
 
     await storage.move('a/file', 'c/copy');
 
-    expect(await exists('/base/files/a/file')).toBe(false);
-    expect(await exists('/base/files/c/copy')).toBe(true);
-    expect(await fs.readFile('/base/files/c/copy', 'utf8')).toBe('content');
-  });
-
-  test('Storage->move keeps owner.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
-    const storage = new Storage();
-
-    await storage.move('a/file', 'c/copy');
-
-    expect(await exists('/base/data/a~file')).toBe(false);
-    expect(await exists('/base/data/c~copy')).toBe(true);
-    expect(JSON.parse(await fs.readFile('/base/data/c~copy', 'utf8'))).toEqual(data);
-  });
-
-  test('Storage->move changes owner.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
-    const storage = new Storage();
-
-    await storage.move('a/file', 'c/copy', 'other');
-
-    expect(await exists('/base/data/a~file')).toBe(false);
-    expect(await exists('/base/data/c~copy')).toBe(true);
-    expect(JSON.parse(await fs.readFile('/base/data/c~copy', 'utf8'))).toEqual({ ...data, owner: 'other' });
+    expect(await exists('/base/files/so/sourceKey')).toBe(true);
+    expect(await exists('/base/data/a/file')).toBe(false);
+    expect(await exists('/base/data/c/copy')).toBe(true);
+    expect(await fs.readFile('/base/files/so/sourceKey', 'utf8')).toBe('content');
+    expect(JSON.parse(await fs.readFile('/base/data/c/copy', 'utf8'))).toEqual(data);
   });
 
   test('Storage->loadData loads Data correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42, md5: 'testMD5' };
-    mockFS({ '/base': { files: { a: { file: '' } }, data: { 'a~file': JSON.stringify(data) } } });
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42, md5: 'testMD5', key: 'so/sourceKey' };
+    mockFS({ '/base': { files: { so: { sourceKey: '' } }, data: { a: { file: JSON.stringify(data) } } } });
     const storage = new Storage();
 
     const actualData = await storage.loadData('a/file');
@@ -180,7 +163,7 @@ describe('Storage', (): void => {
     expect(actualData).toEqual(data);
   });
 
-  test('Storage->loadData returns nullObject if file soes not exist.', async (): Promise<void> => {
+  test('Storage->loadData returns nullObject if file does not exist.', async (): Promise<void> => {
     const data = { size: -1, md5: '', contentType: '' };
     mockFS({ '/base': {} });
     const storage = new Storage();
@@ -190,79 +173,56 @@ describe('Storage', (): void => {
     expect(actualData).toEqual(data);
   });
 
-  test('Storage->setData sets Data correctly.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42, md5: '0'.repeat(32) };
-    mockFS({ '/base': { data: { 'a~file': JSON.stringify(data) } } });
+  test('Storage->saveData saves file data correctly.', async (): Promise<void> => {
+    mockFS({ '/base': {} });
     const storage = new Storage();
+    const data = { owner: 'me', meta: {}, contentType: 'text/plain', size: 42, md5: 'testMD5' };
+    mockFS({ '/base': { files: { so: { sourceKey: '' } }, data: { a: { file: JSON.stringify({ ...data, size: 0, key: 'so/sourceKey' }) } } } });
 
-    await storage.setData('a/file', { ...data, contentType: 'image/png' });
+    await storage.saveData('a/file', data);
 
-    expect(await exists('/base/data/a~file')).toBe(true);
-    expect(JSON.parse(await fs.readFile('/base/data/a~file', 'utf8'))).toEqual({ ...data, contentType: 'image/png' });
+    expect(await exists('/base/data/a/file')).toBe(true);
+    expect(JSON.parse(await fs.readFile('/base/data/a/file', 'utf8'))).toEqual({ ...data, key: 'so/sourceKey' });
   });
 
-  test('Storage->exists returns true if file exists.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+  test('Storage->fileExists returns true if it is a file.', async (): Promise<void> => {
+    mockFS({ '/base': { data: { a: { file: '' } } } });
     const storage = new Storage();
 
-    const fileExists = await storage.exists('a/file');
-
-    expect(fileExists).toBe(true);
-  });
-
-  test('Storage->exists returns false if file does not exist.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
-    const storage = new Storage();
-
-    const fileExists = await storage.exists('a/other');
-
-    expect(fileExists).toBe(false);
-  });
-
-  test('Storage->isFile returns true if it is a file.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
-    const storage = new Storage();
-
-    const isFile = await storage.isFile('a/file');
+    const isFile = await storage.fileExists('a/file');
 
     expect(isFile).toBe(true);
   });
 
-  test('Storage->isFile returns false if it is a directory.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+  test('Storage->fileExists returns false if does not exist.', async (): Promise<void> => {
+    mockFS({ '/base': { data: {} } });
     const storage = new Storage();
 
-    const isFile = await storage.isFile('a');
+    const isFile = await storage.fileExists('a/file');
 
     expect(isFile).toBe(false);
   });
 
-  test('Storage->isDirectory returns true if it is a directory.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+  test('Storage->directoryExists returns true if it is a directory.', async (): Promise<void> => {
+    mockFS({ '/base': { data: { a: {} } } });
     const storage = new Storage();
 
-    const isDirectory = await storage.isDirectory('a');
+    const isDirectory = await storage.directoryExists('a');
 
     expect(isDirectory).toBe(true);
   });
 
-  test('Storage->isDirectory returns false if it is a file.', async (): Promise<void> => {
-    const data = { owner: 'me', meta: {}, contentType: 'text/plain' };
-    mockFS({ '/base': { files: { a: { file: 'content' } }, data: { 'a~file': JSON.stringify(data) } } });
+  test('Storage->directoryExists returns false if does not exist.', async (): Promise<void> => {
+    mockFS({ '/base': { data: {} } });
     const storage = new Storage();
 
-    const isDirectory = await storage.isDirectory('a/file');
+    const isDirectory = await storage.directoryExists('a');
 
     expect(isDirectory).toBe(false);
   });
 
   test('Storage->list returns items in directory, sorted alphabetically, directories first and with trailing slashes.', async (): Promise<void> => {
-    mockFS({ '/base': { files: { a: { file2: '', dir2: {}, file1: '', dir1: {} } } } });
+    mockFS({ '/base': { data: { a: { file2: '', dir2: {}, file1: '', dir1: {} } } } });
     const storage = new Storage();
 
     const items = await storage.list('a');

@@ -71,10 +71,12 @@ describe('fileSaveMetaMiddleware - create', () => {
           user: '080',
           public: '008'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: '', contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', contentType: '', key: 'ke/key' }) } }
+          }
         });
         let next = false;
         const req = buildRequestForFileAction(token, 'save-meta', `${directory}/file`, {});
@@ -117,13 +119,15 @@ describe('fileSaveMetaMiddleware - create', () => {
           user: 'f7f',
           public: 'ff7'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         let next = false;
         const req = buildRequestForFileAction(token, 'save-meta', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: '', contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', contentType: '', key: 'ke/key' }) } }
+          }
         });
 
         await fileSaveMetaMiddleware(req, res, () => (next = true));

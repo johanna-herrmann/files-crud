@@ -44,7 +44,7 @@ const loadHandler = async function (req: Request, res: express.Response): Promis
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
@@ -65,13 +65,13 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
   const meta = req.body.meta as Record<string, unknown> | undefined;
   const data = await storage.loadData(path);
-  await storage.setData(path, { ...data, meta: meta ?? {} });
+  await storage.saveData(path, { ...data, meta: meta ?? {} });
   logger.info('Successfully saved file meta data.', { path, meta });
   sendOK(res);
 };
@@ -81,7 +81,7 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
@@ -95,14 +95,14 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
   const { meta, ...rest } = await storage.loadData(path);
   const data = { ...rest, meta: meta ?? {} };
   logger.info('Successfully loaded file data.', { path, data });
-  sendOK(res, { data });
+  sendOK(res, { data: { ...data, key: undefined } });
 };
 
 const copyHandler = async function (req: Request, res: express.Response): Promise<void> {
@@ -112,7 +112,7 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
-  if (!(await storage.exists(sanitizedPath))) {
+  if (!(await storage.fileExists(sanitizedPath))) {
     return sendError(res, `File ${sanitizedPath} does not exist`);
   }
 
@@ -133,7 +133,7 @@ const moveHandler = async function (req: Request, res: express.Response): Promis
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
-  if (!(await storage.exists(sanitizedPath))) {
+  if (!(await storage.fileExists(sanitizedPath))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
@@ -148,7 +148,7 @@ const deleteHandler = async function (req: Request, res: express.Response): Prom
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
@@ -162,7 +162,7 @@ const listHandler = async function (req: Request, res: express.Response): Promis
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.directoryExists(path))) {
     return sendError(res, `Directory ${path} does not exist`);
   }
 
@@ -177,7 +177,7 @@ const fileExistsHandler = async function (req: Request, res: express.Response): 
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  const exists = await storage.isFile(path);
+  const exists = await storage.fileExists(path);
 
   logger.info('Successfully checked if file exists.', { path, exists });
   sendOK(res, { path, exists });
@@ -188,7 +188,7 @@ const directoryExistsHandler = async function (req: Request, res: express.Respon
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  const exists = await storage.isDirectory(path);
+  const exists = await storage.directoryExists(path);
 
   logger.info('Successfully checked if directory exists.', { path, exists });
   sendOK(res, { path, exists });
