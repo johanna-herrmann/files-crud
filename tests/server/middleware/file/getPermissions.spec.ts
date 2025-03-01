@@ -49,7 +49,10 @@ const runTest = async function (
 
   const actualPermissions = getPermissions(user, path, data, exists, operation);
 
-  expect(actualPermissions).toEqual(expectedPermissions);
+  expect(actualPermissions.length).toBe(expectedPermissions.length);
+  expectedPermissions.forEach((expectedPermission) => {
+    expect(actualPermissions).toContain(expectedPermission);
+  });
 };
 
 describe('getPermissions', (): void => {
@@ -213,6 +216,44 @@ describe('getPermissions', (): void => {
 
       test('cru for user', async (): Promise<void> => {
         await runTest({ defaultPermissions: '0e0' }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update']);
+      });
+    });
+
+    describe('parses array correctly', (): void => {
+      const full = ['create-read-update-delete', 'read-update-create-delete', 'create-read-update-delete'];
+      const rud = ['read', 'update', 'delete'];
+
+      test('no access', async (): Promise<void> => {
+        await runTest({ defaultPermissions: ['', '', ''] }, null, 'dir/file', nullData, false, 'read', []);
+      });
+
+      test('full access, owner', async (): Promise<void> => {
+        await runTest({ defaultPermissions: full }, testUser, 'dir/file', ownerData, true, 'update', ['create', 'read', 'update', 'delete']);
+      });
+
+      test('full access, user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: full }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update', 'delete']);
+      });
+
+      test('full access, public', async (): Promise<void> => {
+        await runTest({ defaultPermissions: full }, null, 'dir/file', ownerData, true, 'read', ['create', 'read', 'update', 'delete']);
+      });
+
+      test('rud spread, read for owner', async (): Promise<void> => {
+        await runTest({ defaultPermissions: rud }, testUser, ownerPath, nullData, false, 'list', ['read']);
+      });
+
+      test('rud spread, update for user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: rud }, testUser, 'dir/file', nullData, false, 'update', ['update']);
+      });
+
+      test('rud spread, delete for public', async (): Promise<void> => {
+        await runTest({ defaultPermissions: rud }, null, 'dir/file', nullData, false, 'delete', ['delete']);
+      });
+
+      test('cru for user', async (): Promise<void> => {
+        const cru = ['', 'create-read-Update', ''];
+        await runTest({ defaultPermissions: cru }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update']);
       });
     });
   });

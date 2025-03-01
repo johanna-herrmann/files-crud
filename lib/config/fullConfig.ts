@@ -127,7 +127,7 @@ const loadServerConfig = function (config: Config) {
   return conf;
 };
 
-const loadDirectoryPermissions = function (config: Config): Record<string, string> {
+const loadDirectoryPermissions = function (config: Config): Record<string, string | string[]> {
   return config.directoryPermissions ?? {};
 };
 

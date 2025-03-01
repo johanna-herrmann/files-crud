@@ -12,8 +12,8 @@ interface Config {
   region?: string;
   register?: 'all' | 'admin' | 'token';
   tokens?: string[];
-  directoryPermissions?: Record<string, string>;
-  defaultPermissions?: string;
+  directoryPermissions?: Record<string, string | string[]>;
+  defaultPermissions?: string | string[];
   publicFileOwner?: 'all' | 'none';
   server?: ServerConfig;
   tokenExpiresInSeconds?: number;

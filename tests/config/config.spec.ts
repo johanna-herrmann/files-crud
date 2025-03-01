@@ -126,29 +126,30 @@ describe('config', (): void => {
   });
 
   test('loads correctly based on environment-variables, directoryPermissions, separated', async (): Promise<void> => {
-    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__DIRECTORIES = 'special/world,special/admins';
-    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__PERMISSIONS = 'fff,000';
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__DIRECTORIES = 'special/world,special/admins,special/all-cr';
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__PERMISSIONS = 'fff,000,create-read:create-read:create-read';
 
     loadConfig();
 
     expect(getConfig()).toEqual({
       directoryPermissions: {
         'special/world': 'fff',
-        'special/admins': '000'
+        'special/admins': '000',
+        'special/all-cr': ['create-read', 'create-read', 'create-read']
       }
     });
   });
 
   test('loads correctly based on environment-variables, directoryPermissions, for each', async (): Promise<void> => {
     process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__SOME_DIR = '001';
-    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__SOME_OTHER_DIR = '009';
+    process.env.FILES_CRUD_DIRECTORY_PERMISSIONS__SOME_OTHER_DIR = 'create-read,read,read';
 
     loadConfig();
 
     expect(getConfig()).toEqual({
       directoryPermissions: {
         someDir: '001',
-        someOtherDir: '009'
+        someOtherDir: ['create-read', 'read', 'read']
       }
     });
   });
