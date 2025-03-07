@@ -12,10 +12,10 @@ const stopHandler = function (_: Request, res: express.Response): void {
   process.exit(0);
 };
 
-const reloadHandler = function (_: Request, res: express.Response): void {
+const reloadHandler = async function (_: Request, res: express.Response): Promise<void> {
   loadLogger().info('Received reload request. Reloading...');
   reloadConfig();
-  reloadDb();
+  await reloadDb();
   reloadStorage();
   reloadLogger();
   loadLogger().info('Reloaded.');
