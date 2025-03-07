@@ -8,4 +8,4 @@ interface User {
   meta?: Record<string, unknown>;
 }
 
-export default User;
+export { User };

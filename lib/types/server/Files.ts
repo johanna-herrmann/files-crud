@@ -8,4 +8,4 @@ interface Files {
   [key: string]: File;
 }
 
-export default Files;
+export { Files };

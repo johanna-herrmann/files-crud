@@ -2,10 +2,10 @@ import { getPermissions } from '@/server/middleware/file/permissions';
 import { testUser } from '#/testItems';
 import { loadConfig } from '@/config/config';
 import { Logger } from '@/logging/Logger';
-import Config from '@/types/config/Config';
-import User from '@/types/user/User';
-import FileData from '@/types/storage/FileData';
-import Right from '@/types/config/Right';
+import { Config } from '@/types/config/Config';
+import { User } from '@/types/user/User';
+import { FileData } from '@/types/storage/FileData';
+import { Right } from '@/types/config/Right';
 
 const ownerPath = `user_${testUser.id}/file`;
 const ownerData = { owner: testUser.id, meta: {}, contentType: '', size: 42, md5: '0'.repeat(32) };

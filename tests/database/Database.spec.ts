@@ -2,12 +2,12 @@ import { Database } from '@/database/Database';
 import { data, MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
 import { expectKeys } from '#/database/expectKeys';
 import { loadConfig } from '@/config/config';
-import User from '@/types/user/User';
-import FailedLoginAttempts from '@/types/user/FailedLoginAttempts';
 import { testUser } from '#/testItems';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
+import { User } from '@/types/user/User';
+import { FailedLoginAttempts } from '@/types/user/FailedLoginAttempts';
 
 const mocked_id = 'test-id';
 let mocked_index = 0;

@@ -1,5 +1,5 @@
-import DbItem from '@/types/database/DbItem';
-import DbValue from '@/types/database/DbValue';
+import { DbItem } from '@/types/database/DbItem';
+import { DbValue } from '@/types/database/DbValue';
 
 /**
  * DatabaseAdapter is used to abstract database operations away from the business logic.
@@ -76,4 +76,4 @@ interface DatabaseAdapter {
   delete(table: string, filterKey: string, filterValue: string): Promise<void>;
 }
 
-export default DatabaseAdapter;
+export { DatabaseAdapter };

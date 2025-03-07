@@ -1,7 +1,7 @@
 import yaml from 'yaml';
 import { getConfig, getEnvPrefix, getFullConfig } from '@/config/config';
 import { printer } from '@/printing/printer';
-import Config from '@/types/config/Config';
+import { Config } from '@/types/config/Config';
 
 type Format = 'json' | 'yaml' | 'env' | 'properties';
 

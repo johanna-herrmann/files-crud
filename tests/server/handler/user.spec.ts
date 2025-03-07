@@ -14,9 +14,9 @@ import {
   setAdminStateHandler
 } from '@/server/handler/user';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
 import { attemptsExceeded, invalidCredentials } from '@/user';
 import { Logger } from '@/logging/Logger';
+import { User } from '@/types/user/User';
 
 const id = testUser.id;
 const username = 'testUser';

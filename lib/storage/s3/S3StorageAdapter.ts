@@ -1,7 +1,7 @@
 import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
 import { getObjectBody, putObject, deleteObject, copyObject } from './s3StorageHelper';
 import { getFullConfig } from '@/config/config';
-import StorageAdapter from '@/types/storage/StorageAdapter';
+import { StorageAdapter } from '@/types/storage/StorageAdapter';
 
 /**
  * StorageAdapter for s3 storage.

@@ -5,7 +5,7 @@ import { existsMiddleware } from '@/server/middleware/file/file';
 import { Logger } from '@/logging/Logger';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
+import { User } from '@/types/user/User';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;

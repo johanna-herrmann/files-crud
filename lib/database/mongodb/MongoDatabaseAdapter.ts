@@ -1,9 +1,9 @@
-import DatabaseAdapter from '@/types/database/DatabaseAdapter';
-import DbItem from '@/types/database/DbItem';
 import mongoose from 'mongoose';
 import { getFullConfig } from '@/config/config';
-import DbValue from '@/types/database/DbValue';
-import DatabaseConfig from '@/types/config/DatabaseConfig';
+import { DatabaseAdapter } from '@/types/database/DatabaseAdapter';
+import { DbItem } from '@/types/database/DbItem';
+import { DbValue } from '@/types/database/DbValue';
+import { DatabaseConfig } from '@/types/config/DatabaseConfig';
 
 interface MongoItem {
   _doc: {

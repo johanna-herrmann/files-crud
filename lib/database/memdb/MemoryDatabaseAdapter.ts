@@ -1,6 +1,6 @@
-import DatabaseAdapter from '@/types/database/DatabaseAdapter';
-import DbItem from '@/types/database/DbItem';
-import DbValue from '@/types/database/DbValue';
+import { DatabaseAdapter } from '@/types/database/DatabaseAdapter';
+import { DbItem } from '@/types/database/DbItem';
+import { DbValue } from '@/types/database/DbValue';
 
 const data: Record<string, DbItem[]> = {};
 

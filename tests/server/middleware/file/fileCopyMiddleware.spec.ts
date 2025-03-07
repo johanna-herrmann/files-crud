@@ -4,8 +4,8 @@ import { assertUnauthorized, assertPass, buildRequestForFileAction, buildRespons
 import { sendUnauthorized } from '@/server/util';
 import { testUser } from '#/testItems';
 import { Logger } from '@/logging/Logger';
-import User from '@/types/user/User';
-import Request from '@/types/server/Request';
+import { User } from '@/types/user/User';
+import { Request } from '@/types/server/Request';
 
 let mocked_passRead = false;
 let mocked_passWrite = false;

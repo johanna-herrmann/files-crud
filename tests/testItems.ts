@@ -1,4 +1,4 @@
-import User from '@/types/user/User';
+import { User } from '@/types/user/User';
 
 const testUser: User = {
   id: 'userId42',

@@ -1,6 +1,6 @@
 import { MemoryDatabaseAdapter, data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
+import { User } from '@/types/user/User';
 
 describe('MongoDatabaseAdapter', (): void => {
   afterEach((): void => {

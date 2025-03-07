@@ -1,8 +1,8 @@
 import paths from 'path';
 import { getFullConfig } from '@/config/config';
-import User from '@/types/user/User';
-import FileData from '@/types/storage/FileData';
-import Right from '@/types/config/Right';
+import { User } from '@/types/user/User';
+import { FileData } from '@/types/storage/FileData';
+import { Right } from '@/types/config/Right';
 
 const isFileOperation = function (operation: Right | 'list'): boolean {
   return /^read|update|delete$/.test(operation);

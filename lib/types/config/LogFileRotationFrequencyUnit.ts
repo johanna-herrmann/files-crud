@@ -1,3 +1,3 @@
 type LogFileRotationFrequencyUnit = 's' | 'm' | 'h' | 'd';
 
-export default LogFileRotationFrequencyUnit;
+export { LogFileRotationFrequencyUnit };

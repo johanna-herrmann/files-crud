@@ -4,8 +4,8 @@ import { assertUnauthorized, assertPass, buildRequestForFileAction, buildRespons
 import { loadMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
 import { Logger } from '@/logging/Logger';
+import { User } from '@/types/user/User';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;

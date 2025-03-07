@@ -1,9 +1,9 @@
 import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
-import DatabaseAdapter from '@/types/database/DatabaseAdapter';
-import DbItem from '@/types/database/DbItem';
-import DbValue from '@/types/database/DbValue';
 import { getFullConfig } from '@/config/config';
 import { createTable, deleteItem, itemExists, listTables, loadItem, loadItems, putItem, updateItem } from '@/database/dynamodb/dynamoDbHelper';
+import { DatabaseAdapter } from '@/types/database/DatabaseAdapter';
+import { DbItem } from '@/types/database/DbItem';
+import { DbValue } from '@/types/database/DbValue';
 
 /**
  * Database Adapter for AWS DynamoDB.

@@ -1,4 +1,3 @@
-import DbItem from '@/types/database/DbItem';
 import { DynamoDBClient, ListTablesCommand, CreateTableCommand, CreateTableCommandInput } from '@aws-sdk/client-dynamodb';
 import {
   PutCommand,
@@ -13,6 +12,7 @@ import {
   ScanCommandInput,
   NativeAttributeValue
 } from '@aws-sdk/lib-dynamodb';
+import { DbItem } from '@/types/database/DbItem';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const buildDbItem = function <T extends DbItem>(itemFound: Record<string, any> | undefined): T | null {

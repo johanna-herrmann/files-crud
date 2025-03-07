@@ -3,8 +3,8 @@ import { assertUnauthorized, assertPass, buildRequestForFileAction, buildRespons
 import { fileMoveMiddleware } from '@/server/middleware/file/copyMove';
 import { sendUnauthorized } from '@/server/util';
 import { Logger } from '@/logging/Logger';
-import User from '@/types/user/User';
-import Request from '@/types/server/Request';
+import { User } from '@/types/user/User';
+import { Request } from '@/types/server/Request';
 
 let mocked_passWrite = false;
 let mocked_passDelete = false;

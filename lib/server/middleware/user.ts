@@ -1,9 +1,9 @@
 import express from 'express';
 import { authorize, checkPassword } from '@/user';
-import User from '@/types/user/User';
-import Request from '@/types/server/Request';
 import { getToken, sendUnauthorized } from '@/server/util';
 import { getFullConfig } from '@/config/config';
+import { User } from '@/types/user/User';
+import { Request } from '@/types/server/Request';
 
 const getActualId = function (user: User, req: Request): string {
   const idFromParams = req.params.id as string | undefined;

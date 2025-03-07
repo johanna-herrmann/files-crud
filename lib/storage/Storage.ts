@@ -3,8 +3,8 @@ import { getFullConfig } from '@/config/config';
 import { getLogger } from '@/logging';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
-import DataAndStructureStorage from '@/storage/fs/DataAndStructureStorage';
-import FileData from '@/types/storage/FileData';
+import { DataAndStructureStorage } from '@/storage/fs/DataAndStructureStorage';
+import { FileData } from '@/types/storage/FileData';
 
 class Storage {
   private readonly storageType: 'fs' | 's3';

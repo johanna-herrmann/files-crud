@@ -1,20 +1,20 @@
 import { loadDb } from '@/database';
 import { versions, current } from './passwordHashing/versions';
-import Database from '@/types/database/Database';
 import { extractSub, issueToken, verifyToken } from './jwt';
 import { countAttempt, handleLocking, resetAttempts } from './locking';
-import User from '@/types/user/User';
+import { DatabaseType } from '@/types/database/DatabaseType';
+import { User } from '@/types/user/User';
 
 const invalidCredentials = 'INVALID_CREDENTIALS';
 const attemptsExceeded = 'ATTEMPTS_EXCEEDED';
 
-const updateHash = async function (db: Database, id: string, password: string): Promise<void> {
+const updateHash = async function (db: DatabaseType, id: string, password: string): Promise<void> {
   const hashVersion = current.version;
   const [salt, hash] = await current.hashPassword(password);
   await db.updateHash(id, hashVersion, salt, hash);
 };
 
-const authenticate = async function (db: Database, username: string, password: string): Promise<User | null> {
+const authenticate = async function (db: DatabaseType, username: string, password: string): Promise<User | null> {
   const user = await db.getUserByUsername(username);
   if (!user) {
     await countAttempt(db, username);

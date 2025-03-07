@@ -7,4 +7,4 @@ interface FileData {
   key?: string;
 }
 
-export default FileData;
+export { FileData };

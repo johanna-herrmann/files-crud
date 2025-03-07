@@ -14,4 +14,4 @@ interface DatabaseConfig {
   jwtKeyTableName?: string;
 }
 
-export default DatabaseConfig;
+export { DatabaseConfig };

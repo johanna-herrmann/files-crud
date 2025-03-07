@@ -30,4 +30,4 @@ interface StorageAdapter {
   copy(path: string, copyPath: string): Promise<void>;
 }
 
-export default StorageAdapter;
+export { StorageAdapter };

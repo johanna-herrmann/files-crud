@@ -1,12 +1,12 @@
 import { Client } from 'pg';
 import { connect, definingQuery, end, getNewClient, readingQuery, writingQuery } from '@/database/postgresql/pgWrapper';
 import { getFullConfig } from '@/config/config';
-import DatabaseAdapter from '@/types/database/DatabaseAdapter';
-import DbItem from '@/types/database/DbItem';
-import PgDbConf from '@/types/database/PgDbConf';
-import DbValue from '@/types/database/DbValue';
-import PgDbValue from '@/types/database/PgDbValue';
-import DatabaseConfig from '@/types/config/DatabaseConfig';
+import { DatabaseAdapter } from '@/types/database/DatabaseAdapter';
+import { DbItem } from '@/types/database/DbItem';
+import { PgDbConf } from '@/types/database/PgDbConf';
+import { DbValue } from '@/types/database/DbValue';
+import { PgDbValue } from '@/types/database/PgDbValue';
+import { DatabaseConfig } from '@/types/config/DatabaseConfig';
 
 /**
  * Database Adapter for postgresql.

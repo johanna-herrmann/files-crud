@@ -1,7 +1,7 @@
 import paths from 'path';
 import express from 'express';
 import { loadLogger } from '@/logging';
-import Request from '@/types/server/Request';
+import { Request } from '@/types/server/Request';
 
 const sanitizePath = function (path: string): string {
   return paths.join(paths.sep, paths.normalize(path)).substring(1).replace('\0', '');

@@ -1,4 +1,3 @@
-import Request from '@/types/server/Request';
 import express from 'express';
 import { sendError, sendOK, sendUnauthorized } from '@/server/util';
 import {
@@ -19,6 +18,7 @@ import {
 } from '@/user';
 import { loadLogger } from '@/logging';
 import { getExpiresAt } from '@/user/jwt';
+import { Request } from '@/types/server/Request';
 
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();

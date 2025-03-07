@@ -1,14 +1,14 @@
 import { loadDb } from '@/database';
-import Database from '@/types/database/Database';
 import { v4 } from 'uuid';
 import { current } from '@/user/passwordHashing/versions';
-import UserListItem from '@/types/user/UserListItem';
-import UserDto from '@/types/user/UserDto';
+import { DatabaseType } from '@/types/database/DatabaseType';
+import { UserListItem } from '@/types/user/UserListItem';
+import { UserDto } from '@/types/user/UserDto';
 
 const userAlreadyExists = 'USER_ALREADY_EXISTS';
 
 const createAndSaveUser = async function (
-  db: Database,
+  db: DatabaseType,
   username: string,
   password: string,
   admin: boolean,

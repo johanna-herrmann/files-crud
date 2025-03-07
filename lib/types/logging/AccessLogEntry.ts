@@ -11,4 +11,4 @@ interface AccessLogEntry {
   time: unknown;
 }
 
-export default AccessLogEntry;
+export { AccessLogEntry };

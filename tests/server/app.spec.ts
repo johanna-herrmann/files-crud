@@ -4,8 +4,8 @@ import request from 'supertest';
 import { buildApp } from '@/server/app';
 import { loadConfig } from '@/config/config';
 import { Logger } from '@/logging/Logger';
-import AccessLogEntry from '@/types/logging/AccessLogEntry';
-import Request from '@/types/server/Request';
+import { AccessLogEntry } from '@/types/logging/AccessLogEntry';
+import { Request } from '@/types/server/Request';
 
 type Middleware = (_: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
 type ErrorMiddleware = (err: Error, _: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;

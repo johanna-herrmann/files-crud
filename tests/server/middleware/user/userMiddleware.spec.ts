@@ -1,10 +1,10 @@
-import User from '@/types/user/User';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
 import { assertUnauthorized, assertPass, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { userMiddleware } from '@/server/middleware';
 import { invalidCredentials } from '@/user';
 import { Logger } from '@/logging/Logger';
+import { User } from '@/types/user/User';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;

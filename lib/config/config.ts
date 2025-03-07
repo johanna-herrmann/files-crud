@@ -2,7 +2,7 @@ import fs from 'fs';
 import yaml from 'yaml';
 import { readEnv } from 'read-env';
 import { loadFullConfig } from '@/config/fullConfig';
-import Config from '@/types/config/Config';
+import { Config } from '@/types/config/Config';
 
 const config: Config = {};
 let fullConfig: Config = {};

@@ -1,7 +1,7 @@
 import express from 'express';
 import autoPush from 'http2-express-autopush';
 import { getFullConfig } from '@/config/config';
-import Request from '@/types/server/Request';
+import { Request } from '@/types/server/Request';
 
 let lastWebRoot: string | undefined;
 let http1Handler: express.RequestHandler | undefined;

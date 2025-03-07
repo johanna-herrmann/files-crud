@@ -1,7 +1,7 @@
 import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import User from '@/types/user/User';
 import { testUser } from '#/testItems';
+import { User } from '@/types/user/User';
 
 const RED_START = '\x1B[31m';
 const END = '\x1B[39m';

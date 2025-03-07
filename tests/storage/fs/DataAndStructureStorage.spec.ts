@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
-import DataAndStructureStorage from '@/storage/fs/DataAndStructureStorage';
+import { DataAndStructureStorage } from '@/storage/fs/DataAndStructureStorage';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 
 const exists = async function (path: string): Promise<boolean> {

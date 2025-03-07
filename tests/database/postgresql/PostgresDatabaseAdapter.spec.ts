@@ -2,7 +2,7 @@ import { newDb } from 'pg-mem';
 import { Client } from 'pg';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
+import { User } from '@/types/user/User';
 
 jest.mock('pg', () => {
   const actualPg = jest.requireActual('pg');

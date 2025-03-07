@@ -4,7 +4,7 @@ import { reloadConfig } from '@/config/config';
 import { reloadDb } from '@/database';
 import { reloadStorage } from '@/storage';
 import { sendOK } from '@/server/util';
-import Request from '@/types/server/Request';
+import { Request } from '@/types/server/Request';
 
 const stopHandler = function (_: Request, res: express.Response): void {
   loadLogger().info('Received stop request. Stopping...');

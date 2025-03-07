@@ -1,6 +1,6 @@
 import mockFS from 'mock-fs';
-import FileData from '@/types/storage/FileData';
 import { checkIntegrity } from '@/command/integrity';
+import { FileData } from '@/types/storage/FileData';
 
 const RED_START = '\x1B[31m';
 const GREEN_START = '\x1B[32m';

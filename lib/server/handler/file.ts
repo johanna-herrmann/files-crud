@@ -3,9 +3,9 @@ import express from 'express';
 import { resolvePath, sanitizePath, sendError, sendOK } from '@/server/util';
 import { loadStorage } from '@/storage';
 import { loadLogger } from '@/logging';
-import Request from '@/types/server/Request';
-import UploadRequest from '@/types/server/UploadRequest';
-import Files from '@/types/server/Files';
+import { Request } from '@/types/server/Request';
+import { UploadRequest } from '@/types/server/UploadRequest';
+import { Files } from '@/types/server/Files';
 
 const saveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();

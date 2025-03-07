@@ -1,14 +1,14 @@
-import Request from '@/types/server/Request';
+import paths from 'path';
 import express from 'express';
 import { authorize } from '@/user';
 import { getToken, resolvePath, sendUnauthorized } from '@/server/util';
 import { loadStorage } from '@/storage';
 import { Storage } from '@/storage/Storage';
 import { getPermissions } from '@/server/middleware/file/permissions';
-import User from '@/types/user/User';
-import Right from '@/types/config/Right';
-import FileData from '@/types/storage/FileData';
-import paths from 'path';
+import { User } from '@/types/user/User';
+import { Right } from '@/types/config/Right';
+import { FileData } from '@/types/storage/FileData';
+import { Request } from '@/types/server/Request';
 
 const nullData: FileData = { owner: '', contentType: '', size: -1, md5: '0'.repeat(32) };
 

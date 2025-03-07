@@ -4,4 +4,4 @@ interface UserListItem {
   admin: boolean;
 }
 
-export default UserListItem;
+export { UserListItem };

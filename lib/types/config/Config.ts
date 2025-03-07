@@ -1,7 +1,7 @@
-import DatabaseConfig from './DatabaseConfig';
-import StorageConfig from '@/types/config/StorageConfig';
-import LoggingConfig from '@/types/config/LoggingConfig';
-import ServerConfig from '@/types/config/ServerConfig';
+import { DatabaseConfig } from './DatabaseConfig';
+import { StorageConfig } from '@/types/config/StorageConfig';
+import { LoggingConfig } from '@/types/config/LoggingConfig';
+import { ServerConfig } from '@/types/config/ServerConfig';
 
 interface Config {
   database?: DatabaseConfig;
@@ -20,4 +20,4 @@ interface Config {
   webRoot?: string;
 }
 
-export default Config;
+export { Config };

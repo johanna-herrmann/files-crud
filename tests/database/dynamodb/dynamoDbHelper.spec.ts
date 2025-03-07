@@ -3,7 +3,7 @@ import { CreateTableCommand, DynamoDBClient, ListTablesCommand } from '@aws-sdk/
 import { PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { putItem, updateItem, deleteItem, loadItem, loadItems, itemExists, listTables, createTable } from '@/database/dynamodb/dynamoDbHelper';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
+import { User } from '@/types/user/User';
 
 const dynamoMock = mockClient(DynamoDBClient);
 const client = new DynamoDBClient();

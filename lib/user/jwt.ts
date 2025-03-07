@@ -1,9 +1,9 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { loadDb } from '@/database';
-import JwtKey from '@/types/user/JwtKey';
 import { getFullConfig } from '@/config/config';
 import { getLogger } from '@/logging';
+import { JwtKey } from '@/types/user/JwtKey';
 
 const KEY_LENGTH = 32;
 const KEYS = 20;

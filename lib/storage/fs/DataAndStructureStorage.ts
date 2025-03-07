@@ -4,7 +4,7 @@ import fse from 'fs-extra';
 import paths from 'path';
 import { v4 } from 'uuid';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
-import FileData from '@/types/storage/FileData';
+import { FileData } from '@/types/storage/FileData';
 
 const buildKey = function (): string {
   const uuid = v4();
@@ -148,4 +148,4 @@ class DataAndStructureStorage {
   }
 }
 
-export default DataAndStructureStorage;
+export { DataAndStructureStorage };

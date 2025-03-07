@@ -9,4 +9,4 @@ interface StorageConfig {
   forcePathStyle?: boolean;
 }
 
-export default StorageConfig;
+export { StorageConfig };

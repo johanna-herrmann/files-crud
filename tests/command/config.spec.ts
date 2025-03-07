@@ -1,6 +1,6 @@
 import { loadConfig, setEnvPrefix } from '@/config/config';
-import Config from '@/types/config/Config';
 import { showConfig } from '@/command/config';
+import { Config } from '@/types/config/Config';
 
 describe('command: config', (): void => {
   const config: Config = {

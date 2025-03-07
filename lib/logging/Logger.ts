@@ -5,10 +5,10 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 import { getFullConfig } from '@/config/config';
 import { accessLogFormats, logFormats } from '@/logging/formats';
 import { getSourcePath } from '@/logging/getSourcePath';
-import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequencyUnit';
-import LoggingFormat from '@/types/config/LoggingFormat';
-import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
-import AccessLogEntry from '@/types/logging/AccessLogEntry';
+import { LogFileRotationFrequencyUnit } from '@/types/config/LogFileRotationFrequencyUnit';
+import { LoggingFormat } from '@/types/config/LoggingFormat';
+import { AccessLoggingFormat } from '@/types/config/AccessLoggingFormat';
+import { AccessLogEntry } from '@/types/logging/AccessLogEntry';
 
 const { combine, timestamp, printf } = format;
 

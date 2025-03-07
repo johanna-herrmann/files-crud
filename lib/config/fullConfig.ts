@@ -1,8 +1,8 @@
-import Config from '@/types/config/Config';
-import DatabaseConfig from '@/types/config/DatabaseConfig';
-import StorageConfig from '@/types/config/StorageConfig';
-import LoggingConfig from '@/types/config/LoggingConfig';
-import ServerConfig from '@/types/config/ServerConfig';
+import { Config } from '@/types/config/Config';
+import { DatabaseConfig } from '@/types/config/DatabaseConfig';
+import { StorageConfig } from '@/types/config/StorageConfig';
+import { LoggingConfig } from '@/types/config/LoggingConfig';
+import { ServerConfig } from '@/types/config/ServerConfig';
 
 const FILE_SIZE_LIMIT = '100m'; // 100 MiB;
 

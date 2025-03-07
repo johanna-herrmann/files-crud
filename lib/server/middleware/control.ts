@@ -1,7 +1,7 @@
 import express from 'express';
 import { getToken, sendUnauthorized } from '@/server/util';
 import { loadLogger } from '@/logging';
-import Request from '@/types/server/Request';
+import { Request } from '@/types/server/Request';
 
 let controlToken = '';
 

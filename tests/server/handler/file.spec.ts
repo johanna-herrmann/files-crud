@@ -1,7 +1,9 @@
-import User from '@/types/user/User';
+import fs from 'fs/promises';
+import { Readable, Writable } from 'stream';
+import mockFS from 'mock-fs';
+import { DirectoryItem } from 'mock-fs/lib/filesystem';
 import { assertError, assertOK, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
 import { testUser } from '#/testItems';
-import mockFS from 'mock-fs';
 import {
   copyHandler,
   deleteHandler,
@@ -15,11 +17,9 @@ import {
   directoryExistsHandler,
   fileExistsHandler
 } from '@/server/handler/file';
-import { DirectoryItem } from 'mock-fs/lib/filesystem';
-import fs from 'fs/promises';
-import UploadRequest from '@/types/server/UploadRequest';
-import { Readable, Writable } from 'stream';
 import { Logger } from '@/logging/Logger';
+import { UploadRequest } from '@/types/server/UploadRequest';
+import { User } from '@/types/user/User';
 
 let mocked_user: User | null = null;
 

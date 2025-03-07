@@ -1,7 +1,7 @@
 import express from 'express';
 import fileUpload from 'express-fileupload';
 import { getFullConfig } from '@/config/config';
-import Request from '@/types/server/Request';
+import { Request } from '@/types/server/Request';
 
 const parseSizeLimit = function (input: string | number): number {
   if (typeof input === 'number') {

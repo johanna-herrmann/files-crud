@@ -1,8 +1,8 @@
-import Request from '@/types/server/Request';
 import express from 'express';
 import { fileDeleteMiddleware, fileSaveMiddleware, loadMiddleware } from '@/server/middleware/file/file';
 import { authorize } from '@/user';
 import { getToken, sendUnauthorized } from '@/server/util';
+import { Request } from '@/types/server/Request';
 
 const fileCopyMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const { path, targetPath, copyOwner } = req.body;

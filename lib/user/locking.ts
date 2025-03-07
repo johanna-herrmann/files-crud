@@ -1,18 +1,18 @@
-import Database from '@/types/database/Database';
+import { DatabaseType } from '@/types/database/DatabaseType';
 
 const THRESHOLD = 5;
 const TTL_MIN = 15 * 1000; // 15 seconds
 const TTL_MAX = 30 * 60 * 1000; // 30 Minutes
 
-const countAttempt = async function (db: Database, username: string): Promise<void> {
+const countAttempt = async function (db: DatabaseType, username: string): Promise<void> {
   await db.countLoginAttempt(username);
 };
 
-const resetAttempts = async function (db: Database, username: string): Promise<void> {
+const resetAttempts = async function (db: DatabaseType, username: string): Promise<void> {
   await db.removeLoginAttempts(username);
 };
 
-const handleLocking = async function (db: Database, username: string): Promise<boolean> {
+const handleLocking = async function (db: DatabaseType, username: string): Promise<boolean> {
   const attempts = await db.getLoginAttempts(username);
   if (!attempts || attempts.attempts < THRESHOLD) {
     return false;
