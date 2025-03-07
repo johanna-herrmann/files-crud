@@ -4,7 +4,7 @@ import { loadLogger } from '@/logging';
 import Request from '@/types/server/Request';
 
 const sanitizePath = function (path: string): string {
-  return (paths.join(paths.sep, paths.normalize(path)).substring(1) || '-').replace('\0', '');
+  return paths.join(paths.sep, paths.normalize(path)).substring(1).replace('\0', '');
 };
 
 const resolvePath = function (req: Request): string {
