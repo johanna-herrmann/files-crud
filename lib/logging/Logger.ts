@@ -90,7 +90,7 @@ class Logger {
           return logFormats[loggingFormat]({ level, message, timestamp, sourcePath, meta });
         })
       ),
-      transports: [new transports.Console({ forceConsole: forceConsole, stderrLevels: ['error'] })]
+      transports: [new transports.Console({ forceConsole, stderrLevels: ['error'] })]
     });
   }
 
@@ -236,7 +236,7 @@ class Logger {
   public access({ method, path, statusCode, contentLength, ...rest }: Omit<AccessLogEntry, 'timestamp'>): Logger {
     this.accessFileLogger?.info('', { method, path, statusCode, contentLength, ...rest });
     const isApiRequest = /^\/api\//.test(path as string);
-    if (!isApiRequest && (statusCode as number) < 399) {
+    if (!isApiRequest && (statusCode as number) < 400) {
       this.ttyLogger?.info(`Access: statusCode ${statusCode} on ${method} ${path}`, {
         sourcePath: getSourcePath(),
         meta: { method, path, statusCode, contentLength }

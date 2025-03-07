@@ -76,7 +76,7 @@ describe('Logger logs to console', (): void => {
       assertMessage(loggedMessage, 'error');
     });
 
-    test('on none-api access', async (): Promise<void> => {
+    test('on none-api access, 200', async (): Promise<void> => {
       new Logger().access({
         method: 'GET',
         path: '/index.html',
@@ -93,6 +93,42 @@ describe('Logger logs to console', (): void => {
       expect(loggedMessage).toBe(
         `\x1B[32m1970-01-01T00:00:00.042 [${__filename}] INFO: Access: statusCode 200 on GET /index.html - {"method":"GET","path":"/index.html","statusCode":"200","contentLength":123}\x1B[39m`
       );
+    });
+
+    test('on none-api access, 399', async (): Promise<void> => {
+      new Logger().access({
+        method: 'GET',
+        path: '/index.html',
+        statusCode: '399',
+        contentLength: 123,
+        time: 0,
+        ip: '',
+        httpVersion: '',
+        referer: '',
+        userAgent: ''
+      });
+
+      expect(logSpy).toHaveBeenCalled();
+      expect(loggedMessage).toBe(
+        `\x1B[32m1970-01-01T00:00:00.042 [${__filename}] INFO: Access: statusCode 399 on GET /index.html - {"method":"GET","path":"/index.html","statusCode":"399","contentLength":123}\x1B[39m`
+      );
+    });
+
+    test('not on none-api access, 400', async (): Promise<void> => {
+      new Logger().access({
+        method: 'GET',
+        path: '/index.html',
+        statusCode: '400',
+        contentLength: 123,
+        time: 0,
+        ip: '',
+        httpVersion: '',
+        referer: '',
+        userAgent: ''
+      });
+
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(loggedMessage).toBe('');
     });
 
     test('not on api access', async (): Promise<void> => {
