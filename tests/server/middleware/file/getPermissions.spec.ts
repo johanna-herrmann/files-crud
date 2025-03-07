@@ -123,6 +123,14 @@ describe('getPermissions', (): void => {
       };
     };
 
+    test('returns [read] for owner, directory', async (): Promise<void> => {
+      await runTest(buildDirectoryPermissions(0), testUser, `user_${testUser.id}`, nullData, true, 'list', ['read']);
+    });
+
+    test('returns [] for public on directory user_undefined', async (): Promise<void> => {
+      await runTest(buildDirectoryPermissions(0), null, 'user_undefined', nullData, true, 'list', []);
+    });
+
     test('returns [delete] for owner, file', async (): Promise<void> => {
       await runTest(buildDirectoryPermissions(0), testUser, 'dir/file', ownerData, true, 'update', ['delete']);
     });
@@ -182,6 +190,10 @@ describe('getPermissions', (): void => {
 
       test('cru for user', async (): Promise<void> => {
         await runTest({ defaultPermissions: '----cru-----' }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update']);
+      });
+
+      test('CRU for user', async (): Promise<void> => {
+        await runTest({ defaultPermissions: '----CRU-----' }, testUser, 'dir/file', nullData, false, 'read', ['create', 'read', 'update']);
       });
     });
 

@@ -12,7 +12,7 @@ const isDirectoryOperation = function (operation: Right | 'list'): boolean {
   return /^create|list$/.test(operation);
 };
 
-const getDirectoryPermissions = function (directoryPermissions: Record<string, string>, path: string): string | undefined {
+const getDirectoryPermissions = function (directoryPermissions: Record<string, string | string[]>, path: string): string | string[] | undefined {
   const sortedKeys = Object.keys(directoryPermissions).sort((a: string, b: string) => {
     const levelsA = a.split('/').length;
     const levelsB = b.split('/').length;
@@ -39,7 +39,7 @@ const parseLevelPermissions = function (permissions: string | string[], levelInd
     const start = levelIndex * 4;
     const levelPermissions = permissions.substring(start, start + 4);
     rights.forEach((right) => {
-      if (levelPermissions.includes(right.charAt(0))) {
+      if (levelPermissions.toLowerCase().includes(right.charAt(0))) {
         rightsSet.push(right);
       }
     });
@@ -73,21 +73,21 @@ const parsePermissions = function (permissions: string | string[], level: 'owner
 };
 
 const getPermissions = function (user: User | null, path: string, data: FileData, exists: boolean, operation: Right | 'list'): Right[] {
-  const config = getFullConfig();
-  const directory = operation === 'list' ? path : paths.dirname(paths.join(paths.sep, path)).substring(1);
-  const directoryPermissions = config.directoryPermissions as Record<string, string>;
-  const permissions = getDirectoryPermissions(directoryPermissions, directory) ?? config.defaultPermissions ?? '';
-
   if (user?.admin) {
     return ['create', 'read', 'update', 'delete'];
   }
+
+  const config = getFullConfig();
+  const directory = operation === 'list' ? path : paths.dirname(paths.join(paths.sep, path)).substring(1);
+  const directoryPermissions = config.directoryPermissions as Record<string, string | string[]>;
+  const permissions = getDirectoryPermissions(directoryPermissions, directory) ?? config.defaultPermissions ?? '';
 
   const expectedPublicFileOwner = config.publicFileOwner === 'all' ? 'public' : 'none';
   if (exists && (data?.owner === expectedPublicFileOwner || data?.owner === user?.id) && isFileOperation(operation)) {
     return parsePermissions(permissions, 'owner');
   }
 
-  if (path.split('/')[0] === `user_${user?.id}` && isDirectoryOperation(operation)) {
+  if (!!user && path.split('/')[0] === `user_${user?.id}` && isDirectoryOperation(operation)) {
     return parsePermissions(permissions, 'owner');
   }
 
