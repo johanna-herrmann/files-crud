@@ -25,8 +25,14 @@ const toPropertiesNotation = function (config: Record<string, unknown>, prefix =
     if (key === 'directoryPermissions') {
       const keys = Object.keys(config.directoryPermissions ?? {});
       const values = Object.values(config.directoryPermissions ?? {});
+      const fixedValues = values.map((value) => {
+        if (typeof value === 'string') {
+          return value;
+        }
+        return value.join(':');
+      });
       entries.push(`${prefix}${key}.directories=${keys.join(',')}`);
-      entries.push(`${prefix}${key}.permissions=${values.join(',')}`);
+      entries.push(`${prefix}${key}.permissions=${fixedValues.join(',')}`);
       return;
     }
     if (typeof value === 'object' && 'push' in value) {
