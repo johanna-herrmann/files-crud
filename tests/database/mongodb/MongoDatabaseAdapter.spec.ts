@@ -77,7 +77,7 @@ describe('MongoDatabaseAdapter', (): void => {
     db = new MongoDatabaseAdapter();
     await db.open();
 
-    await db.init<User>('user_', testUser);
+    await db.init<User>('user_', testUser, 'id');
 
     expect(schemata['user_']).toEqual(userSchema);
   });

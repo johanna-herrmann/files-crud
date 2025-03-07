@@ -171,7 +171,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     db = new DynamoDatabaseAdapter();
     await db.open();
 
-    await db.init<User>('user_', testUser);
+    await db.init<User>('user_', testUser, 'id');
 
     expect(mocked_tables).toEqual([tableName]);
     expect(mocked_keys[tableName]).toBe('id');
@@ -185,7 +185,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     db = new DynamoDatabaseAdapter();
     await db.open();
 
-    await db.init<User>('user_', testUser);
+    await db.init<User>('user_', testUser, 'id');
 
     expect(mocked_tables).toEqual([tableName]);
     expect(mocked_keys[tableName]).toBe('id');
@@ -198,7 +198,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     db = new DynamoDatabaseAdapter();
     await db.open();
 
-    await db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', lastAttempt: 0, attempts: 0 });
+    await db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', lastAttempt: 0, attempts: 0 }, 'username');
 
     expect(mocked_tables).toEqual([tableName]);
     expect(mocked_keys[tableName]).toBe('username');
@@ -212,7 +212,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     db = new DynamoDatabaseAdapter();
     await db.open();
 
-    await db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', lastAttempt: 0, attempts: 0 });
+    await db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', lastAttempt: 0, attempts: 0 }, 'username');
 
     expect(mocked_tables).toEqual([tableName]);
     expect(mocked_keys[tableName]).toBe('username');
@@ -225,7 +225,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     db = new DynamoDatabaseAdapter();
     await db.open();
 
-    await db.init<JwtKey>('jwtKey', { kid: '', key: '' });
+    await db.init<JwtKey>('jwtKey', { kid: '', key: '' }, 'kid');
 
     expect(mocked_tables).toEqual([tableName]);
     expect(mocked_keys[tableName]).toBe('kid');
@@ -239,7 +239,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     db = new DynamoDatabaseAdapter();
     await db.open();
 
-    await db.init<JwtKey>('jwtKey', { kid: '', key: '' });
+    await db.init<JwtKey>('jwtKey', { kid: '', key: '' }, 'kid');
 
     expect(mocked_tables).toEqual([tableName]);
     expect(mocked_keys[tableName]).toBe('kid');
@@ -250,7 +250,7 @@ describe('DynamoDatabaseAdapter', (): void => {
     db = new DynamoDatabaseAdapter();
     await db.open();
 
-    await db.init<User>('user_', testUser);
+    await db.init<User>('user_', testUser, 'id');
 
     expect(mocked_tables).toEqual([]);
     expect(mocked_keys['files-crud-user']).toBe('');

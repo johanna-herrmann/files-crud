@@ -70,7 +70,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->init initializes user table.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
 
       try {
         const res = await db?.getClient().query('SELECT * FROM user_');
@@ -83,7 +83,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     test('PostgresDatabaseAdapter->init initializes failedLoginAttempts table.', async (): Promise<void> => {
       await db?.open();
 
-      await db?.init('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
+      await db?.init('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 }, 'username');
 
       try {
         const res = await db?.getClient().query('SELECT * FROM failedLoginAttempts');
@@ -96,7 +96,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     test('PostgresDatabaseAdapter->init initializes jwtKey table.', async (): Promise<void> => {
       await db?.open();
 
-      await db?.init('jwtKey', { kid: '', key: '' });
+      await db?.init('jwtKey', { kid: '', key: '' }, 'kid');
 
       try {
         const res = await db?.getClient().query('SELECT * FROM jwtKey');
@@ -107,7 +107,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->add adds item.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
 
       await db?.add('user_', testUser);
 
@@ -117,7 +117,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->update updates item, without key change.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
       await db?.add('user_', testUser);
       const update = { hashVersion: 'newVersion', salt: 'newSalt', hash: 'newHash' };
 
@@ -129,7 +129,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->update updates item, with key change.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
       await db?.add('user_', testUser);
 
       await db?.update('user_', 'username', testUser.username, { username: 'newUsername' });
@@ -140,7 +140,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->findOne finds one.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
       await db?.add('user_', testUser);
 
       const user = await db?.findOne<User>('user_', 'username', testUser.username);
@@ -150,7 +150,7 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     test('PostgresDatabaseAdapter->findAll finds all.', async (): Promise<void> => {
       const otherUser = { ...testUser, username: 'other' };
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
       await db?.add('user_', testUser);
       await db?.add('user_', otherUser);
 
@@ -162,7 +162,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->exists returns true if item exists.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
       await db?.add('user_', testUser);
 
       const exists = await db?.exists('user_', 'username', testUser.username);
@@ -171,7 +171,7 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->exists returns true if item does not exist.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
       await db?.add('user_', { ...testUser, username: 'other' });
 
       const exists = await db?.exists('user_', 'username', testUser.username);
@@ -181,7 +181,7 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     test('PostgresDatabaseAdapter->delete deletes item.', async (): Promise<void> => {
       const otherUser = { ...testUser, username: 'other' };
-      await db?.init('user_', testUser);
+      await db?.init('user_', testUser, 'id');
       await db?.add('user_', testUser);
       await db?.add('user_', otherUser);
 

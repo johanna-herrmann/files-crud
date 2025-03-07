@@ -45,9 +45,9 @@ class Database implements DatabaseType {
   }
 
   public async init(): Promise<void> {
-    await this.db.init<User>('user_', { id: '', username: '', admin: false, hashVersion: '', salt: '', hash: '', meta: {} });
-    await this.db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
-    await this.db.init<JwtKey>('jwtKey', { kid: '', key: '' });
+    await this.db.init<User>('user_', { id: '', username: '', admin: false, hashVersion: '', salt: '', hash: '', meta: {} }, 'id');
+    await this.db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 }, 'username');
+    await this.db.init<JwtKey>('jwtKey', { kid: '', key: '' }, 'kid');
     this.logger?.info('DB initialized.');
   }
 

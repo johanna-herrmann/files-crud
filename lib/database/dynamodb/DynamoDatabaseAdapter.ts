@@ -69,17 +69,17 @@ class DynamoDatabaseAdapter implements DatabaseAdapter {
 
   /**
    * Creates a new table/collection.
-   * The first key of `item` is used as partition key / hash key.
    * @param table The name of the table.
-   * @param item Dummy Item to derive the fields from.
+   * @param _item Dummy Item to derive the fields from.
    *             Example: Provide dummy user item, so fields of user can be derived.
    *             The table/collection will be created if it not exists already.
+   * @param key The name of the partition key / hash key
    */
-  public async init<T extends DbItem>(table: string, item: T): Promise<void> {
+  public async init<T extends DbItem>(table: string, _item: T, key: string): Promise<void> {
     const actualTable = this.getDynamoTableName(table);
     const tables = await listTables(this.ensureClient());
     if (!tables.includes(actualTable)) {
-      await createTable(this.ensureClient(), actualTable, Object.keys(item)[0]);
+      await createTable(this.ensureClient(), actualTable, key);
     }
   }
 

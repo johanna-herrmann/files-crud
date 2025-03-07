@@ -37,7 +37,7 @@ class MemoryDatabaseAdapter implements DatabaseAdapter {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async init<T extends DbItem>(table: string, _item: T): Promise<void> {
+  public async init<T extends DbItem>(table: string, _item: T, _key: string): Promise<void> {
     data[table] = data[table] ?? [];
   }
 

@@ -22,8 +22,9 @@ interface DatabaseAdapter {
    * @param item Dummy Item to derive the fields from.
    *             Example: Provide dummy user item, so fields of user can be derived.
    *             The table/collection will be created if it not exists already.
+   * @param key The name of the key for dynamodb
    */
-  init<T extends DbItem>(table: string, item: T): Promise<void>;
+  init<T extends DbItem>(table: string, item: T, key: string): Promise<void>;
 
   /**
    * Adds a new item to the database.
