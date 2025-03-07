@@ -8,16 +8,16 @@ const fileCopyMiddleware = async function (req: Request, res: express.Response, 
   const { path, targetPath, copyOwner } = req.body;
   const user = await authorize(getToken(req));
 
+  if (!user?.admin && copyOwner) {
+    return sendUnauthorized(res, 'Only admins are allowed to copy the owner');
+  }
+
+  req.body.userId = user?.id ?? 'public';
+
   req.params.path = (path as string).split('/');
   await loadMiddleware(req, res, async () => {
     req.params.path = (targetPath as string).split('/');
-    await fileSaveMiddleware(req, res, () => {
-      if (!user?.admin && copyOwner) {
-        return sendUnauthorized(res, 'Only admins are allowed to copy the owner');
-      }
-      req.body.userId = user?.id ?? 'public';
-      next();
-    });
+    await fileSaveMiddleware(req, res, next);
   });
 };
 
@@ -27,9 +27,7 @@ const fileMoveMiddleware = async function (req: Request, res: express.Response, 
   req.params.path = (path as string).split('/');
   await fileDeleteMiddleware(req, res, async () => {
     req.params.path = (targetPath as string).split('/');
-    await fileSaveMiddleware(req, res, () => {
-      next();
-    });
+    await fileSaveMiddleware(req, res, next);
   });
 };
 
