@@ -6,7 +6,6 @@ interface DatabaseConfig {
   port?: number;
   user?: string;
   pass?: string;
-  password?: string;
   region?: string;
   accessKeyId?: string;
   secretAccessKey?: string;
