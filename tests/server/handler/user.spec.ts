@@ -266,6 +266,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { id: idConstraint, newUsername: usernameConstraint };
       const body = { id: 'xyz', newUsername: 'abcde' };
       const req = buildRequestForUserAction('', '-', undefined, body);
@@ -309,6 +310,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { id: idConstraint, newPassword: passwordConstraint };
       const body = { id: 'sel', newPassword: '123456789' };
       const req = buildRequestForUserAction('', '-', undefined, body);
@@ -333,6 +335,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { id: idConstraint, admin: requiredAdminConstraint };
       const body = { id: 'self', admin: 'yes' };
       const req = buildRequestForUserAction('', '-', undefined, body);
@@ -357,6 +360,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { id: idConstraint, meta: metaConstraint };
       const body = {};
       const req = buildRequestForUserAction('', '-', undefined, body);
@@ -380,6 +384,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { id: idConstraint };
       const body = {};
       const req = buildRequestForUserAction('', '-', undefined, body);
@@ -403,6 +408,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { id: idConstraint };
       const body = {};
       const req = buildRequestForUserAction('', '-', undefined, body);
@@ -447,6 +453,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { id: idConstraint };
       const body = {};
       const req = buildRequestForUserAction('', '-', undefined, body);
@@ -487,6 +494,7 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
       const schema = { username: usernameConstraint, password: passwordConstraint };
       const body = { username: 'username', password: 'pas' };
       const req = buildRequestForUserAction('', '-', undefined, body);
