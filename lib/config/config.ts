@@ -2,6 +2,7 @@ import fs from 'fs';
 import yaml from 'yaml';
 import { readEnv } from 'read-env';
 import { loadFullConfig } from '@/config/fullConfig';
+import { buildConfigSchema } from '@/config/schema';
 import { Config } from '@/types/config/Config';
 
 const config: Config = {};
@@ -95,6 +96,11 @@ const getNewConfig = function (config_?: Config): Record<string, unknown> {
   const config = getConfigFromFile();
   const envConfig = getConfigFromEnv();
   mergeConfigs(config, envConfig);
+  const directoryPermissions = config.directoryPermissions ?? {};
+  const validated = buildConfigSchema(Object.keys(directoryPermissions)).validate(config, { convert: false });
+  if (validated.error) {
+    throw new Error(`Invalid Config. ${validated.error}`);
+  }
   return config;
 };
 

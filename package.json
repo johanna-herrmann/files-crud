@@ -80,6 +80,7 @@
     "fs-extra": "^11.2.0",
     "http2-express-autopush": "^1.0.5",
     "http2-express-bridge": "^1.0.7",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mock-express-response": "^0.3.0",
     "mongoose": "^8.10.1",

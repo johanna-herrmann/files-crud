@@ -214,4 +214,46 @@ describe('config', (): void => {
       sslCertPath: './certificate.pem'
     });
   });
+
+  test('fails on invalid', async (): Promise<void> => {
+    let error: unknown = null;
+    process.env.FILES_CRUD_GARBAGE = '';
+
+    try {
+      loadConfig();
+    } catch (ex: unknown) {
+      error = ex;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('Invalid Config. ValidationError: "garbage" is not allowed');
+  });
+
+  test('fails on invalid, deep, out of range', async (): Promise<void> => {
+    let error: unknown = null;
+    process.env.FILES_CRUD_SERVER__PORT = '98765';
+
+    try {
+      loadConfig();
+    } catch (ex: unknown) {
+      error = ex;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('Invalid Config. ValidationError: "server.port" must be less than or equal to 65536');
+  });
+
+  test('fails on invalid, deeper, wrong type', async (): Promise<void> => {
+    let error: unknown = null;
+    process.env.FILES_CRUD_SERVER__CORS__ORIGIN = '123';
+
+    try {
+      loadConfig();
+    } catch (ex: unknown) {
+      error = ex;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('Invalid Config. ValidationError: "server.cors.origin" must be one of [string, array]');
+  });
 });
