@@ -1,4 +1,5 @@
 import express from 'express';
+import joi from 'joi';
 import { sendError, sendOK, sendUnauthorized } from '@/server/util';
 import {
   addUser,
@@ -23,6 +24,17 @@ import { Request } from '@/types/server/Request';
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
+
+  const bodySchema = joi.object({
+    username: joi.string().min(3).max(64).required(),
+    password: joi.string().min(8).required(),
+    meta: joi.object({})
+  });
+  const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { username, password, meta } = body;
 
   const result = await register(username as string, password as string, (meta ?? {}) as Record<string, unknown>);
@@ -34,7 +46,7 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
   logger.info('Successfully registered user.', { username });
 
   if ((password as string).length < 10) {
-    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (password as string).length });
+    logger.warn('Password is a bit short. Consider increasing password minimal length to 10.', { length: (password as string).length });
   }
 
   sendOK(res, { username });
@@ -43,6 +55,18 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
 const addUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
+
+  const bodySchema = joi.object({
+    username: joi.string().min(3).max(64).required(),
+    password: joi.string().min(8).required(),
+    meta: joi.object({}),
+    admin: joi.boolean()
+  });
+  const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { username, password, meta, admin } = body;
 
   const added = await addUser(username as string, password as string, admin as boolean, (meta ?? {}) as Record<string, unknown>);
@@ -54,7 +78,7 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
   logger.info('Successfully added user.', { username, admin });
 
   if ((password as string).length < 10) {
-    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (password as string).length });
+    logger.warn('Password is a bit short. Consider increasing password minimal length to 10.', { length: (password as string).length });
   }
 
   sendOK(res, { username });
@@ -63,6 +87,16 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
 const changeUsernameHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
+
+  const bodySchema = joi.object({
+    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
+    newUsername: joi.string().min(3).max(64).required()
+  });
+  const error = bodySchema.validate(body, { convert: false }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { id, newUsername } = body;
 
   const result = await changeUsername(id as string, newUsername as string);
@@ -78,6 +112,16 @@ const changeUsernameHandler = async function (req: Request, res: express.Respons
 const setAdminStateHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
+
+  const bodySchema = joi.object({
+    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
+    admin: joi.boolean()
+  });
+  const error = bodySchema.validate(body, { convert: false }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { id, admin } = body;
 
   await setAdminState(id as string, admin as boolean);
@@ -89,6 +133,16 @@ const setAdminStateHandler = async function (req: Request, res: express.Response
 const saveMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
+
+  const bodySchema = joi.object({
+    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
+    meta: joi.object({})
+  });
+  const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const id = body.id ?? '';
   const { meta } = body;
 
@@ -101,6 +155,16 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
 const changePasswordHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
+
+  const bodySchema = joi.object({
+    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
+    newPassword: joi.string().min(8).required()
+  });
+  const error = bodySchema.validate(body, { convert: false }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { id, newPassword } = body;
 
   await changePassword(id as string, newPassword as string);
@@ -108,7 +172,7 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
   logger.info('Successfully changed password.', { id });
 
   if ((newPassword as string).length < 10) {
-    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (newPassword as string).length });
+    logger.warn('Password is a bit short. Consider increasing password minimal length to 10.', { length: (newPassword as string).length });
   }
 
   sendOK(res);
@@ -116,6 +180,15 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
 
 const deleteUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
+
+  const bodySchema = joi.object({
+    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required()
+  });
+  const error = bodySchema.validate(req.body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const id = req.body.id ?? '';
 
   await deleteUser(id as string);
@@ -126,6 +199,15 @@ const deleteUserHandler = async function (req: Request, res: express.Response): 
 
 const loadMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
+
+  const bodySchema = joi.object({
+    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required()
+  });
+  const error = bodySchema.validate(req.body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const id = req.body.id ?? '';
 
   const meta = await loadMeta(id as string);
@@ -136,6 +218,15 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 
 const getUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
+
+  const bodySchema = joi.object({
+    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required()
+  });
+  const error = bodySchema.validate(req.body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const id = req.body.id ?? '';
 
   const user = await getUser(id as string);
@@ -160,6 +251,16 @@ const getUsersHandler = async function (_: Request, res: express.Response): Prom
 const loginHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
+
+  const bodySchema = joi.object({
+    username: joi.string().min(3).max(64).required(),
+    password: joi.string().min(8).required()
+  });
+  const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { username, password } = body;
 
   const tokenOrError = await login(username as string, password as string);

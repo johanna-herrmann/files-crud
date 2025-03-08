@@ -21,7 +21,7 @@ import { User } from '@/types/user/User';
 const id = testUser.id;
 const username = 'testUser';
 const newUsername = 'newUsername';
-const password = '123';
+const password = '12345678';
 const admin = false;
 const meta = { k: 'v' };
 const newMeta = { abc: 123 };
@@ -54,10 +54,10 @@ jest.mock('@/user/auth', () => {
       if (username === 'locked') {
         return attemptsExceeded;
       }
-      if (username.length > 0 && password.length > 0) {
-        return `token.${username}.${password}`;
+      if (username.startsWith('invalid') || password.startsWith('invalid')) {
+        return invalidCredentials;
       }
-      return invalidCredentials;
+      return `token.${username}.${password}`;
     }
   };
 });
@@ -123,8 +123,8 @@ describe('user handlers', (): void => {
 
       assertOK(res, { username });
       expect((data.user_?.at(0) as User)?.username).toBe(username);
-      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
-      expect(mock_loggedWarnMeta).toEqual({ length: 3 });
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider increasing password minimal length to 10.');
+      expect(mock_loggedWarnMeta).toEqual({ length: 8 });
     });
 
     test('registers User if it does not exist already, not warning about short password.', async (): Promise<void> => {
@@ -151,6 +151,15 @@ describe('user handlers', (): void => {
       expect(mock_loggedErrorMessage).toBe('Error. User testUser exists already.');
       expect(mock_loggedErrorMeta).toEqual({ statusCode: 400 });
     });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, { username: 'username', meta: { some: 'value' }, password: 'pas' });
+      const res = buildResponse();
+
+      await registerHandler(req, res);
+
+      assertError(res, 'ValidationError: "password" length must be at least 8 characters long');
+    });
   });
 
   describe('addUserHandler', (): void => {
@@ -163,8 +172,8 @@ describe('user handlers', (): void => {
       assertOK(res, { username });
       expect((data.user_?.at(0) as User)?.username).toBe(username);
       expect((data.user_?.at(0) as User)?.admin).toBe(true);
-      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
-      expect(mock_loggedWarnMeta).toEqual({ length: 3 });
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider increasing password minimal length to 10.');
+      expect(mock_loggedWarnMeta).toEqual({ length: 8 });
     });
 
     test('adds User if it does not exist already, admin, not warning about short password.', async (): Promise<void> => {
@@ -201,6 +210,15 @@ describe('user handlers', (): void => {
       assertError(res, 'User testUser exists already');
       expect(data.user_?.length).toBe(1);
     });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, { username: 'username', meta: { some: 'value' }, admin: false });
+      const res = buildResponse();
+
+      await addUserHandler(req, res);
+
+      assertError(res, 'ValidationError: "password" is required');
+    });
   });
 
   describe('changeUsernameHandler', (): void => {
@@ -227,6 +245,15 @@ describe('user handlers', (): void => {
       expect((data.user_?.at(0) as User)?.username).toBe(username);
       expect((data.user_?.at(1) as User)?.username).toBe(newUsername);
     });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, { id: 'xyz', newUsername: 'abcde' });
+      const res = buildResponse();
+
+      await changeUsernameHandler(req, res);
+
+      assertError(res, 'ValidationError: "id" does not match any of the allowed types');
+    });
   });
 
   describe('changePasswordHandler', (): void => {
@@ -241,7 +268,7 @@ describe('user handlers', (): void => {
       expect((data.user_?.at(0) as User)?.hashVersion).toBe('testVersion');
       expect((data.user_?.at(0) as User)?.salt).toBe('salt.newPasswd');
       expect((data.user_?.at(0) as User)?.hash).toBe('hash.newPasswd');
-      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider increasing password minimal length to 10.');
       expect(mock_loggedWarnMeta).toEqual({ length: 9 });
     });
 
@@ -259,6 +286,15 @@ describe('user handlers', (): void => {
       expect(mock_loggedWarnMessage).toBe('');
       expect(mock_loggedWarnMeta).toBeUndefined();
     });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, { id: 'sel', newPassword: '123456789' });
+      const res = buildResponse();
+
+      await changePasswordHandler(req, res);
+
+      assertError(res, 'ValidationError: "id" does not match any of the allowed types');
+    });
   });
 
   describe('setAdminStateHandler', (): void => {
@@ -271,6 +307,15 @@ describe('user handlers', (): void => {
 
       assertOK(res);
       expect((data.user_?.at(0) as User)?.admin).toBe(true);
+    });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, { id: 'self', admin: 'yes' });
+      const res = buildResponse();
+
+      await setAdminStateHandler(req, res);
+
+      assertError(res, 'ValidationError: "admin" must be a boolean');
     });
   });
 
@@ -285,6 +330,15 @@ describe('user handlers', (): void => {
       assertOK(res);
       expect((data.user_?.at(0) as User)?.meta).toEqual(newMeta);
     });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, {});
+      const res = buildResponse();
+
+      await saveMetaHandler(req, res);
+
+      assertError(res, 'ValidationError: "id" is required');
+    });
   });
 
   describe('loadMetaHandler', (): void => {
@@ -297,6 +351,15 @@ describe('user handlers', (): void => {
 
       assertOK(res, { meta: testUser.meta });
     });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, {});
+      const res = buildResponse();
+
+      await loadMetaHandler(req, res);
+
+      assertError(res, 'ValidationError: "id" is required');
+    });
   });
 
   describe('getUserHandler', (): void => {
@@ -308,6 +371,15 @@ describe('user handlers', (): void => {
       await getUserHandler(req, res);
 
       assertOK(res, { user: { ...testUser, hashVersion: undefined, salt: undefined, hash: undefined } });
+    });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, {});
+      const res = buildResponse();
+
+      await getUserHandler(req, res);
+
+      assertError(res, 'ValidationError: "id" is required');
     });
   });
 
@@ -342,6 +414,15 @@ describe('user handlers', (): void => {
       expect(data.user_.length).toBe(1);
       expect((data.user_?.at(0) as User)?.username).toEqual('other');
     });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, {});
+      const res = buildResponse();
+
+      await deleteUserHandler(req, res);
+
+      assertError(res, 'ValidationError: "id" is required');
+    });
   });
 
   describe('loginHandler', (): void => {
@@ -355,7 +436,7 @@ describe('user handlers', (): void => {
     });
 
     test('rejects if password is invalid', async (): Promise<void> => {
-      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: '', password: '' });
+      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: 'abc', password: 'invalid_' });
       const res = buildResponse();
 
       await loginHandler(req, res);
@@ -364,12 +445,21 @@ describe('user handlers', (): void => {
     });
 
     test('rejects if attempts exceeded', async (): Promise<void> => {
-      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: 'locked', password: '123' });
+      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: 'locked', password: '12345678' });
       const res = buildResponse();
 
       await loginHandler(req, res);
 
       assertUnauthorized(undefined, res, 'Login attempts exceeded for username locked');
+    });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      const req = buildRequestForUserAction('', '-', undefined, { username: 'username', password: 'pas' });
+      const res = buildResponse();
+
+      await loginHandler(req, res);
+
+      assertError(res, 'ValidationError: "password" length must be at least 8 characters long');
     });
   });
 });

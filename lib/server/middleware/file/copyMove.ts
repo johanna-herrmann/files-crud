@@ -1,10 +1,21 @@
 import express from 'express';
+import joi from 'joi';
 import { fileDeleteMiddleware, fileSaveMiddleware, loadMiddleware } from '@/server/middleware/file/file';
 import { authorize } from '@/user';
-import { getToken, sendUnauthorized } from '@/server/util';
+import { getToken, sendError, sendUnauthorized } from '@/server/util';
 import { Request } from '@/types/server/Request';
 
 const fileCopyMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const bodySchema = joi.object({
+    path: joi.string(),
+    targetPath: joi.string(),
+    copyOwner: joi.boolean()
+  });
+  const error = bodySchema.validate(req.body).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { path, targetPath, copyOwner } = req.body;
   const user = await authorize(getToken(req));
 
@@ -22,6 +33,15 @@ const fileCopyMiddleware = async function (req: Request, res: express.Response, 
 };
 
 const fileMoveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const bodySchema = joi.object({
+    path: joi.string(),
+    targetPath: joi.string()
+  });
+  const error = bodySchema.validate(req.body).error;
+  if (error) {
+    return sendError(res, `${error}`);
+  }
+
   const { path, targetPath } = req.body;
 
   req.params.path = (path as string).split('/');

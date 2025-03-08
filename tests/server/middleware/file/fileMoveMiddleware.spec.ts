@@ -1,6 +1,13 @@
 import express from 'express';
-import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
-import { fileMoveMiddleware } from '@/server/middleware/file/copyMove';
+import {
+  assertUnauthorized,
+  assertPass,
+  buildRequestForFileAction,
+  buildResponse,
+  resetLastMessage,
+  assertError
+} from '#/server/expressTestUtils';
+import { fileCopyMiddleware, fileMoveMiddleware } from '@/server/middleware/file/copyMove';
 import { sendUnauthorized } from '@/server/util';
 import { Logger } from '@/logging/Logger';
 import { User } from '@/types/user/User';
@@ -126,6 +133,19 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_deletePath).toBe('src/file');
       expect(mocked_writePath).toBe('');
       assertUnauthorized(next, res, 'You are not allowed to delete src/file');
+    });
+
+    test('sends error on invalid body.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange(true, true);
+      req.body = { path: 'file', targetPath: '' };
+
+      await fileCopyMiddleware(req, res, () => (next = true));
+
+      expect(mocked_deletePath).toBe('');
+      expect(mocked_writePath).toBe('');
+      expect(next).toBe(false);
+      assertError(res, 'ValidationError: "targetPath" is not allowed to be empty');
     });
   });
 });

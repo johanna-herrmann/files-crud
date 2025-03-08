@@ -1,6 +1,13 @@
 import express from 'express';
 import { fileCopyMiddleware } from '@/server/middleware/file/copyMove';
-import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import {
+  assertUnauthorized,
+  assertPass,
+  buildRequestForFileAction,
+  buildResponse,
+  resetLastMessage,
+  assertError
+} from '#/server/expressTestUtils';
 import { sendUnauthorized } from '@/server/util';
 import { testUser } from '#/testItems';
 import { Logger } from '@/logging/Logger';
@@ -166,6 +173,19 @@ describe('fileCopyMiddleware', (): void => {
       await fileCopyMiddleware(req, res, () => (next = true));
 
       assertUnauthorized(next, res, 'Only admins are allowed to copy the owner');
+    });
+
+    test('sends error on invalid body.', async (): Promise<void> => {
+      let next = false;
+      const [req, res] = arrange(true, true, false);
+      req.body = { path: 'file', targetPat: 'copy', copyO: false };
+
+      await fileCopyMiddleware(req, res, () => (next = true));
+
+      expect(mocked_readPath).toBe('');
+      expect(mocked_writePath).toBe('');
+      expect(next).toBe(false);
+      assertError(res, 'ValidationError: "targetPat" is not allowed');
     });
   });
 });
