@@ -1,6 +1,6 @@
 import express from 'express';
 import joi from 'joi';
-import { sendError, sendOK, sendUnauthorized } from '@/server/util';
+import { sendOK, sendUnauthorized, sendError, sendValidationError } from '@/server/util';
 import {
   addUser,
   changePassword,
@@ -21,6 +21,13 @@ import { loadLogger } from '@/logging';
 import { getExpiresAt } from '@/user/jwt';
 import { Request } from '@/types/server/Request';
 
+const idConstraint = 'required string, uuid or "self"';
+const usernameConstraint = 'required string, 3 to 64 chars long';
+const passwordConstraint = 'required string, at least 8 chars long';
+const metaConstraint = 'optional object';
+const adminConstraint = 'optional boolean';
+const requiredAdminConstraint = 'required boolean';
+
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const body = req.body;
@@ -32,7 +39,7 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
   });
   const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { username: usernameConstraint, password: passwordConstraint, meta: metaConstraint }, body);
   }
 
   const { username, password, meta } = body;
@@ -64,7 +71,16 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
   });
   const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(
+      res,
+      {
+        username: usernameConstraint,
+        password: passwordConstraint,
+        meta: metaConstraint,
+        admin: adminConstraint
+      },
+      body
+    );
   }
 
   const { username, password, meta, admin } = body;
@@ -89,12 +105,12 @@ const changeUsernameHandler = async function (req: Request, res: express.Respons
   const body = req.body;
 
   const bodySchema = joi.object({
-    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
+    id: joi.alternatives([joi.string().uuid(), 'self']).required(),
     newUsername: joi.string().min(3).max(64).required()
   });
   const error = bodySchema.validate(body, { convert: false }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { id: idConstraint, newUsername: usernameConstraint }, body);
   }
 
   const { id, newUsername } = body;
@@ -114,12 +130,12 @@ const setAdminStateHandler = async function (req: Request, res: express.Response
   const body = req.body;
 
   const bodySchema = joi.object({
-    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
-    admin: joi.boolean()
+    id: joi.alternatives([joi.string().uuid(), 'self']).required(),
+    admin: joi.boolean().required()
   });
   const error = bodySchema.validate(body, { convert: false }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { id: idConstraint, admin: requiredAdminConstraint }, body);
   }
 
   const { id, admin } = body;
@@ -135,12 +151,12 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
   const body = req.body;
 
   const bodySchema = joi.object({
-    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
+    id: joi.alternatives([joi.string().uuid(), 'self']).required(),
     meta: joi.object({})
   });
   const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { id: idConstraint, meta: metaConstraint }, body);
   }
 
   const id = body.id ?? '';
@@ -157,12 +173,12 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
   const body = req.body;
 
   const bodySchema = joi.object({
-    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required(),
+    id: joi.alternatives([joi.string().uuid(), 'self']).required(),
     newPassword: joi.string().min(8).required()
   });
   const error = bodySchema.validate(body, { convert: false }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { id: idConstraint, newPassword: passwordConstraint }, body);
   }
 
   const { id, newPassword } = body;
@@ -182,11 +198,11 @@ const deleteUserHandler = async function (req: Request, res: express.Response): 
   const logger = loadLogger();
 
   const bodySchema = joi.object({
-    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required()
+    id: joi.alternatives([joi.string().uuid(), 'self']).required()
   });
   const error = bodySchema.validate(req.body, { convert: false, allowUnknown: true }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { id: idConstraint }, req.body);
   }
 
   const id = req.body.id ?? '';
@@ -201,11 +217,11 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
   const logger = loadLogger();
 
   const bodySchema = joi.object({
-    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required()
+    id: joi.alternatives([joi.string().uuid(), 'self']).required()
   });
   const error = bodySchema.validate(req.body, { convert: false, allowUnknown: true }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { id: idConstraint }, req.body);
   }
 
   const id = req.body.id ?? '';
@@ -220,11 +236,11 @@ const getUserHandler = async function (req: Request, res: express.Response): Pro
   const logger = loadLogger();
 
   const bodySchema = joi.object({
-    id: joi.alternatives([joi.string().uuid(), joi.string().regex(/^self$/)]).required()
+    id: joi.alternatives([joi.string().uuid(), 'self']).required()
   });
   const error = bodySchema.validate(req.body, { convert: false, allowUnknown: true }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { id: idConstraint }, req.body);
   }
 
   const id = req.body.id ?? '';
@@ -258,7 +274,7 @@ const loginHandler = async function (req: Request, res: express.Response): Promi
   });
   const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { username: usernameConstraint, password: passwordConstraint }, req.body);
   }
 
   const { username, password } = body;

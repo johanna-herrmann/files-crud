@@ -2,8 +2,11 @@ import express from 'express';
 import joi from 'joi';
 import { fileDeleteMiddleware, fileSaveMiddleware, loadMiddleware } from '@/server/middleware/file/file';
 import { authorize } from '@/user';
-import { getToken, sendError, sendUnauthorized } from '@/server/util';
+import { getToken, sendUnauthorized, sendValidationError } from '@/server/util';
 import { Request } from '@/types/server/Request';
+
+const pathConstraint = 'required string, not empty';
+const copyOwnerConstraint = 'optional boolean';
 
 const fileCopyMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const bodySchema = joi.object({
@@ -13,7 +16,7 @@ const fileCopyMiddleware = async function (req: Request, res: express.Response, 
   });
   const error = bodySchema.validate(req.body).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint, copyOwner: copyOwnerConstraint }, req.body);
   }
 
   const { path, targetPath, copyOwner } = req.body;
@@ -39,7 +42,7 @@ const fileMoveMiddleware = async function (req: Request, res: express.Response, 
   });
   const error = bodySchema.validate(req.body).error;
   if (error) {
-    return sendError(res, `${error}`);
+    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint }, req.body);
   }
 
   const { path, targetPath } = req.body;

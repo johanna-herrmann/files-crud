@@ -1,6 +1,13 @@
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
-import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import {
+  assertUnauthorized,
+  assertPass,
+  buildRequestForFileAction,
+  buildResponse,
+  resetLastMessage,
+  assertValidationError
+} from '#/server/expressTestUtils';
 import { fileSaveMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
@@ -239,5 +246,18 @@ describe('fileSaveMiddleware', () => {
         await rejectsIfCreatePermissionIsNotGiven('owner', 'valid-user-token', `user_${testUser.id}`);
       });
     });
+  });
+
+  test('sends error on invalid path param.', async (): Promise<void> => {
+    const constraint = 'required string, not empty';
+    let next = false;
+    const req = buildRequestForFileAction('', 'list', '', {});
+    delete req.params.path;
+    const res = buildResponse();
+
+    await fileSaveMiddleware(req, res, () => (next = true));
+
+    expect(next).toBe(false);
+    assertValidationError(res, { path: constraint }, { path: '' });
   });
 });

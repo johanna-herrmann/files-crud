@@ -98,6 +98,11 @@ const assertError = function (res: express.Response, message: string, errorGiven
   expect(lastMessage).toBe(JSON.stringify({ error: `Error. ${message}.` }));
 };
 
+const assertValidationError = function (res: express.Response, schema: Record<string, string>, value: Record<string, unknown>) {
+  expect(res.statusCode).toBe(400);
+  expect(lastMessage).toBe(JSON.stringify({ error: 'Validation Error.', schema, value }));
+};
+
 const assertOK = function (res: express.Response, body?: Record<string, unknown>) {
   expect(res.statusCode).toBe(200);
   expect(lastMessage).toBe(JSON.stringify(body ?? {}));
@@ -118,6 +123,7 @@ export {
   assertUnauthorized,
   assert404,
   assertError,
+  assertValidationError,
   assertOK,
   resetLastMessage
 };

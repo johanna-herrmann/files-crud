@@ -243,6 +243,36 @@ describe('config', (): void => {
     expect((error as Error).message).toBe('Invalid Config. ValidationError: "server.port" must be less than or equal to 65536');
   });
 
+  test('fails on invalid, deep, not matching enum', async (): Promise<void> => {
+    let error: unknown = null;
+    process.env.FILES_CRUD_STORAGE__NAME = 'fantasy_storage';
+
+    try {
+      loadConfig();
+    } catch (ex: unknown) {
+      error = ex;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe('Invalid Config. ValidationError: "storage.name" must be one of [fs, s3]');
+  });
+
+  test('fails on invalid, deep, wrong size type', async (): Promise<void> => {
+    let error: unknown = null;
+    process.env.FILES_CRUD_SERVER__FILE_SIZE_LIMIT = 'k23';
+
+    try {
+      loadConfig();
+    } catch (ex: unknown) {
+      error = ex;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe(
+      'Invalid Config. ValidationError: "server.fileSizeLimit" with value "k23" fails to match the required pattern: /^\\d+[kmgtpe]$/iu'
+    );
+  });
+
   test('fails on invalid, deeper, wrong type', async (): Promise<void> => {
     let error: unknown = null;
     process.env.FILES_CRUD_SERVER__CORS__ORIGIN = '123';

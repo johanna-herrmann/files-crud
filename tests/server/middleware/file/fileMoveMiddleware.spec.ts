@@ -1,10 +1,19 @@
 import express from 'express';
-import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage, assertError } from '#/server/expressTestUtils';
-import { fileCopyMiddleware, fileMoveMiddleware } from '@/server/middleware/file/copyMove';
+import {
+  assertUnauthorized,
+  assertPass,
+  buildRequestForFileAction,
+  buildResponse,
+  resetLastMessage,
+  assertValidationError
+} from '#/server/expressTestUtils';
+import { fileMoveMiddleware } from '@/server/middleware/file/copyMove';
 import { sendUnauthorized } from '@/server/util';
 import { Logger } from '@/logging/Logger';
 import { User } from '@/types/user/User';
 import { Request } from '@/types/server/Request';
+
+const pathConstraint = 'required string, not empty';
 
 let mocked_passWrite = false;
 let mocked_passDelete = false;
@@ -129,16 +138,18 @@ describe('fileCopyMoveMiddleware', (): void => {
     });
 
     test('sends error on invalid body.', async (): Promise<void> => {
+      const schema = { path: pathConstraint, targetPath: pathConstraint };
+      const body = { path: 'file', targetPath: '' };
       let next = false;
       const [req, res] = arrange(true, true);
-      req.body = { path: 'file', targetPath: '' };
+      req.body = body;
 
-      await fileCopyMiddleware(req, res, () => (next = true));
+      await fileMoveMiddleware(req, res, () => (next = true));
 
       expect(mocked_deletePath).toBe('');
       expect(mocked_writePath).toBe('');
       expect(next).toBe(false);
-      assertError(res, 'ValidationError: "targetPath" is not allowed to be empty');
+      assertValidationError(res, schema, body);
     });
   });
 });

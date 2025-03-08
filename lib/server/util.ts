@@ -8,12 +8,15 @@ const sanitizePath = function (path: string): string {
 };
 
 const resolvePath = function (req: Request): string {
-  const params = req.params as Record<string, string[]>;
+  const params = req.params as Record<string, string | string[]>;
   if (!params.path) {
     return '';
   }
-  const path = params.path.join('/');
-  return sanitizePath(path);
+  const pathValue = params.path;
+  if (typeof pathValue === 'string') {
+    return sanitizePath(pathValue);
+  }
+  return sanitizePath(pathValue.join('/'));
 };
 
 const getToken = function (req: Request): string {
@@ -55,9 +58,16 @@ const sendError = function (res: express.Response, message: string, error?: Erro
   res.json({ error: messageWithoutDetails });
 };
 
+const sendValidationError = function (res: express.Response, schema: Record<string, string>, value: Record<string, unknown>): void {
+  const logger = loadLogger();
+  res.statusCode = 400;
+  logger.error('validation error', { schema, value, status: 400 });
+  res.json({ error: 'Validation Error.', schema, value });
+};
+
 const sendOK = function (res: express.Response, body?: Record<string, unknown>): void {
   res.statusCode = 200;
   res.json(body ?? {});
 };
 
-export { sanitizePath, resolvePath, getToken, sendUnauthorized, sendNotFound, sendError, sendOK };
+export { sanitizePath, resolvePath, getToken, sendUnauthorized, sendNotFound, sendError, sendValidationError, sendOK };

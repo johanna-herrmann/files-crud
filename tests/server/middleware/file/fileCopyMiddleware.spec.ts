@@ -1,11 +1,21 @@
 import express from 'express';
 import { fileCopyMiddleware } from '@/server/middleware/file/copyMove';
-import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage, assertError } from '#/server/expressTestUtils';
+import {
+  assertUnauthorized,
+  assertPass,
+  buildRequestForFileAction,
+  buildResponse,
+  resetLastMessage,
+  assertValidationError
+} from '#/server/expressTestUtils';
 import { sendUnauthorized } from '@/server/util';
 import { testUser } from '#/testItems';
 import { Logger } from '@/logging/Logger';
 import { User } from '@/types/user/User';
 import { Request } from '@/types/server/Request';
+
+const pathConstraint = 'required string, not empty';
+const copyOwnerConstraint = 'optional boolean';
 
 let mocked_passRead = false;
 let mocked_passWrite = false;
@@ -169,16 +179,18 @@ describe('fileCopyMiddleware', (): void => {
     });
 
     test('sends error on invalid body.', async (): Promise<void> => {
+      const schema = { path: pathConstraint, targetPath: pathConstraint, copyOwner: copyOwnerConstraint };
+      const body = { path: 'file', targetPat: 'copy', copyO: false };
       let next = false;
       const [req, res] = arrange(true, true, false);
-      req.body = { path: 'file', targetPat: 'copy', copyO: false };
+      req.body = body;
 
       await fileCopyMiddleware(req, res, () => (next = true));
 
       expect(mocked_readPath).toBe('');
       expect(mocked_writePath).toBe('');
       expect(next).toBe(false);
-      assertError(res, 'ValidationError: "targetPat" is not allowed');
+      assertValidationError(res, schema, body);
     });
   });
 });

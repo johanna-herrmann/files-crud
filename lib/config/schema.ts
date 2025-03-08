@@ -8,7 +8,7 @@ const buildConfigSchema = function (directoryPermissionsKey: string[]): joi.Obje
 
   return joi.object({
     database: joi.object({
-      name: joi.string().regex(/^(in-memory|mongodb|postgresql|dynamodb)$/iu),
+      name: joi.alternatives('in-memory', 'mongodb', 'postgresql', 'dynamodb'),
       db: joi.string(),
       url: joi.string(),
       host: joi.string(),
@@ -23,7 +23,7 @@ const buildConfigSchema = function (directoryPermissionsKey: string[]): joi.Obje
       jwtKeyTableName: joi.string().regex(/^[a-z0-9_-]+$/iu)
     }),
     storage: joi.object({
-      name: joi.string().regex(/^(fs|s3)$/iu),
+      name: joi.alternatives('fs', 's3'),
       path: joi.string(),
       region: joi.string(),
       accessKeyId: joi.string(),
@@ -33,15 +33,19 @@ const buildConfigSchema = function (directoryPermissionsKey: string[]): joi.Obje
       forcePathStyle: joi.boolean()
     }),
     logging: joi.object({
-      level: joi.string().regex(/^(debug|info|warn|error)$/iu),
+      level: joi.alternatives('debug', 'info', 'warn', 'error'),
       accessLogFile: joi.string(),
       errorLogFile: joi.string(),
-      ttyLoggingFormat: joi.string().regex(/^(humanReadableLine|coloredHumanReadableLine|humanReadableBlock|coloredHumanReadableBlock|json)$/iu),
-      fileLoggingFormat: joi.string().regex(/^(humanReadableLine|coloredHumanReadableLine|humanReadableBlock|coloredHumanReadableBlock|json)$/iu),
-      errorFileLoggingFormat: joi
-        .string()
-        .regex(/^(humanReadableLine|coloredHumanReadableLine|humanReadableBlock|coloredHumanReadableBlock|json)$/iu),
-      accessLoggingFormat: joi.string().regex(/^(classic|json)$/iu),
+      ttyLoggingFormat: joi.alternatives('humanReadableLine', 'coloredHumanReadableLine', 'humanReadableBlock', 'coloredHumanReadableBlock', 'json'),
+      fileLoggingFormat: joi.alternatives('humanReadableLine', 'coloredHumanReadableLine', 'humanReadableBlock', 'coloredHumanReadableBlock', 'json'),
+      errorFileLoggingFormat: joi.alternatives(
+        'humanReadableLine',
+        'coloredHumanReadableLine',
+        'humanReadableBlock',
+        'coloredHumanReadableBlock',
+        'json'
+      ),
+      accessLoggingFormat: joi.alternatives('classic', 'json'),
       enableErrorFileLogging: joi.boolean(),
       enableAccessLogging: joi.boolean(),
       enableLogFileRotation: joi.boolean(),
@@ -60,14 +64,14 @@ const buildConfigSchema = function (directoryPermissionsKey: string[]): joi.Obje
       hsts: joi.boolean(),
       noRobots: joi.boolean(),
       cors: joi.object({
-        origin: [joi.string(), joi.array().items(joi.string())],
-        methods: [joi.string(), joi.array().items(joi.string())],
-        allowedHeaders: [joi.string(), joi.array().items(joi.string())],
-        exposedHeaders: [joi.string(), joi.array().items(joi.string())],
+        origin: joi.alternatives(joi.string(), joi.array().items(joi.string())),
+        methods: joi.alternatives(joi.string(), joi.array().items(joi.string())),
+        allowedHeaders: joi.alternatives(joi.string(), joi.array().items(joi.string())),
+        exposedHeaders: joi.alternatives(joi.string(), joi.array().items(joi.string())),
         credentials: joi.boolean(),
         maxAge: joi.number()
       }),
-      fileSizeLimit: [joi.number().integer().min(0), joi.string().regex(/^\d+[kmgtpe]$/iu)]
+      fileSizeLimit: joi.alternatives(joi.number().integer().min(0), joi.string().regex(/^\d+[kmgtpe]$/iu))
     }),
     accessKeyId: joi.string(),
     secretAccessKey: joi.string(),

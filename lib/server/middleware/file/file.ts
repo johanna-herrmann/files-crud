@@ -1,7 +1,8 @@
 import paths from 'path';
 import express from 'express';
+import joi from 'joi';
 import { authorize } from '@/user';
-import { getToken, resolvePath, sendUnauthorized } from '@/server/util';
+import { getToken, resolvePath, sendUnauthorized, sendValidationError } from '@/server/util';
 import { loadStorage } from '@/storage';
 import { Storage } from '@/storage/Storage';
 import { getPermissions } from '@/server/middleware/file/permissions';
@@ -11,6 +12,7 @@ import { FileData } from '@/types/storage/FileData';
 import { Request } from '@/types/server/Request';
 
 const nullData: FileData = { owner: '', contentType: '', size: -1, md5: '0'.repeat(32) };
+const notEmptyPathConstraint = 'required string, not empty';
 
 const ensureRights = function (rightsSet: Right[], requiredRight: Right, path: string, res: express.Response): boolean {
   if (!rightsSet.includes(requiredRight)) {
@@ -47,9 +49,18 @@ const checkForListing = async function (req: Request, res: express.Response, nex
 };
 
 const loadMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const bodySchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = bodySchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+  }
+
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = resolvePath(req);
   const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'read');
   if (allowed) {
@@ -58,9 +69,18 @@ const loadMiddleware = async function (req: Request, res: express.Response, next
 };
 
 const fileSaveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const bodySchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = bodySchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+  }
+
   const storage = loadStorage();
   const user = (req.body.user ?? (await authorize(getToken(req)))) as User;
-  const path = resolvePath(req);
   const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, exists ? 'update' : 'create');
   if (allowed) {
@@ -70,9 +90,18 @@ const fileSaveMiddleware = async function (req: Request, res: express.Response, 
 };
 
 const fileDeleteMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const bodySchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = bodySchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+  }
+
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = resolvePath(req);
   const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'delete');
   if (allowed) {
@@ -81,9 +110,18 @@ const fileDeleteMiddleware = async function (req: Request, res: express.Response
 };
 
 const fileSaveMetaMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const bodySchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = bodySchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+  }
+
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = resolvePath(req);
   const exists = await storage.fileExists(path);
   const data = await storage.loadData(path);
   const meta = data?.meta;
@@ -98,6 +136,16 @@ const directoryListingMiddleware = async function (req: Request, res: express.Re
 };
 
 const existsMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const bodySchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = bodySchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+  }
+
   await checkForListing(req, res, next, true);
 };
 

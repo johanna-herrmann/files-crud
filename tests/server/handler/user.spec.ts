@@ -1,5 +1,13 @@
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import { assertError, assertOK, assertUnauthorized, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import {
+  assertOK,
+  assertUnauthorized,
+  assertError,
+  assertValidationError,
+  buildRequestForUserAction,
+  buildResponse,
+  resetLastMessage
+} from '#/server/expressTestUtils';
 import {
   addUserHandler,
   changePasswordHandler,
@@ -17,6 +25,13 @@ import { testUser } from '#/testItems';
 import { attemptsExceeded, invalidCredentials } from '@/user';
 import { Logger } from '@/logging/Logger';
 import { User } from '@/types/user/User';
+
+const idConstraint = 'required string, uuid or "self"';
+const usernameConstraint = 'required string, 3 to 64 chars long';
+const passwordConstraint = 'required string, at least 8 chars long';
+const metaConstraint = 'optional object';
+const adminConstraint = 'optional boolean';
+const requiredAdminConstraint = 'required boolean';
 
 const id = testUser.id;
 const username = 'testUser';
@@ -153,12 +168,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
+      const schema = { username: usernameConstraint, password: passwordConstraint, meta: metaConstraint };
+      const body = { username: 'username', meta: { some: 'value' }, password: 'pas' };
       const req = buildRequestForUserAction('', '-', undefined, { username: 'username', meta: { some: 'value' }, password: 'pas' });
       const res = buildResponse();
 
       await registerHandler(req, res);
 
-      assertError(res, 'ValidationError: "password" length must be at least 8 characters long');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -212,12 +229,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, { username: 'username', meta: { some: 'value' }, admin: false });
+      const schema = { username: usernameConstraint, password: passwordConstraint, meta: metaConstraint, admin: adminConstraint };
+      const body = { username: 'username', meta: { some: 'value' }, admin: false };
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await addUserHandler(req, res);
 
-      assertError(res, 'ValidationError: "password" is required');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -247,12 +266,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, { id: 'xyz', newUsername: 'abcde' });
+      const schema = { id: idConstraint, newUsername: usernameConstraint };
+      const body = { id: 'xyz', newUsername: 'abcde' };
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await changeUsernameHandler(req, res);
 
-      assertError(res, 'ValidationError: "id" does not match any of the allowed types');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -288,12 +309,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, { id: 'sel', newPassword: '123456789' });
+      const schema = { id: idConstraint, newPassword: passwordConstraint };
+      const body = { id: 'sel', newPassword: '123456789' };
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await changePasswordHandler(req, res);
 
-      assertError(res, 'ValidationError: "id" does not match any of the allowed types');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -310,12 +333,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, { id: 'self', admin: 'yes' });
+      const schema = { id: idConstraint, admin: requiredAdminConstraint };
+      const body = { id: 'self', admin: 'yes' };
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await setAdminStateHandler(req, res);
 
-      assertError(res, 'ValidationError: "admin" must be a boolean');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -332,12 +357,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, {});
+      const schema = { id: idConstraint, meta: metaConstraint };
+      const body = {};
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await saveMetaHandler(req, res);
 
-      assertError(res, 'ValidationError: "id" is required');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -353,12 +380,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, {});
+      const schema = { id: idConstraint };
+      const body = {};
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await loadMetaHandler(req, res);
 
-      assertError(res, 'ValidationError: "id" is required');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -374,12 +403,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, {});
+      const schema = { id: idConstraint };
+      const body = {};
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await getUserHandler(req, res);
 
-      assertError(res, 'ValidationError: "id" is required');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -416,12 +447,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, {});
+      const schema = { id: idConstraint };
+      const body = {};
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await deleteUserHandler(req, res);
 
-      assertError(res, 'ValidationError: "id" is required');
+      assertValidationError(res, schema, body);
     });
   });
 
@@ -454,12 +487,14 @@ describe('user handlers', (): void => {
     });
 
     test('sends error on invalid body', async (): Promise<void> => {
-      const req = buildRequestForUserAction('', '-', undefined, { username: 'username', password: 'pas' });
+      const schema = { username: usernameConstraint, password: passwordConstraint };
+      const body = { username: 'username', password: 'pas' };
+      const req = buildRequestForUserAction('', '-', undefined, body);
       const res = buildResponse();
 
       await loginHandler(req, res);
 
-      assertError(res, 'ValidationError: "password" length must be at least 8 characters long');
+      assertValidationError(res, schema, body);
     });
   });
 });
