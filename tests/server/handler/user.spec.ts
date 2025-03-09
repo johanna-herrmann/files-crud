@@ -120,6 +120,10 @@ jest.mock('@/logging/index', () => {
 });
 
 describe('user handlers', (): void => {
+  beforeEach(async () => {
+    data.user_ = [];
+  });
+
   afterEach(async () => {
     data.user_ = [];
     resetLastMessage();
@@ -307,6 +311,16 @@ describe('user handlers', (): void => {
       expect((data.user_?.at(0) as User)?.hash).toBe('hash.newPassword');
       expect(mock_loggedWarnMessage).toBe('');
       expect(mock_loggedWarnMeta).toBeUndefined();
+    });
+
+    test('no error with old password', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
+      const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { id, newPassword: 'newPassword', oldPassword: 'ol' });
+      const res = buildResponse();
+
+      await changePasswordHandler(req, res);
+
+      assertOK(res);
     });
 
     test('sends error on invalid body', async (): Promise<void> => {

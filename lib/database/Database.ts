@@ -132,7 +132,10 @@ class Database implements DatabaseType {
   }
 
   public async removeLoginAttempts(username: string): Promise<void> {
-    return await this.db.delete('failedLoginAttempts', 'username', username);
+    const attemptsItem = await this.db.findOne<FailedLoginAttempts>('failedLoginAttempts', 'username', username);
+    if (!!attemptsItem) {
+      await this.db.delete('failedLoginAttempts', 'username', username);
+    }
   }
 }
 

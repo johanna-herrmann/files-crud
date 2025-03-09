@@ -170,18 +170,19 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
 
 const changePasswordHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { oldPassword: _, ...payload } = req.body;
 
   const bodySchema = joi.object({
     id: joi.alternatives([joi.string().uuid(), 'self']).required(),
     newPassword: joi.string().min(8).required()
   });
-  const error = bodySchema.validate(body, { convert: false }).error;
+  const error = bodySchema.validate(payload, { convert: false }).error;
   if (error) {
-    return sendValidationError(res, { id: idConstraint, newPassword: passwordConstraint }, body);
+    return sendValidationError(res, { id: idConstraint, newPassword: passwordConstraint }, payload);
   }
 
-  const { id, newPassword } = body;
+  const { id, newPassword } = payload;
 
   await changePassword(id as string, newPassword as string);
 

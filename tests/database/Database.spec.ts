@@ -322,4 +322,18 @@ describe('Database', (): void => {
 
     expect(data.failedLoginAttempts.length).toBe(0);
   });
+
+  test('Database->removeLoginAttempts throws no error if entry does not exist.', async (): Promise<void> => {
+    const db = new Database();
+    let error: Error | null = null;
+
+    try {
+      await db.removeLoginAttempts(testUser.username);
+    } catch (err: unknown) {
+      error = err as Error;
+    }
+
+    expect(data.failedLoginAttempts.length).toBe(0);
+    expect(error).toBeNull();
+  });
 });

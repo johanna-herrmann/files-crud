@@ -3,13 +3,13 @@ import { addUser, getUsers } from '@/user';
 import { printer } from '@/printing/printer';
 import { getLogger } from '@/logging';
 
-const printLine = function (line: string): void {
+const printLine = function (line: string, meta?: Record<string, unknown>): void {
   const logger = getLogger();
   if (!logger) {
     printer.printLine(line);
     return;
   }
-  logger.info(line);
+  logger.info(line, meta);
 };
 
 const printError = function (message: string): void {
@@ -37,7 +37,7 @@ const createAdmin = async function ({ username, password }: { username?: string;
     password = password ?? getRandomString(15);
     printLine(`Creating user...`);
     await addUser(username, password, true, {});
-    printLine(`Successfully created user. username: ${username}; password: ${password}`);
+    printLine(`Successfully created user. username: ${username}; password: ${password}`, { username, password });
   } catch (err: unknown) {
     const error = err as Error;
     printError(

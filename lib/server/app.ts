@@ -20,6 +20,7 @@ import {
   logAccessMiddleware,
   headerMiddleware,
   controlMiddleware,
+  bodyFallbackMiddleware,
   notFoundMiddleware,
   errorMiddleware
 } from '@/server/middleware';
@@ -59,6 +60,7 @@ const buildApp = function (noFallbacks?: boolean): express.Application {
   app.use(headerMiddleware);
   app.use(corsMiddleware);
   app.use(express.json());
+  app.use(bodyFallbackMiddleware);
   app.use(logAccessMiddleware);
 
   // user routes

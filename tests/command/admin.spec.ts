@@ -1,12 +1,18 @@
 import { createAdmin, createInitialAdminIfNoAdminExists } from '@/command/admin';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
+import { Logger } from '@/logging/Logger';
+import { loadLogger, resetLogger } from '@/logging';
+import { loadDb } from '@/database';
 import { User } from '@/types/user/User';
 
 const RED_START = '\x1B[31m';
 const END = '\x1B[39m';
 
 const mock_error = new Error('test error');
+
+let mocked_loggedMessages: string[] = [];
+let mocked_loggedMeta: (Record<string, unknown> | undefined)[] = [];
 
 jest.mock('@/user/passwordHashing/versions', () => {
   return {
@@ -28,6 +34,30 @@ jest.mock('crypto', () => {
     ...actual,
     randomBytes(size: number): Buffer {
       return Buffer.from('a'.repeat(size), 'utf8');
+    }
+  };
+});
+
+jest.mock('@/logging', () => {
+  let loggerToGet: Logger | null = null;
+  const logger: Logger = {
+    info(message: string, meta?: Record<string, unknown>): Logger {
+      mocked_loggedMessages.push(message);
+      mocked_loggedMeta.push(meta);
+      return this;
+    }
+  } as Logger;
+  // noinspection JSUnusedGlobalSymbols
+  return {
+    resetLogger() {
+      loggerToGet = null;
+    },
+    loadLogger(): Logger {
+      loggerToGet = logger;
+      return logger;
+    },
+    getLogger(): Logger | null {
+      return loggerToGet;
     }
   };
 });
@@ -60,6 +90,9 @@ describe('command: admin', (): void => {
     printings = [];
     channels = [];
     data.user_ = [];
+    mocked_loggedMessages = [];
+    mocked_loggedMeta = [];
+    resetLogger();
   });
 
   describe('createAdmin', (): void => {
@@ -76,6 +109,7 @@ describe('command: admin', (): void => {
 
     test('creates admin, username given', async (): Promise<void> => {
       const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
+
       await createAdmin({ username: 'testUsername' });
 
       expect((data.user_?.at(0) as User).username).toBe('testUsername');
@@ -88,6 +122,7 @@ describe('command: admin', (): void => {
 
     test('creates admin, password given', async (): Promise<void> => {
       const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
+
       await createAdmin({ password: 'testPassword123' });
 
       expect((data.user_?.at(0) as User).username).toBe(username);
@@ -101,6 +136,7 @@ describe('command: admin', (): void => {
     test('creates admin, nothing given', async (): Promise<void> => {
       const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
       const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
+
       await createAdmin({});
 
       expect((data.user_?.at(0) as User).username).toBe(username);
@@ -109,6 +145,22 @@ describe('command: admin', (): void => {
       expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
       expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: ${username}; password: ${password}\n`]);
       expect(channels).toEqual(['out', 'out']);
+    });
+
+    test('creates admin, nothing given, using logger', async (): Promise<void> => {
+      await loadDb();
+      loadLogger();
+      const username = Buffer.from('a'.repeat(6), 'utf8').toString('base64');
+      const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
+
+      await createAdmin({});
+
+      expect((data.user_?.at(0) as User).username).toBe(username);
+      expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
+      expect((data.user_?.at(0) as User).salt).toBe(`salt.${password}`);
+      expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
+      expect(mocked_loggedMessages).toEqual(['Creating user...', `Successfully created user. username: ${username}; password: ${password}`]);
+      expect(mocked_loggedMeta).toEqual([undefined, { username, password }]);
     });
 
     test('fails successfully', async (): Promise<void> => {

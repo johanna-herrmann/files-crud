@@ -66,7 +66,7 @@ const passesIfAdmin = async function (action: string, idParam: string | undefine
   assertPass(next, res);
   if (idParam || !!idInBody) {
     const id = idParam ?? idInBody ?? [];
-    expect(req.body.id).toBe(id === 'self' ? testUser.id : id);
+    expect(req.body?.id).toBe(id === 'self' ? testUser.id : id);
   }
 };
 
@@ -80,7 +80,7 @@ const passesIfSelf = async function (action: string, idParam: string | undefined
 
   assertPass(next, res);
   if (!!idParam || !!idInBody) {
-    expect(req.body.id).toBe(testUser.id);
+    expect(req.body?.id).toBe(testUser.id);
   }
 };
 
@@ -93,7 +93,7 @@ const passesIfSelfAndValidPassword = async function (): Promise<void> {
   await userMiddleware(req, res, () => (next = true));
 
   assertPass(next, res);
-  expect(req.body.id).toBe(testUser.id);
+  expect(req.body?.id).toBe(testUser.id);
 };
 
 const rejectsIfSelfAndInvalidPassword = async function (): Promise<void> {
