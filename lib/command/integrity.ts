@@ -51,11 +51,6 @@ const checkPathIntegrity = async function (path: string): Promise<undefined | 1>
     return await checkDirectoryIntegrity(path);
   }
 
-  if (path === '') {
-    // at this place we know, storage is not initialized, so just get outta here, so integrity check can be just empty
-    return;
-  }
-
   printer.printError(`Error: ${path} does not exist.`);
   return 1;
 };

@@ -149,10 +149,25 @@ describe('DataAndStructureStorage', (): void => {
     expect(nothing).toBe(false);
   });
 
+  test('DataAndStructureStorage->directoryExists returns always true if called on root.', async (): Promise<void> => {
+    mockFS({});
+
+    const exists = await storage.directoryExists('');
+
+    expect(exists).toBe(true);
+  });
+
   test('Storage->list returns items in directory, sorted alphabetically, directories first and with trailing slashes.', async (): Promise<void> => {
     mockFS({ '/base': { a: { file2: '', dir2: {}, file1: '', dir1: {} } } });
     const items = await storage.list('a');
 
     expect(items).toEqual(['dir1/', 'dir2/', 'file1', 'file2']);
+  });
+
+  test('Storage->list returns empty result, if called on root, before any file is stored.', async (): Promise<void> => {
+    mockFS({});
+    const items = await storage.list('');
+
+    expect(items).toEqual([]);
   });
 });

@@ -117,6 +117,7 @@ class DataAndStructureStorage {
    * @returns Fulfils with boolean upon success, true if it exists and is a directory
    */
   public async directoryExists(path: string): Promise<boolean> {
+    await fse.ensureDir(this.directory);
     const resolvedPath = paths.join(this.directory, path);
     if (!existsSync(resolvedPath)) {
       return false;
@@ -131,6 +132,7 @@ class DataAndStructureStorage {
    * @returns Fulfils with an array of items upon success, sorted, directories first, directories suffixed by a slash
    */
   public async list(path: string): Promise<string[]> {
+    await fse.ensureDir(this.directory);
     const resolvedPath = paths.join(this.directory, path);
     const items = await fs.readdir(resolvedPath);
     const directories: string[] = [];
