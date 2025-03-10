@@ -1,9 +1,12 @@
 import fs from 'fs';
+import fsp from 'fs/promises';
 import yaml from 'yaml';
 import { readEnv } from 'read-env';
 import { loadFullConfig } from '@/config/fullConfig';
 import { buildConfigSchema } from '@/config/schema';
 import { Config } from '@/types/config/Config';
+
+const NEW_CONFIG_FILE_PATH = './.new_config.json';
 
 const config: Config = {};
 let fullConfig: Config = {};
@@ -129,8 +132,10 @@ const getEnvPrefix = function (): string {
 
 loadConfig();
 
-const reloadConfig = function () {
-  loadConfig();
+const reloadConfig = async function () {
+  const configString = (await fsp.readFile(NEW_CONFIG_FILE_PATH, 'utf-8')) || '{}';
+  loadConfig(JSON.parse(configString));
+  await fsp.unlink(NEW_CONFIG_FILE_PATH);
 };
 
-export { getConfig, getFullConfig, loadConfig, setEnvPrefix, getEnvPrefix, reloadConfig };
+export { getConfig, getFullConfig, loadConfig, setEnvPrefix, getEnvPrefix, reloadConfig, NEW_CONFIG_FILE_PATH };

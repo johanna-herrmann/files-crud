@@ -1,20 +1,11 @@
-import { Storage } from '@/storage/Storage';
+import fs from 'fs/promises';
+import paths from 'path';
 import mockFS from 'mock-fs';
+import { Storage } from '@/storage/Storage';
 import { loadConfig } from '@/config/config';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
-import fs from 'fs/promises';
-import paths from 'path';
-
-const exists = async function (path: string): Promise<boolean> {
-  try {
-    await fs.stat(path);
-
-    return true;
-  } catch {
-    return false;
-  }
-};
+import { exists } from '#/utils';
 
 jest.mock('uuid', () => {
   const actual = jest.requireActual('uuid');

@@ -14,7 +14,7 @@ const stopHandler = function (_: Request, res: express.Response): void {
 
 const reloadHandler = async function (_: Request, res: express.Response): Promise<void> {
   loadLogger().info('Received reload request. Reloading...');
-  reloadConfig();
+  await reloadConfig();
   await reloadDb();
   reloadStorage();
   reloadLogger();

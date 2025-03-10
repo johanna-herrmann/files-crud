@@ -2,6 +2,7 @@ import fs from 'fs';
 import { printer } from '@/printing/printer';
 import { doFetch } from './fetchWrapper';
 import { start } from './start';
+import { getConfig, NEW_CONFIG_FILE_PATH } from '@/config/config';
 
 const getPropertiesString = function () {
   try {
@@ -46,6 +47,9 @@ const stop = async function (): Promise<boolean> {
 };
 
 const reload = async function (): Promise<void> {
+  printer.printLine('Preparing to reload...');
+  const config = getConfig();
+  fs.writeFileSync(NEW_CONFIG_FILE_PATH, JSON.stringify(config), 'utf8');
   printer.printLine('Sending request to reload...');
   const { port, protocol, token } = getControlProperties();
   const success = await doRequest('reload', port, protocol, token);

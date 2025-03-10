@@ -18,6 +18,7 @@ import {
   fileExistsHandler
 } from '@/server/handler/file';
 import { Logger } from '@/logging/Logger';
+import { exists } from '#/utils';
 import { UploadRequest } from '@/types/server/UploadRequest';
 import { User } from '@/types/user/User';
 
@@ -108,16 +109,6 @@ const buildDownloadRequest = function (): UploadRequest {
       return this.headers[name];
     }
   } as UploadRequest;
-};
-
-const exists = async function (path: string): Promise<boolean> {
-  try {
-    await fs.stat(path);
-
-    return true;
-  } catch {
-    return false;
-  }
 };
 
 describe('file handlers', (): void => {

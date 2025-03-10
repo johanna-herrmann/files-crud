@@ -1,6 +1,7 @@
 import mockFS from 'mock-fs';
-import { getConfig, getFullConfig, loadConfig, setEnvPrefix } from '@/config/config';
 import process from 'process';
+import { getConfig, getFullConfig, loadConfig, reloadConfig, setEnvPrefix, NEW_CONFIG_FILE_PATH } from '@/config/config';
+import { exists } from '#/utils';
 
 describe('config', (): void => {
   const OLD_ENV = process.env;
@@ -285,5 +286,16 @@ describe('config', (): void => {
 
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).toBe('Invalid Config. ValidationError: "server.cors.origin" must be one of [string, array]');
+  });
+
+  test('reloadConfig reloads config correctly.', async (): Promise<void> => {
+    const newConfig = { register: 'all', server: { port: 1234 } };
+    loadConfig();
+    mockFS({ [NEW_CONFIG_FILE_PATH]: JSON.stringify(newConfig) });
+
+    await reloadConfig();
+
+    expect(getConfig()).toEqual(newConfig);
+    expect(await exists(NEW_CONFIG_FILE_PATH)).toBe(false);
   });
 });
