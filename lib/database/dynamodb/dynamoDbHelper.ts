@@ -131,7 +131,7 @@ const itemExists = async function (client: DynamoDBClient, TableName: string, ke
     },
     KeyConditionExpression: '#key = :value',
     Limit: 1,
-    ProjectionExpression: ''
+    ProjectionExpression: keyName
   };
 
   const command = new QueryCommand(input);

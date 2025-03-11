@@ -32,7 +32,7 @@ const mockForExists = function (exists: boolean) {
       ExpressionAttributeValues: { ':value': 'someName' },
       KeyConditionExpression: '#key = :value',
       Limit: 1,
-      ProjectionExpression: ''
+      ProjectionExpression: 'username'
     })
     .resolves({
       Items: exists ? [{}] : []
