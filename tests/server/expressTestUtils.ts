@@ -20,7 +20,12 @@ const buildRequestForControlAction = function (ip: string, xForwardedFor?: strin
   return { headers: { authorization: token, ['X-Forwarded-For']: xForwardedFor }, socket: { remoteAddress: ip } } as unknown as Request;
 };
 
-const buildRequestForFileAction = function (token: string, action: string, pathParam: string | undefined, body: Record<string, unknown>): Request {
+const buildRequestForFileAction = function (
+  token: string,
+  action: string,
+  pathParam: string | undefined,
+  body: Record<string, unknown> | undefined
+): Request {
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
     params: { action, path: pathParam ? pathParam?.split('/') : undefined },

@@ -133,7 +133,7 @@ describe('fileSaveMiddleware', () => {
           }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, undefined);
         const res = buildResponse();
 
         await fileSaveMiddleware(req, res, () => (next = true));
