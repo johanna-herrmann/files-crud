@@ -8,7 +8,7 @@ const buildConfigSchema = function (directoryPermissionsKey: string[]): joi.Obje
 
   return joi.object({
     database: joi.object({
-      name: joi.alternatives('in-memory', 'mongodb', 'postgresql', 'dynamodb'),
+      name: joi.alternatives('in-memory', 'mongodb', 'postgresql'),
       db: joi.string(),
       url: joi.string(),
       host: joi.string(),
