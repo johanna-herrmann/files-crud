@@ -61,6 +61,14 @@ class Storage {
   }
 
   /**
+   * Deletes all files of a user.
+   * @param id The user id
+   */
+  public async deleteAllFilesFromUser(id: string): Promise<void> {
+    await this.deleteAllFilesFromUserInDirectory(id, '');
+  }
+
+  /**
    * Copies a file and it's data.
    * @param path The path of the file to copy
    * @param copyPath The path of the copy target
@@ -127,7 +135,22 @@ class Storage {
    * @returns Fulfils with an array of items upon success, sorted, directories first, directories suffixed by a slash
    */
   public async list(path: string): Promise<string[]> {
-    return this.dataStorage.list(path);
+    return await this.dataStorage.list(path);
+  }
+
+  private async deleteAllFilesFromUserInDirectory(id: string, directory: string): Promise<void> {
+    const items = await this.dataStorage.list(directory);
+    for (const item of items) {
+      const fullPath = paths.join(directory, item);
+      if (item.endsWith('/')) {
+        await this.deleteAllFilesFromUserInDirectory(id, fullPath);
+        continue;
+      }
+      const data = await this.loadData(fullPath);
+      if (data.owner === id) {
+        await this.delete(fullPath);
+      }
+    }
   }
 }
 

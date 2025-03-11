@@ -1,5 +1,5 @@
 interface DatabaseConfig {
-  name: 'mongodb' | 'postgresql' | 'in-memory';
+  name?: 'mongodb' | 'postgresql' | 'in-memory';
   db?: string;
   url?: string;
   host?: string;

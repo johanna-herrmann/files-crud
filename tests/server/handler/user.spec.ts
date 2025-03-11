@@ -1,3 +1,4 @@
+import mockFS from 'mock-fs';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import {
   assertOK,
@@ -24,6 +25,8 @@ import {
 import { testUser } from '#/testItems';
 import { attemptsExceeded, invalidCredentials } from '@/user';
 import { Logger } from '@/logging/Logger';
+import { loadConfig } from '@/config/config';
+import { exists } from '#/utils';
 import { User } from '@/types/user/User';
 
 const idConstraint = 'required string, uuid or "self"';
@@ -121,10 +124,12 @@ jest.mock('@/logging/index', () => {
 
 describe('user handlers', (): void => {
   beforeEach(async () => {
+    mockFS({});
     data.user_ = [];
   });
 
   afterEach(async () => {
+    mockFS.restore();
     data.user_ = [];
     resetLastMessage();
     mock_loggedWarnMessage = '';
@@ -454,6 +459,13 @@ describe('user handlers', (): void => {
 
   describe('deleteUserHandler', (): void => {
     test('deletes user', async (): Promise<void> => {
+      loadConfig({ storage: { path: '/base' } });
+      mockFS({
+        '/base': {
+          data: { toDelete: JSON.stringify({ owner: id, key: 'ke/key1' }), toNotDelete: JSON.stringify({ owner: 'other', ke: { key2: '' } }) },
+          files: { ke: { key1: '', key2: '' } }
+        }
+      });
       data.user_[0] = { ...testUser };
       data.user_[1] = { ...testUser, username: 'other' };
       const req = buildRequestForUserAction('valid_admin_token', 'one', id, { id });
@@ -464,6 +476,10 @@ describe('user handlers', (): void => {
       assertOK(res);
       expect(data.user_.length).toBe(1);
       expect((data.user_?.at(0) as User)?.username).toEqual('other');
+      expect(await exists('/base/data/toDelete')).toBe(false);
+      expect(await exists('/base/files/ke/key1')).toBe(false);
+      expect(await exists('/base/data/toNotDelete')).toBe(true);
+      expect(await exists('/base/files/ke/key2')).toBe(true);
     });
 
     test('sends error on invalid body', async (): Promise<void> => {

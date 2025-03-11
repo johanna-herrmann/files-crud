@@ -19,6 +19,7 @@ import {
 } from '@/user';
 import { loadLogger } from '@/logging';
 import { getExpiresAt } from '@/user/jwt';
+import { loadStorage } from '@/storage';
 import { Request } from '@/types/server/Request';
 
 const idConstraint = 'required string, uuid or "self"';
@@ -209,6 +210,7 @@ const deleteUserHandler = async function (req: Request, res: express.Response): 
   const id = req.body.id ?? '';
 
   await deleteUser(id as string);
+  await loadStorage().deleteAllFilesFromUser(id as string);
 
   logger.info('Successfully removed user.', { id });
   sendOK(res);

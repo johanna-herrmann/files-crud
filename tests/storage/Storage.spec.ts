@@ -96,6 +96,32 @@ describe('Storage', (): void => {
     expect(await exists('/base/data/a/file')).toBe(false);
   });
 
+  test('Storage->deleteAllFilesFromUser deletes all files from a user.', async (): Promise<void> => {
+    const data1 = { owner: 'testId', meta: {}, contentType: 'text/plain', key: 'te/test1' };
+    const data2 = { owner: 'testId', meta: {}, contentType: 'text/plain', key: 'te/test2' };
+    const data3 = { owner: 'otherId', meta: {}, contentType: 'text/plain', key: 'te/test3' };
+    const data4 = { owner: 'otherId', meta: {}, contentType: 'text/plain', key: 'te/test4' };
+    mockFS({
+      '/base': {
+        files: { te: { test1: 'content1', test2: 'content2', test3: 'content3', test4: 'content4' } },
+        data: { dir: { file1: JSON.stringify(data1), file3: JSON.stringify(data3) }, file2: JSON.stringify(data2), file4: JSON.stringify(data4) }
+      }
+    });
+    const storage = new Storage();
+
+    await storage.deleteAllFilesFromUser('testId');
+
+    expect(await exists('/base/files/te/test1')).toBe(false);
+    expect(await exists('/base/files/te/test2')).toBe(false);
+    expect(await exists('/base/data/dir/file1')).toBe(false);
+    expect(await exists('/base/data/file2')).toBe(false);
+
+    expect(await exists('/base/files/te/test3')).toBe(true);
+    expect(await exists('/base/files/te/test4')).toBe(true);
+    expect(await exists('/base/data/dir/file3')).toBe(true);
+    expect(await exists('/base/data/file4')).toBe(true);
+  });
+
   test('Storage->copy copies file correctly, keeping owner.', async (): Promise<void> => {
     const data = { owner: 'me', meta: {}, contentType: 'text/plain', key: 'so/sourceKey' };
     mockFS({ '/base': { files: { so: { sourceKey: 'content' } }, data: { a: { file: JSON.stringify(data) } } } });
