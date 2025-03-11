@@ -52,7 +52,7 @@ describe('s3StorageHelper', (): void => {
 
   test('copyObject calls copyObjectCommand correctly.', async (): Promise<void> => {
     let called = false;
-    s3Mock.on(CopyObjectCommand, { Bucket: bucket, Key: 'itemCopy', CopySource: 'item' }).callsFake(() => (called = true));
+    s3Mock.on(CopyObjectCommand, { Bucket: bucket, Key: 'itemCopy', CopySource: `${bucket}/item` }).callsFake(() => (called = true));
 
     await copyObject(client, bucket, 'item', 'itemCopy');
 

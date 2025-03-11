@@ -54,7 +54,7 @@ const deleteObject = async function (client: S3Client, Bucket: string, key: stri
 
 const copyObject = async function (client: S3Client, Bucket: string, copySource: string, key: string): Promise<void> {
   const Key = trim(key);
-  const CopySource = trim(copySource);
+  const CopySource = `${Bucket}/${trim(copySource)}`;
   const commandInput: CopyObjectCommandInput = {
     Bucket,
     CopySource,
