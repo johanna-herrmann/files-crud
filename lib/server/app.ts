@@ -85,7 +85,7 @@ const buildApp = function (noFallbacks?: boolean): express.Application {
   app.get('/api/file/load-data/*path', fileLoadDataMiddleware, loadFileDataHandler);
   app.get('/api/file/download/*path', fileLoadMiddleware, loadFileHandler);
   app.get('/api/file/list/{*path}', directoryListingMiddleware, listDirectoryItemsHandler);
-  app.get('/api/file/file-exists/{*path}', existsMiddleware, fileExistsHandler);
+  app.get('/api/file/file-exists/*path', existsMiddleware, fileExistsHandler);
   app.get('/api/file/directory-exists/{*path}', existsMiddleware, directoryExistsHandler);
 
   // control routes
