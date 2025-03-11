@@ -121,7 +121,7 @@ describe('fileCopyMiddleware', (): void => {
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('target/copy');
       assertPass(next, res);
-      expect(req.body.userId).toBe('public');
+      expect(req.body?.userId).toBe('public');
     });
 
     test('passes, copy owner.', async (): Promise<void> => {
@@ -134,7 +134,7 @@ describe('fileCopyMiddleware', (): void => {
       expect(mocked_readPath).toBe('src/file');
       expect(mocked_writePath).toBe('target/copy');
       assertPass(next, res);
-      expect(req.body.userId).toBe(testUser.id);
+      expect(req.body?.userId).toBe(testUser.id);
     });
 
     test('rejects write target.', async (): Promise<void> => {

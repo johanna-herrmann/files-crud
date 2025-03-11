@@ -80,11 +80,11 @@ const fileSaveMiddleware = async function (req: Request, res: express.Response, 
   }
 
   const storage = loadStorage();
-  const user = (req.body.user ?? (await authorize(getToken(req)))) as User;
+  const user = (req.body?.user ?? (await authorize(getToken(req)))) as User;
   const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, exists ? 'update' : 'create');
   if (allowed) {
-    req.body.userId = user?.id ?? 'public';
+    (req.body ?? {}).userId = user?.id ?? 'public';
     next();
   }
 };

@@ -9,24 +9,26 @@ const pathConstraint = 'required string, not empty';
 const copyOwnerConstraint = 'optional boolean';
 
 const fileCopyMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const body = req.body ?? {};
   const bodySchema = joi.object({
     path: joi.string(),
     targetPath: joi.string(),
     copyOwner: joi.boolean()
   });
-  const error = bodySchema.validate(req.body).error;
+  const error = bodySchema.validate(body).error;
   if (error) {
-    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint, copyOwner: copyOwnerConstraint }, req.body);
+    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint, copyOwner: copyOwnerConstraint }, body);
   }
 
-  const { path, targetPath, copyOwner } = req.body;
+  const { path, targetPath, copyOwner } = body;
   const user = await authorize(getToken(req));
 
   if (!user?.admin && copyOwner) {
     return sendUnauthorized(res, 'Only admins are allowed to copy the owner');
   }
 
-  req.body.userId = user?.id ?? 'public';
+  body.userId = user?.id ?? 'public';
+  req.body = body;
 
   req.params.path = (path as string).split('/');
   await loadMiddleware(req, res, async () => {
@@ -36,16 +38,17 @@ const fileCopyMiddleware = async function (req: Request, res: express.Response, 
 };
 
 const fileMoveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const body = req.body ?? {};
   const bodySchema = joi.object({
     path: joi.string(),
     targetPath: joi.string()
   });
-  const error = bodySchema.validate(req.body).error;
+  const error = bodySchema.validate(body).error;
   if (error) {
-    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint }, req.body);
+    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint }, body);
   }
 
-  const { path, targetPath } = req.body;
+  const { path, targetPath } = body;
 
   req.params.path = (path as string).split('/');
   await fileDeleteMiddleware(req, res, async () => {

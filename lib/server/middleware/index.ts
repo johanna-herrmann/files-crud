@@ -14,7 +14,6 @@ import { corsMiddleware } from './cors';
 import { staticMiddleware } from './static';
 import { headerMiddleware } from './header';
 import { controlMiddleware } from './control';
-import { bodyFallbackMiddleware } from './bodyFallback';
 import { notFoundMiddleware } from './404';
 import { errorMiddleware } from './error';
 
@@ -41,7 +40,6 @@ export {
   logAccessMiddleware,
   headerMiddleware,
   controlMiddleware,
-  bodyFallbackMiddleware,
   notFoundMiddleware,
   errorMiddleware
 };

@@ -12,7 +12,7 @@ const saveHandler = async function (req: Request, res: express.Response): Promis
   const storage = loadStorage();
   const path = resolvePath(req);
   const { meta, owner: givenOwner } = await storage.loadData(path);
-  const owner = givenOwner ?? (req.body.userId as string);
+  const owner = givenOwner ?? (req.body?.userId as string);
   const files = (req as UploadRequest).files as Files;
   const key = Object.keys(files).at(0) ?? 'file';
   const { data: content, mimetype, md5 } = files[key];
@@ -69,7 +69,7 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
     return sendError(res, `File ${path} does not exist`);
   }
 
-  const meta = req.body.meta as Record<string, unknown> | undefined;
+  const meta = req.body?.meta as Record<string, unknown> | undefined;
   const data = await storage.loadData(path);
   await storage.saveData(path, { ...data, meta: meta ?? {} });
   logger.info('Successfully saved file meta data.', { path, meta });
@@ -108,7 +108,7 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
 const copyHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath, copyOwner, userId } = req.body;
+  const { path, targetPath, copyOwner, userId } = req.body ?? {};
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
@@ -129,7 +129,7 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
 const moveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath } = req.body;
+  const { path, targetPath } = req.body ?? {};
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 

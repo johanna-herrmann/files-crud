@@ -3,7 +3,12 @@ import { Request } from '@/types/server/Request';
 
 let lastMessage = '{}';
 
-const buildRequestForUserAction = function (token: string, action: string, idParam: string | undefined, body: Record<string, unknown>): Request {
+const buildRequestForUserAction = function (
+  token: string,
+  action: string,
+  idParam: string | undefined,
+  body: Record<string, unknown> | undefined
+): Request {
   return {
     headers: { authorization: token ? `Bearer ${token}` : '' },
     params: { action, id: idParam },

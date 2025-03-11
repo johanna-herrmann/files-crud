@@ -7,7 +7,7 @@ import { Request } from '@/types/server/Request';
 
 const getActualId = function (user: User, req: Request): string {
   const idFromParams = req.params.id as string | undefined;
-  const idFromBody = req.body.id as string | undefined;
+  const idFromBody = req.body?.id as string | undefined;
   const idOrSelf = idFromParams ?? idFromBody ?? '[]';
   return idOrSelf === 'self' ? user.id : idOrSelf;
 };
@@ -48,12 +48,14 @@ const userMiddleware = async function (req: Request, res: express.Response, next
 
   const { action } = req.params;
   const id = getActualId(user, req);
-  req.body.id = id;
+  const body = req.body ?? {};
+  body.id = id;
+  req.body = body;
   if (isAdminAction(user, action, id)) {
     return handleAdminAction(user.admin, res, next);
   }
   if (isSelfPasswordChange(user, action, id)) {
-    return await handleSelfPasswordChange(user.username, (req.body.oldPassword as string) ?? '', res, next);
+    return await handleSelfPasswordChange(user.username, (req.body?.oldPassword as string) ?? '', res, next);
   }
 
   next();
@@ -66,7 +68,7 @@ const registerMiddleware = async function (req: Request, res: express.Response, 
   }
 
   if (config.register === 'token') {
-    const body = req.body;
+    const body = req.body ?? {};
     const token = (body.token ?? '[]') as string;
     return config.tokens?.includes(token) ? next() : sendUnauthorized(res, 'Register is not allowed without valid register token');
   }

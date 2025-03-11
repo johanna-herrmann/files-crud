@@ -92,7 +92,7 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.userId).toBe(mocked_user?.id ?? 'public');
+        expect(req.body?.userId).toBe(mocked_user?.id ?? 'public');
       };
 
       test('for public.', async (): Promise<void> => {
@@ -139,7 +139,7 @@ describe('fileSaveMiddleware', () => {
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.userId).toBe(mocked_user?.id ?? 'public');
+        expect(req.body?.userId).toBe(mocked_user?.id ?? 'public');
       };
 
       test('for public.', async (): Promise<void> => {

@@ -58,7 +58,7 @@ jest.mock('@/logging/index', () => {
 const passesIfAdmin = async function (action: string, idParam: string | undefined, idInBody: string | undefined): Promise<void> {
   data.user_[0] = { ...testUser, admin: true };
   let next = false;
-  const req = buildRequestForUserAction('valid_admin_token', action, idParam, { id: idInBody });
+  const req = buildRequestForUserAction('valid_admin_token', action, idParam, action === 'load' ? undefined : { id: idInBody });
   const res = buildResponse();
 
   await userMiddleware(req, res, () => (next = true));
