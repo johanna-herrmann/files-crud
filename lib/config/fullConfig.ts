@@ -7,15 +7,6 @@ import { ServerConfig } from '@/types/config/ServerConfig';
 const FILE_SIZE_LIMIT = '100m'; // 100 MiB;
 
 const loadDbConfig = function (config: Config): DatabaseConfig {
-  const dynamodbConfig: Partial<DatabaseConfig> = {
-    region: config.database?.region ?? config.region ?? 'eu-central-1',
-    accessKeyId: config.database?.accessKeyId ?? config.accessKeyId ?? 'fallback-key',
-    secretAccessKey: config.database?.secretAccessKey ?? config.secretAccessKey ?? 'fallback-secret',
-    userTableName: config.database?.userTableName ?? 'files-crud-user',
-    failedLoginAttemptsTableName: config.database?.failedLoginAttemptsTableName ?? 'files-crud-failedloginattempts',
-    jwtKeyTableName: config.database?.jwtKeyTableName ?? 'files-crud-jwtkey'
-  };
-
   const mongodbConfig: Partial<DatabaseConfig> = {
     url: config.database?.url ?? 'mongodb://localhost:27017/files-crud',
     user: config.database?.user,
@@ -30,12 +21,6 @@ const loadDbConfig = function (config: Config): DatabaseConfig {
     pass: config.database?.pass
   };
 
-  if (config.database?.name === 'dynamodb') {
-    return {
-      name: 'dynamodb',
-      ...dynamodbConfig
-    };
-  }
   if (config.database?.name === 'postgresql') {
     return {
       name: 'postgresql',
@@ -61,9 +46,9 @@ const loadStorageConfig = function (config: Config): StorageConfig {
   }
   return {
     ...conf,
-    region: config.storage?.region || config.region || 'eu-central-1',
-    accessKeyId: config.storage?.accessKeyId || config.accessKeyId || 'fallback-key',
-    secretAccessKey: config.storage?.secretAccessKey || config.secretAccessKey || 'fallback-secret',
+    region: config.storage?.region || 'eu-central-1',
+    accessKeyId: config.storage?.accessKeyId || 'fallback-key',
+    secretAccessKey: config.storage?.secretAccessKey || 'fallback-secret',
     bucket: config.storage?.bucket ?? 'files-crud',
     endpoint: config.storage?.endpoint,
     forcePathStyle: config.storage?.forcePathStyle ?? false
@@ -139,10 +124,6 @@ const loadFullConfig = function (config: Config): Config {
     database: loadDbConfig(config),
     storage: loadStorageConfig(config),
     logging: loadLoggingConfig(config),
-    accessKeyId: config.database?.name === 'dynamodb' || config.storage?.name === 's3' ? (config.accessKeyId ?? 'fallback-key') : undefined,
-    secretAccessKey:
-      config.database?.name === 'dynamodb' || config.storage?.name === 's3' ? (config.secretAccessKey ?? 'fallback-secret') : undefined,
-    region: config.database?.name === 'dynamodb' || config.storage?.name === 's3' ? (config.region ?? 'eu-central') : undefined,
     register,
     tokens: register === 'token' ? (config.tokens ?? []) : undefined,
     directoryPermissions: loadDirectoryPermissions(config),

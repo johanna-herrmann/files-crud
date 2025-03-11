@@ -5,7 +5,6 @@ import { loadConfig } from '@/config/config';
 import { testUser } from '#/testItems';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
-import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
 import { User } from '@/types/user/User';
 import { FailedLoginAttempts } from '@/types/user/FailedLoginAttempts';
 
@@ -58,13 +57,6 @@ describe('Database', (): void => {
     const db = new Database();
 
     expect(db.getAdapter()).toBeInstanceOf(PostgresDatabaseAdapter);
-  });
-
-  test('Database->constructor uses DynamoDatabaseAdapter.', async (): Promise<void> => {
-    loadConfig({ database: { name: 'dynamodb' } });
-    const db = new Database();
-
-    expect(db.getAdapter()).toBeInstanceOf(DynamoDatabaseAdapter);
   });
 
   test('Database->open connects to db.', async (): Promise<void> => {

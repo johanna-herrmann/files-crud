@@ -7,9 +7,6 @@ interface Config {
   database?: DatabaseConfig;
   storage?: StorageConfig;
   logging?: LoggingConfig;
-  accessKeyId?: string;
-  secretAccessKey?: string;
-  region?: string;
   register?: 'all' | 'admin' | 'token';
   tokens?: string[];
   directoryPermissions?: Record<string, string | string[]>;

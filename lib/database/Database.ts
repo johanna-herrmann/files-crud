@@ -2,7 +2,6 @@ import { v4 } from 'uuid';
 import { getFullConfig } from '@/config/config';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
-import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
 import { MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
 import { Logger } from '@/logging/Logger';
 import { getLogger } from '@/logging';
@@ -25,8 +24,6 @@ class Database implements DatabaseType {
       this.db = new MongoDatabaseAdapter();
     } else if (config.database?.name === 'postgresql') {
       this.db = new PostgresDatabaseAdapter();
-    } else if (config.database?.name === 'dynamodb') {
-      this.db = new DynamoDatabaseAdapter();
     } else {
       this.db = new MemoryDatabaseAdapter();
     }

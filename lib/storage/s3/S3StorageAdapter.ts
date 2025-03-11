@@ -14,9 +14,9 @@ class S3StorageAdapter implements StorageAdapter {
 
   constructor() {
     const config = getFullConfig();
-    const region = (config.storage?.region || config.region) as string;
-    const accessKeyId = (config.storage?.accessKeyId || config.accessKeyId) as string;
-    const secretAccessKey = (config.storage?.secretAccessKey || config.secretAccessKey) as string;
+    const region = config.storage?.region as string;
+    const accessKeyId = config.storage?.accessKeyId as string;
+    const secretAccessKey = config.storage?.secretAccessKey as string;
     const bucket = config.storage?.bucket as string;
     const endpoint = config.storage?.endpoint;
     const forcePathStyle = config.storage?.forcePathStyle as boolean;

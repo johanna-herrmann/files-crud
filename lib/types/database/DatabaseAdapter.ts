@@ -17,7 +17,6 @@ interface DatabaseAdapter {
 
   /**
    * Creates a new table/collection.
-   * On DynamoDB this function does nothing, since dynamodb tables should be created manually before running files-crud.
    * @param table The name of the table.
    * @param item Dummy Item to derive the fields from.
    *             Example: Provide dummy user item, so fields of user can be derived.

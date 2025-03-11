@@ -197,11 +197,11 @@ describe('config', (): void => {
   });
 
   test('defaults correctly, file with few properties', async (): Promise<void> => {
-    mockFS({ './config.json': '{"server":{"useHttps":true},"database":{"name":"dynamodb"}}' });
+    mockFS({ './config.json': '{"server":{"useHttps":true},"database":{"name":"mongodb"}}' });
 
     loadConfig();
 
-    expect(getFullConfig().database?.name).toBe('dynamodb');
+    expect(getFullConfig().database?.name).toBe('mongodb');
     expect(getFullConfig().server).toEqual({
       host: '0.0.0.0',
       port: 9000,

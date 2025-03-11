@@ -80,24 +80,9 @@ describe('S3Storage', (): void => {
     expect(bucket).toBe('files-crud');
   });
 
-  test('S3StorageAdapter->constructor creates client and sets bucket correctly, global credentials and region.', async (): Promise<void> => {
-    loadConfig({ storage: { name: 's3' }, accessKeyId: 'global-key', secretAccessKey: 'global-secret', region: 'de' });
-    const storage = new S3StorageAdapter();
-
-    const [client, bucket] = storage.getConf();
-    const credentials = await client.config.credentials();
-    expect(await client.config.region()).toBe('de');
-    expect(credentials.accessKeyId).toBe('global-key');
-    expect(credentials.secretAccessKey).toBe('global-secret');
-    expect(bucket).toBe('files-crud');
-  });
-
-  test('S3StorageAdapter->constructor creates client and sets bucket correctly, specific credentials and region.', async (): Promise<void> => {
+  test('S3StorageAdapter->constructor creates client and sets bucket correctly, with credentials and region.', async (): Promise<void> => {
     loadConfig({
-      storage: { name: 's3', accessKeyId: 'specific-key', secretAccessKey: 'specific-secret', region: 'us' },
-      accessKeyId: 'global-key',
-      secretAccessKey: 'global-secret',
-      region: 'de'
+      storage: { name: 's3', accessKeyId: 'specific-key', secretAccessKey: 'specific-secret', region: 'us' }
     });
     const storage = new S3StorageAdapter();
 
