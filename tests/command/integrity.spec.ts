@@ -103,7 +103,7 @@ describe('command: integrity', (): void => {
       'Checking dir/subDir/subFile ',
       `  ${RED_START}Invalid${END}\n`,
       'Finished check\n',
-      `total: 2\nvalid: ${GREEN_START}0${END}\ninvalid: ${RED_START}1${END}\nerrors: ${RED_START}1${END}\n`
+      `total: 2\nvalid: 0\ninvalid: ${RED_START}1${END}\nerrors: ${RED_START}1${END}\n`
     ]);
     expect(channels).toEqual(['out', 'out', 'out', 'err', 'out', 'out', 'out', 'out']);
   });
@@ -116,7 +116,7 @@ describe('command: integrity', (): void => {
       'Checking dir/file ',
       `  ${GREEN_START}Valid${END}\n`,
       'Finished check\n',
-      `total: 1\nvalid: ${GREEN_START}1${END}\ninvalid: ${RED_START}0${END}\nerrors: ${RED_START}0${END}\n`
+      `total: 1\nvalid: ${GREEN_START}1${END}\ninvalid: 0\nerrors: 0\n`
     ]);
     expect(channels).toEqual(['out', 'out', 'out', 'out', 'out']);
   });
@@ -133,11 +133,7 @@ describe('command: integrity', (): void => {
 
     await checkIntegrity('');
 
-    expect(printings).toEqual([
-      'Starting check...\n',
-      'Finished check\n',
-      `total: 0\nvalid: ${GREEN_START}0${END}\ninvalid: ${RED_START}0${END}\nerrors: ${RED_START}0${END}\n`
-    ]);
+    expect(printings).toEqual(['Starting check...\n', 'Finished check\n', `total: 0\nvalid: 0\ninvalid: 0\nerrors: 0\n`]);
     expect(channels).toEqual(['out', 'out', 'out']);
   });
 
