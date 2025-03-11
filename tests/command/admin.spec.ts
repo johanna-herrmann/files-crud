@@ -13,6 +13,7 @@ const mock_error = new Error('test error');
 
 let mocked_loggedMessages: string[] = [];
 let mocked_loggedMeta: (Record<string, unknown> | undefined)[] = [];
+let resetDbCalled = false;
 
 jest.mock('@/user/passwordHashing/versions', () => {
   return {
@@ -34,6 +35,16 @@ jest.mock('crypto', () => {
     ...actual,
     randomBytes(size: number): Buffer {
       return Buffer.from('a'.repeat(size), 'utf8');
+    }
+  };
+});
+
+jest.mock('@/database', () => {
+  const actual = jest.requireActual('@/database');
+  return {
+    ...actual,
+    async resetDb() {
+      resetDbCalled = true;
     }
   };
 });
@@ -92,12 +103,13 @@ describe('command: admin', (): void => {
     data.user_ = [];
     mocked_loggedMessages = [];
     mocked_loggedMeta = [];
+    resetDbCalled = false;
     resetLogger();
   });
 
   describe('createAdmin', (): void => {
     test('creates admin, username and password given', async (): Promise<void> => {
-      await createAdmin({ username: 'testUsername', password: 'testPassword123' });
+      await createAdmin({ username: 'testUsername', password: 'testPassword123' }, true);
 
       expect((data.user_?.at(0) as User).username).toBe('testUsername');
       expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
@@ -105,12 +117,13 @@ describe('command: admin', (): void => {
       expect((data.user_?.at(0) as User).hash).toBe('hash.testPassword123');
       expect(printings).toEqual(['Creating user...\n', 'Successfully created user. username: testUsername; password: testPassword123\n']);
       expect(channels).toEqual(['out', 'out']);
+      expect(resetDbCalled).toBe(true);
     });
 
     test('creates admin, username given', async (): Promise<void> => {
       const password = Buffer.from('a'.repeat(15), 'utf8').toString('base64');
 
-      await createAdmin({ username: 'testUsername' });
+      await createAdmin({ username: 'testUsername' }, false);
 
       expect((data.user_?.at(0) as User).username).toBe('testUsername');
       expect((data.user_?.at(0) as User).hashVersion).toBe('testVersion');
@@ -118,6 +131,7 @@ describe('command: admin', (): void => {
       expect((data.user_?.at(0) as User).hash).toBe(`hash.${password}`);
       expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: testUsername; password: ${password}\n`]);
       expect(channels).toEqual(['out', 'out']);
+      expect(resetDbCalled).toBe(false);
     });
 
     test('creates admin, password given', async (): Promise<void> => {
@@ -131,6 +145,7 @@ describe('command: admin', (): void => {
       expect((data.user_?.at(0) as User).hash).toBe(`hash.testPassword123`);
       expect(printings).toEqual(['Creating user...\n', `Successfully created user. username: ${username}; password: testPassword123\n`]);
       expect(channels).toEqual(['out', 'out']);
+      expect(resetDbCalled).toBe(false);
     });
 
     test('creates admin, nothing given', async (): Promise<void> => {

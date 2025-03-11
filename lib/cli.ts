@@ -77,7 +77,7 @@ program
   .action(async ({ username, password }: { username?: string; password?: string }) => {
     setEnvPrefix(program.optsWithGlobals().envPrefix);
     loadConfig();
-    await createAdmin({ username, password });
+    await createAdmin({ username, password }, true);
   });
 
 // define config subcommand

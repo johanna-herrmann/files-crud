@@ -5,7 +5,7 @@ import { data, MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdap
 describe('database', (): void => {
   afterEach(async (): Promise<void> => {
     await (await loadDb()).close();
-    resetDb();
+    await resetDb();
   });
 
   test('loadDB inits new memory-db correctly', async (): Promise<void> => {

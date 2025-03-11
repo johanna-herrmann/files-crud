@@ -13,9 +13,11 @@ const loadDb = async function (): Promise<Database> {
   return db ?? (await initDb());
 };
 
-const resetDb = function (): void {
-  db?.close();
-  db = null;
+const resetDb = async function (): Promise<void> {
+  if (!!db) {
+    await db.close();
+    db = null;
+  }
 };
 
 const reloadDb = async function (): Promise<void> {

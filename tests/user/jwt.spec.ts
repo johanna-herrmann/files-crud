@@ -20,12 +20,12 @@ describe('jwt', (): void => {
 
   afterEach(async (): Promise<void> => {
     jest.useRealTimers();
-    resetDb();
+    await resetDb();
     resetKeys();
   });
 
   test('initializes correctly.', async (): Promise<void> => {
-    resetDb();
+    await resetDb();
     resetKeys();
 
     await initKeys();

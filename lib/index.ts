@@ -2,7 +2,6 @@
 
 import { program } from './cli';
 import { printer } from '@/printing/printer';
-import { Error } from 'mongoose';
 
 program
   .parseAsync()

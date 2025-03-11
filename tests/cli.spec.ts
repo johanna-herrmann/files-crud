@@ -43,9 +43,9 @@ jest.mock('@/command/integrity', () => {
 
 jest.mock('@/command/admin', () => {
   return {
-    async createAdmin({ username, password }: { username?: string; password?: string }) {
+    async createAdmin({ username, password }: { username?: string; password?: string }, command?: boolean) {
       mocked_lastFunction = 'admin';
-      mocked_lastFunctionArgs = { username, password };
+      mocked_lastFunctionArgs = { username, password, command };
     }
   };
 });
@@ -223,7 +223,7 @@ describe('cli', (): void => {
 
       const config = getConfig();
       expect(mocked_lastFunction).toBe('admin');
-      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: undefined });
+      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: undefined, command: true });
       expect(config).toEqual({});
     });
 
@@ -232,7 +232,7 @@ describe('cli', (): void => {
 
       const config = getConfig();
       expect(mocked_lastFunction).toBe('admin');
-      expect(mocked_lastFunctionArgs).toEqual({ username: 'tu', password: undefined });
+      expect(mocked_lastFunctionArgs).toEqual({ username: 'tu', password: undefined, command: true });
       expect(config).toEqual({});
     });
 
@@ -241,7 +241,7 @@ describe('cli', (): void => {
 
       const config = getConfig();
       expect(mocked_lastFunction).toBe('admin');
-      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: 'tp' });
+      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: 'tp', command: true });
       expect(config).toEqual({});
     });
 
@@ -250,7 +250,7 @@ describe('cli', (): void => {
 
       const config = getConfig();
       expect(mocked_lastFunction).toBe('admin');
-      expect(mocked_lastFunctionArgs).toEqual({ username: 'tu', password: 'tp' });
+      expect(mocked_lastFunctionArgs).toEqual({ username: 'tu', password: 'tp', command: true });
       expect(config).toEqual({});
     });
 
@@ -259,7 +259,7 @@ describe('cli', (): void => {
 
       const config = getConfig();
       expect(mocked_lastFunction).toBe('admin');
-      expect(mocked_lastFunctionArgs).toEqual({ username: 'tu', password: 'tp' });
+      expect(mocked_lastFunctionArgs).toEqual({ username: 'tu', password: 'tp', command: true });
       expect(config).toEqual({});
     });
 
@@ -270,7 +270,7 @@ describe('cli', (): void => {
 
       const config = getConfig();
       expect(mocked_lastFunction).toBe('admin');
-      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: undefined });
+      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: undefined, command: true });
       expect(config).toEqual({ database: { name: 'mongodb' } });
     });
 
@@ -281,7 +281,7 @@ describe('cli', (): void => {
 
       const config = getConfig();
       expect(mocked_lastFunction).toBe('admin');
-      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: undefined });
+      expect(mocked_lastFunctionArgs).toEqual({ username: undefined, password: undefined, command: true });
       expect(config).toEqual({ database: { name: 'mongodb' } });
     });
   });

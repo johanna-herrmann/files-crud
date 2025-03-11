@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { addUser, getUsers } from '@/user';
 import { printer } from '@/printing/printer';
 import { getLogger } from '@/logging';
+import { resetDb } from '@/database';
 
 const printLine = function (line: string, meta?: Record<string, unknown>): void {
   const logger = getLogger();
@@ -31,13 +32,16 @@ const getRandomString = function (length: number): string {
   return crypto.randomBytes(length).toString('base64url');
 };
 
-const createAdmin = async function ({ username, password }: { username?: string; password?: string }): Promise<void> {
+const createAdmin = async function ({ username, password }: { username?: string; password?: string }, command?: boolean): Promise<void> {
   try {
     username = username ?? getRandomString(6);
     password = password ?? getRandomString(15);
     printLine(`Creating user...`);
     await addUser(username, password, true, {});
     printLine(`Successfully created user. username: ${username}; password: ${password}`, { username, password });
+    if (command) {
+      await resetDb();
+    }
   } catch (err: unknown) {
     const error = err as Error;
     printError(
