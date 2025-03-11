@@ -1,9 +1,10 @@
 import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
 import { getFullConfig } from '@/config/config';
-import { createTable, deleteItem, itemExists, listTables, loadItem, loadItems, putItem, updateItem } from '@/database/dynamodb/dynamoDbHelper';
+import { deleteItem, itemExists, loadItem, loadItems, putItem, updateItem } from '@/database/dynamodb/dynamoDbHelper';
 import { DatabaseAdapter } from '@/types/database/DatabaseAdapter';
 import { DbItem } from '@/types/database/DbItem';
 import { DbValue } from '@/types/database/DbValue';
+import { loadLogger } from '@/logging';
 
 /**
  * Database Adapter for AWS DynamoDB.
@@ -68,19 +69,11 @@ class DynamoDatabaseAdapter implements DatabaseAdapter {
   }
 
   /**
-   * Creates a new table/collection.
-   * @param table The name of the table.
-   * @param _item Dummy Item to derive the fields from.
-   *             Example: Provide dummy user item, so fields of user can be derived.
-   *             The table/collection will be created if it not exists already.
-   * @param key The name of the partition key / hash key
+   * Does nothing, since dynamodb tables should be created manually before running files-crud.
    */
-  public async init<T extends DbItem>(table: string, _item: T, key: string): Promise<void> {
-    const actualTable = this.getDynamoTableName(table);
-    const tables = await listTables(this.ensureClient());
-    if (!tables.includes(actualTable)) {
-      await createTable(this.ensureClient(), actualTable, key);
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async init<T extends DbItem>(table: string, _item: T): Promise<void> {
+    // left blank intentionally
   }
 
   public async add<T extends DbItem>(table: string, item: T): Promise<void> {

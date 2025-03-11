@@ -85,8 +85,7 @@ class MongoDatabaseAdapter implements DatabaseAdapter {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async init<T extends DbItem>(table: string, item: T, _key: string): Promise<void> {
+  public async init<T extends DbItem>(table: string, item: T): Promise<void> {
     let schema: Record<string, unknown> | undefined = schemata[table];
     if (!!schema) {
       return;

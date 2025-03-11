@@ -108,8 +108,7 @@ class PostgresDatabaseAdapter implements DatabaseAdapter {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async init<T extends DbItem>(table: string, item: T, _key: string): Promise<void> {
+  public async init<T extends DbItem>(table: string, item: T): Promise<void> {
     const types: Record<string, string> = {
       string: 'text',
       number: 'bigint',

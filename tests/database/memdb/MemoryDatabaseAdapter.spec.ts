@@ -13,7 +13,7 @@ describe('MongoDatabaseAdapter', (): void => {
     delete data.user_;
     const db = new MemoryDatabaseAdapter();
 
-    await db.init<User>('user_', testUser, 'id');
+    await db.init<User>('user_', testUser);
 
     expect(data.user_?.length).toBe(0);
   });

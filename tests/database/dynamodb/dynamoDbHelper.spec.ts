@@ -1,7 +1,7 @@
 import { mockClient } from 'aws-sdk-client-mock';
-import { CreateTableCommand, DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { putItem, updateItem, deleteItem, loadItem, loadItems, itemExists, listTables, createTable } from '@/database/dynamodb/dynamoDbHelper';
+import { putItem, updateItem, deleteItem, loadItem, loadItems, itemExists } from '@/database/dynamodb/dynamoDbHelper';
 import { testUser } from '#/testItems';
 import { User } from '@/types/user/User';
 
@@ -52,39 +52,6 @@ jest.mock('uuid', () => {
 describe('dynamoDbHelper', (): void => {
   beforeEach(async (): Promise<void> => {
     dynamoMock.reset();
-  });
-
-  test('listTables returns tables correctly, single call.', async (): Promise<void> => {
-    dynamoMock.on(ListTablesCommand, {}).resolves({ TableNames: ['one', 'second'] });
-
-    const tables = await listTables(client);
-
-    expect(tables).toEqual(['one', 'second']);
-  });
-
-  test('listTables returns tables correctly, multiple calls.', async (): Promise<void> => {
-    dynamoMock.on(ListTablesCommand, {}).resolves({ TableNames: ['one', 'second'], LastEvaluatedTableName: 'second' });
-    dynamoMock.on(ListTablesCommand, { ExclusiveStartTableName: 'second' }).resolves({ TableNames: ['third'] });
-
-    const tables = await listTables(client);
-
-    expect(tables).toEqual(['one', 'second', 'third']);
-  });
-
-  test('createTable calls dynamodb api CreateTableCommand correctly.', async (): Promise<void> => {
-    let called = false;
-    dynamoMock
-      .on(CreateTableCommand, {
-        BillingMode: 'PAY_PER_REQUEST',
-        TableClass: 'STANDARD',
-        AttributeDefinitions: [{ AttributeName: 'username', AttributeType: 'S' }],
-        KeySchema: [{ AttributeName: 'username', KeyType: 'HASH' }]
-      })
-      .callsFake(() => (called = true));
-
-    await createTable(client, TableName, 'username');
-
-    expect(called).toBe(true);
   });
 
   test('putItem calls dynamodb api putCommand correctly.', async (): Promise<void> => {

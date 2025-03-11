@@ -17,14 +17,13 @@ interface DatabaseAdapter {
 
   /**
    * Creates a new table/collection.
-   * Some Adapters may use the first property's key of item as key field (example: dynamoDB).
+   * On DynamoDB this function does nothing, since dynamodb tables should be created manually before running files-crud.
    * @param table The name of the table.
    * @param item Dummy Item to derive the fields from.
    *             Example: Provide dummy user item, so fields of user can be derived.
    *             The table/collection will be created if it not exists already.
-   * @param key The name of the key for dynamodb
    */
-  init<T extends DbItem>(table: string, item: T, key: string): Promise<void>;
+  init<T extends DbItem>(table: string, item: T): Promise<void>;
 
   /**
    * Adds a new item to the database.

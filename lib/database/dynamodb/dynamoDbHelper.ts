@@ -1,4 +1,4 @@
-import { DynamoDBClient, ListTablesCommand, CreateTableCommand, CreateTableCommandInput } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   PutCommand,
   PutCommandInput,
@@ -20,32 +20,6 @@ const buildDbItem = function <T extends DbItem>(itemFound: Record<string, any> |
     return null;
   }
   return itemFound as T;
-};
-
-const listTables = async function (client: DynamoDBClient): Promise<string[]> {
-  let ExclusiveStartTableName: string | undefined;
-  let more = true;
-  const tables: string[] = [];
-  while (more) {
-    const command = new ListTablesCommand(ExclusiveStartTableName ? { ExclusiveStartTableName } : {});
-    const result = await client.send(command);
-    tables.push(...(result.TableNames || []));
-    ExclusiveStartTableName = result.LastEvaluatedTableName;
-    more = !!ExclusiveStartTableName;
-  }
-  return tables;
-};
-
-const createTable = async function (client: DynamoDBClient, TableName: string, keyName: string): Promise<void> {
-  const input: CreateTableCommandInput = {
-    TableName,
-    BillingMode: 'PAY_PER_REQUEST',
-    TableClass: 'STANDARD',
-    AttributeDefinitions: [{ AttributeName: keyName, AttributeType: 'S' }],
-    KeySchema: [{ AttributeName: keyName, KeyType: 'HASH' }]
-  };
-  const command = new CreateTableCommand(input);
-  await client.send(command);
 };
 
 const putItem = async function (client: DynamoDBClient, TableName: string, Item: DbItem): Promise<void> {
@@ -140,4 +114,4 @@ const itemExists = async function (client: DynamoDBClient, TableName: string, ke
   return !!result.Items?.at(0);
 };
 
-export { listTables, createTable, putItem, updateItem, deleteItem, loadItem, loadItems, itemExists };
+export { putItem, updateItem, deleteItem, loadItem, loadItems, itemExists };
