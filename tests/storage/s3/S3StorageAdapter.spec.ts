@@ -1,5 +1,5 @@
-import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import { S3Client } from '@aws-sdk/client-s3';
+import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
 import { loadConfig } from '@/config/config';
 
 let mocked_s3: Record<string, Buffer | undefined> = {};
