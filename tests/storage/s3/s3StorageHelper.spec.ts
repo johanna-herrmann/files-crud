@@ -10,13 +10,14 @@ import {
 } from '@aws-sdk/client-s3';
 import { MinioContainer, StartedMinioContainer } from '@testcontainers/minio';
 import { getObjectBody, putObject, deleteObject, copyObject } from '@/storage/s3/s3StorageHelper';
+import { version } from '../../../node_modules/@testcontainers/minio/package.json';
 
 const BUCKET_NAME = 'files-crud';
 let s3Client: S3Client | null = null;
 
 const createClient = function (container: StartedMinioContainer): S3Client {
   const config: S3ClientConfig = {
-    region: 'local',
+    //region: 'local',
     endpoint: container.getConnectionUrl(),
     credentials: {
       accessKeyId: container.getUsername(),
@@ -86,7 +87,7 @@ describe('s3StorageHelper', (): void => {
     if (s3Client?.config?.endpoint) {
       console.log({ endpoint: await s3Client.config.endpoint() });
     }
-    console.log({ container, s3Client });
+    console.log({ version, container, s3Client });
     await createBucket();
   });
 
