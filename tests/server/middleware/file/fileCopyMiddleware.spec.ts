@@ -190,7 +190,7 @@ describe('fileCopyMiddleware', (): void => {
       expect(mocked_readPath).toBe('');
       expect(mocked_writePath).toBe('');
       expect(next).toBe(false);
-      assertValidationError(res, schema, body);
+      assertValidationError(res, 'body', schema, body);
     });
   });
 });

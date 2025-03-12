@@ -13,6 +13,7 @@ import { Request } from '@/types/server/Request';
 
 const nullData: FileData = { owner: '', contentType: '', size: -1, md5: '0'.repeat(32) };
 const notEmptyPathConstraint = 'required string, not empty';
+const pathConstraint = 'optional string';
 
 const ensureRights = function (rightsSet: Right[], requiredRight: Right, path: string, res: express.Response): boolean {
   if (!rightsSet.includes(requiredRight)) {
@@ -51,12 +52,12 @@ const checkForListing = async function (req: Request, res: express.Response, nex
 const loadMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const path = resolvePath(req);
 
-  const bodySchema = joi.object({
+  const pathSchema = joi.object({
     path: joi.string().required()
   });
-  const error = bodySchema.validate({ path }, { convert: false }).error;
+  const error = pathSchema.validate({ path }, { convert: false }).error;
   if (error) {
-    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
   }
 
   const storage = loadStorage();
@@ -71,12 +72,12 @@ const loadMiddleware = async function (req: Request, res: express.Response, next
 const fileSaveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const path = resolvePath(req);
 
-  const bodySchema = joi.object({
+  const pathSchema = joi.object({
     path: joi.string().required()
   });
-  const error = bodySchema.validate({ path }, { convert: false }).error;
+  const error = pathSchema.validate({ path }, { convert: false }).error;
   if (error) {
-    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
   }
 
   const storage = loadStorage();
@@ -94,12 +95,12 @@ const fileSaveMiddleware = async function (req: Request, res: express.Response, 
 const fileDeleteMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const path = resolvePath(req);
 
-  const bodySchema = joi.object({
+  const pathSchema = joi.object({
     path: joi.string().required()
   });
-  const error = bodySchema.validate({ path }, { convert: false }).error;
+  const error = pathSchema.validate({ path }, { convert: false }).error;
   if (error) {
-    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
   }
 
   const storage = loadStorage();
@@ -114,12 +115,21 @@ const fileDeleteMiddleware = async function (req: Request, res: express.Response
 const fileSaveMetaMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const path = resolvePath(req);
 
-  const bodySchema = joi.object({
+  const paramSchema = joi.object({
     path: joi.string().required()
   });
-  const error = bodySchema.validate({ path }, { convert: false }).error;
-  if (error) {
-    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+  const paramError = paramSchema.validate({ path }, { convert: false }).error;
+  if (paramError) {
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
+  }
+
+  const body = req.body ?? {};
+  const bodySchema = joi.object({
+    meta: joi.object()
+  });
+  const bodyError = bodySchema.validate(body, { convert: false }).error;
+  if (bodyError) {
+    return sendValidationError(res, 'body', { meta: 'optional object' }, body);
   }
 
   const storage = loadStorage();
@@ -134,18 +144,27 @@ const fileSaveMetaMiddleware = async function (req: Request, res: express.Respon
 };
 
 const directoryListingMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+  const pathSchema = joi.object({
+    path: joi.string()
+  });
+  const error = pathSchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, 'path parameter', { path: pathConstraint }, { path });
+  }
+
   await checkForListing(req, res, next, false);
 };
 
 const existsMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const path = resolvePath(req);
 
-  const bodySchema = joi.object({
+  const pathSchema = joi.object({
     path: joi.string().required()
   });
-  const error = bodySchema.validate({ path }, { convert: false }).error;
+  const error = pathSchema.validate({ path }, { convert: false }).error;
   if (error) {
-    return sendValidationError(res, { path: notEmptyPathConstraint }, { path });
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
   }
 
   await checkForListing(req, res, next, true);

@@ -3,6 +3,8 @@ import express from 'express';
 import { loadLogger } from '@/logging';
 import { Request } from '@/types/server/Request';
 
+type Source = 'body' | 'path parameter';
+
 const sanitizePath = function (path: string): string {
   return paths.join(paths.sep, paths.normalize(path)).substring(1).replace('\0', '');
 };
@@ -58,11 +60,11 @@ const sendError = function (res: express.Response, message: string, error?: Erro
   res.json({ error: messageWithoutDetails });
 };
 
-const sendValidationError = function (res: express.Response, schema: Record<string, string>, value: Record<string, unknown>): void {
+const sendValidationError = function (res: express.Response, source: Source, schema: Record<string, string>, value: Record<string, unknown>): void {
   const logger = loadLogger();
   res.statusCode = 400;
   logger.error('validation error', { schema, value, status: 400 });
-  res.json({ error: 'Validation Error.', schema, value });
+  res.json({ error: 'Validation Error.', source, schema, value });
 };
 
 const sendOK = function (res: express.Response, body?: Record<string, unknown>): void {

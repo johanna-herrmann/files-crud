@@ -16,8 +16,9 @@ const buildRequestForUserAction = function (
   } as unknown as Request;
 };
 
-const buildRequestForControlAction = function (ip: string, xForwardedFor?: string, token?: string): Request {
-  return { headers: { authorization: token, ['X-Forwarded-For']: xForwardedFor }, socket: { remoteAddress: ip } } as unknown as Request;
+const buildRequestForControlAction = function (ip: string, xForwardedFor?: string, token?: string, action?: string): Request {
+  const params = action ? { action } : {};
+  return { params, headers: { authorization: token, ['X-Forwarded-For']: xForwardedFor }, socket: { remoteAddress: ip } } as unknown as Request;
 };
 
 const buildRequestForFileAction = function (
@@ -85,9 +86,9 @@ const buildResponse = function (withStream?: boolean): express.Response {
 };
 
 const assertPass = function (next: boolean, res: express.Response) {
-  expect(next).toBe(true);
-  expect(res.statusCode).toBe(-1);
   expect(lastMessage).toBe('{}');
+  expect(res.statusCode).toBe(-1);
+  expect(next).toBe(true);
 };
 
 const assertUnauthorized = function (next: boolean | undefined, res: express.Response, message: string) {
@@ -95,27 +96,27 @@ const assertUnauthorized = function (next: boolean | undefined, res: express.Res
     expect(next).toBe(false);
   }
   expect(res.statusCode).toBe(401);
-  expect(lastMessage).toBe(JSON.stringify({ error: `Unauthorized. ${message}.` }));
+  expect(JSON.parse(lastMessage)).toEqual({ error: `Unauthorized. ${message}.` });
 };
 
 const assert404 = function (res: express.Response) {
   expect(res.statusCode).toBe(404);
-  expect(lastMessage).toBe(JSON.stringify({ error: 'Cannot GET /test' }));
+  expect(JSON.parse(lastMessage)).toEqual({ error: 'Cannot GET /test' });
 };
 
 const assertError = function (res: express.Response, message: string, errorGiven?: boolean) {
   expect(res.statusCode).toBe(errorGiven ? 500 : 400);
-  expect(lastMessage).toBe(JSON.stringify({ error: `Error. ${message}.` }));
+  expect(JSON.parse(lastMessage)).toEqual({ error: `Error. ${message}.` });
 };
 
-const assertValidationError = function (res: express.Response, schema: Record<string, string>, value: Record<string, unknown>) {
+const assertValidationError = function (res: express.Response, source: string, schema: Record<string, string>, value: Record<string, unknown>) {
   expect(res.statusCode).toBe(400);
-  expect(lastMessage).toBe(JSON.stringify({ error: 'Validation Error.', schema, value }));
+  expect(JSON.parse(lastMessage)).toEqual({ error: 'Validation Error.', source, schema, value });
 };
 
 const assertOK = function (res: express.Response, body?: Record<string, unknown>) {
   expect(res.statusCode).toBe(200);
-  expect(lastMessage).toBe(JSON.stringify(body ?? {}));
+  expect(JSON.parse(lastMessage)).toEqual(body ?? {});
 };
 
 const resetLastMessage = function () {

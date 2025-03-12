@@ -170,6 +170,6 @@ describe('fileSaveMetaMiddleware - create', () => {
     await fileSaveMetaMiddleware(req, res, () => (next = true));
 
     expect(next).toBe(false);
-    assertValidationError(res, { path: constraint }, { path: '' });
+    assertValidationError(res, 'path parameter', { path: constraint }, { path: '' });
   });
 });

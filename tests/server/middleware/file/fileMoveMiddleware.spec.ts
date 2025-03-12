@@ -149,7 +149,7 @@ describe('fileCopyMoveMiddleware', (): void => {
       expect(mocked_deletePath).toBe('');
       expect(mocked_writePath).toBe('');
       expect(next).toBe(false);
-      assertValidationError(res, schema, body);
+      assertValidationError(res, 'body', schema, body);
     });
   });
 });

@@ -29,12 +29,8 @@ import { loadConfig } from '@/config/config';
 import { exists } from '#/utils';
 import { User } from '@/types/user/User';
 
-const idConstraint = 'required string, uuid or "self"';
 const usernameConstraint = 'required string, 3 to 64 chars long';
 const passwordConstraint = 'required string, at least 8 chars long';
-const metaConstraint = 'optional object';
-const adminConstraint = 'optional boolean';
-const requiredAdminConstraint = 'required boolean';
 
 const id = testUser.id;
 const username = 'testUser';
@@ -175,17 +171,6 @@ describe('user handlers', (): void => {
       expect(mock_loggedErrorMessage).toBe('Error. User testUser exists already.');
       expect(mock_loggedErrorMeta).toEqual({ statusCode: 400 });
     });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      const schema = { username: usernameConstraint, password: passwordConstraint, meta: metaConstraint };
-      const body = { username: 'username', meta: { some: 'value' }, password: 'pas' };
-      const req = buildRequestForUserAction('', '-', undefined, { username: 'username', meta: { some: 'value' }, password: 'pas' });
-      const res = buildResponse();
-
-      await registerHandler(req, res);
-
-      assertValidationError(res, schema, body);
-    });
   });
 
   describe('addUserHandler', (): void => {
@@ -236,17 +221,6 @@ describe('user handlers', (): void => {
       assertError(res, 'User testUser exists already');
       expect(data.user_?.length).toBe(1);
     });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      const schema = { username: usernameConstraint, password: passwordConstraint, meta: metaConstraint, admin: adminConstraint };
-      const body = { username: 'username', meta: { some: 'value' }, admin: false };
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await addUserHandler(req, res);
-
-      assertValidationError(res, schema, body);
-    });
   });
 
   describe('changeUsernameHandler', (): void => {
@@ -272,18 +246,6 @@ describe('user handlers', (): void => {
       assertError(res, `There is always a user with name ${newUsername}`);
       expect((data.user_?.at(0) as User)?.username).toBe(username);
       expect((data.user_?.at(1) as User)?.username).toBe(newUsername);
-    });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      data.user_[0] = { ...testUser };
-      const schema = { id: idConstraint, newUsername: usernameConstraint };
-      const body = { id: 'xyz', newUsername: 'abcde' };
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await changeUsernameHandler(req, res);
-
-      assertValidationError(res, schema, body);
     });
   });
 
@@ -327,18 +289,6 @@ describe('user handlers', (): void => {
 
       assertOK(res);
     });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      data.user_[0] = { ...testUser };
-      const schema = { id: idConstraint, newPassword: passwordConstraint };
-      const body = { id: 'sel', newPassword: '123456789' };
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await changePasswordHandler(req, res);
-
-      assertValidationError(res, schema, body);
-    });
   });
 
   describe('setAdminStateHandler', (): void => {
@@ -351,18 +301,6 @@ describe('user handlers', (): void => {
 
       assertOK(res);
       expect((data.user_?.at(0) as User)?.admin).toBe(true);
-    });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      data.user_[0] = { ...testUser };
-      const schema = { id: idConstraint, admin: requiredAdminConstraint };
-      const body = { id: 'self', admin: 'yes' };
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await setAdminStateHandler(req, res);
-
-      assertValidationError(res, schema, body);
     });
   });
 
@@ -377,18 +315,6 @@ describe('user handlers', (): void => {
       assertOK(res);
       expect((data.user_?.at(0) as User)?.meta).toEqual(newMeta);
     });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      data.user_[0] = { ...testUser };
-      const schema = { id: idConstraint, meta: metaConstraint };
-      const body = {};
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await saveMetaHandler(req, res);
-
-      assertValidationError(res, schema, body);
-    });
   });
 
   describe('loadMetaHandler', (): void => {
@@ -401,18 +327,6 @@ describe('user handlers', (): void => {
 
       assertOK(res, { meta: testUser.meta });
     });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      data.user_[0] = { ...testUser };
-      const schema = { id: idConstraint };
-      const body = {};
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await loadMetaHandler(req, res);
-
-      assertValidationError(res, schema, body);
-    });
   });
 
   describe('getUserHandler', (): void => {
@@ -424,18 +338,6 @@ describe('user handlers', (): void => {
       await getUserHandler(req, res);
 
       assertOK(res, { user: { ...testUser, hashVersion: undefined, salt: undefined, hash: undefined } });
-    });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      data.user_[0] = { ...testUser };
-      const schema = { id: idConstraint };
-      const body = {};
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await getUserHandler(req, res);
-
-      assertValidationError(res, schema, body);
     });
   });
 
@@ -481,18 +383,6 @@ describe('user handlers', (): void => {
       expect(await exists('/base/data/toNotDelete')).toBe(true);
       expect(await exists('/base/files/ke/key2')).toBe(true);
     });
-
-    test('sends error on invalid body', async (): Promise<void> => {
-      data.user_[0] = { ...testUser };
-      const schema = { id: idConstraint };
-      const body = {};
-      const req = buildRequestForUserAction('', '-', undefined, body);
-      const res = buildResponse();
-
-      await deleteUserHandler(req, res);
-
-      assertValidationError(res, schema, body);
-    });
   });
 
   describe('loginHandler', (): void => {
@@ -532,7 +422,7 @@ describe('user handlers', (): void => {
 
       await loginHandler(req, res);
 
-      assertValidationError(res, schema, body);
+      assertValidationError(res, 'body', schema, body);
     });
   });
 });

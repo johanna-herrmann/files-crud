@@ -17,7 +17,7 @@ const fileCopyMiddleware = async function (req: Request, res: express.Response, 
   });
   const error = bodySchema.validate(body).error;
   if (error) {
-    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint, copyOwner: copyOwnerConstraint }, body);
+    return sendValidationError(res, 'body', { path: pathConstraint, targetPath: pathConstraint, copyOwner: copyOwnerConstraint }, body);
   }
 
   const { path, targetPath, copyOwner } = body;
@@ -45,7 +45,7 @@ const fileMoveMiddleware = async function (req: Request, res: express.Response, 
   });
   const error = bodySchema.validate(body).error;
   if (error) {
-    return sendValidationError(res, { path: pathConstraint, targetPath: pathConstraint }, body);
+    return sendValidationError(res, 'body', { path: pathConstraint, targetPath: pathConstraint }, body);
   }
 
   const { path, targetPath } = body;
