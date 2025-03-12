@@ -16,6 +16,7 @@ let s3Client: S3Client | null = null;
 
 const createClient = function (container: StartedMinioContainer): S3Client {
   const config: S3ClientConfig = {
+    region: 'local',
     endpoint: container.getConnectionUrl(),
     credentials: {
       accessKeyId: container.getUsername(),
@@ -75,8 +76,6 @@ const objectExists = async function (client: S3Client, Key: string): Promise<boo
 };
 
 describe('s3StorageHelper', (): void => {
-  jest.setTimeout(60000);
-
   let container: null | StartedMinioContainer = null;
 
   beforeAll(async (): Promise<void> => {
