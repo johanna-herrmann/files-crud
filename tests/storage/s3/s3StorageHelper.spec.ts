@@ -82,6 +82,10 @@ describe('s3StorageHelper', (): void => {
   beforeAll(async (): Promise<void> => {
     container = await new MinioContainer('minio/minio:RELEASE.2024-12-13T22-19-12Z').withAddedCapabilities().start();
     s3Client = createClient(container);
+    if (s3Client?.config?.endpoint) {
+      console.log({ endpoint: await s3Client.config.endpoint() });
+    }
+    console.log({ container, s3Client });
     await createBucket();
   });
 
