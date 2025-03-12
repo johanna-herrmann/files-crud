@@ -16,6 +16,7 @@ let s3Client: S3Client | null = null;
 
 const createClient = function (container: StartedMinioContainer): S3Client {
   const config: S3ClientConfig = {
+    region: 'local',
     endpoint: container.getConnectionUrl(),
     credentials: {
       accessKeyId: container.getUsername(),
