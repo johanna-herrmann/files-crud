@@ -52,6 +52,7 @@ const createAdmin = async function ({ username, password }: { username?: string;
         value: { username, password }
       };
       printError(`Error. Validation Error.\n${JSON.stringify(validationErrorDetails, undefined, '  ')}`);
+      printFailed();
       return;
     }
 
@@ -61,13 +62,11 @@ const createAdmin = async function ({ username, password }: { username?: string;
 
     if (!added) {
       printError(`Error. User ${username} exists already.`);
+      printFailed();
       return;
     }
 
     printLine(`Successfully created user. username: ${username}; password: ${password}`, { username, password });
-    if (command) {
-      await resetDb();
-    }
   } catch (err: unknown) {
     const error = err as Error;
     printError(
@@ -76,6 +75,10 @@ const createAdmin = async function ({ username, password }: { username?: string;
         .replace(/\\n/g, '\n')
     );
     printFailed();
+  } finally {
+    if (command) {
+      await resetDb();
+    }
   }
 };
 

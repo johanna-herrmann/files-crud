@@ -189,8 +189,12 @@ describe('command: admin', (): void => {
       await createAdmin({ username: testUser.username, password: 'p123456789' });
 
       expect(data.user_?.length).toBe(1);
-      expect(printings).toEqual(['Creating user...\n', `${RED_START}Error. User ${testUser.username} exists already.${END}\n`]);
-      expect(channels).toEqual(['out', 'err']);
+      expect(printings).toEqual([
+        'Creating user...\n',
+        `${RED_START}Error. User ${testUser.username} exists already.${END}\n`,
+        `${RED_START}Failed due to error${END}\n`
+      ]);
+      expect(channels).toEqual(['out', 'err', 'out']);
     });
 
     test('cancels with error on invalid schema', async (): Promise<void> => {
@@ -203,8 +207,11 @@ describe('command: admin', (): void => {
       await createAdmin({ username: 'u', password: 'p' });
 
       expect(data.user_?.length).toBe(0);
-      expect(printings).toEqual([`${RED_START}Error. Validation Error.\n${JSON.stringify(validationErrorDetails, undefined, '  ')}${END}\n`]);
-      expect(channels).toEqual(['err']);
+      expect(printings).toEqual([
+        `${RED_START}Error. Validation Error.\n${JSON.stringify(validationErrorDetails, undefined, '  ')}${END}\n`,
+        `${RED_START}Failed due to error${END}\n`
+      ]);
+      expect(channels).toEqual(['err', 'out']);
     });
 
     test('fails successfully', async (): Promise<void> => {
