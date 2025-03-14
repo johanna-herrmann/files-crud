@@ -4,6 +4,7 @@ import { addUser, getUsers } from '@/user';
 import { printer } from '@/printing/printer';
 import { getLogger } from '@/logging';
 import { resetDb } from '@/database';
+import { sendError } from '@/server/util';
 
 const usernameConstraint = 'required string, 3 to 64 chars long';
 const passwordConstraint = 'required string, at least 8 chars long';
@@ -56,7 +57,14 @@ const createAdmin = async function ({ username, password }: { username?: string;
     }
 
     printLine(`Creating user...`);
-    await addUser(username, password, true, {});
+
+    const added = await addUser(username, password, true, {});
+
+    if (!added) {
+      printError(`Error. User ${username} exists already.`);
+      return;
+    }
+
     printLine(`Successfully created user. username: ${username}; password: ${password}`, { username, password });
     if (command) {
       await resetDb();

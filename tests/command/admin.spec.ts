@@ -183,6 +183,16 @@ describe('command: admin', (): void => {
       expect(mocked_loggedMeta).toEqual([undefined, { username, password }]);
     });
 
+    test('cancels with error if user already exists', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
+
+      await createAdmin({ username: testUser.username, password: 'p123456789' });
+
+      expect(data.user_?.length).toBe(1);
+      expect(printings).toEqual(['Creating user...\n', `${RED_START}Error. User ${testUser.username} exists already.${END}\n`]);
+      expect(channels).toEqual(['out', 'err']);
+    });
+
     test('cancels with error on invalid schema', async (): Promise<void> => {
       const validationErrorDetails = {
         source: 'arguments',
