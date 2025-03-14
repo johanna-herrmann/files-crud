@@ -5,24 +5,7 @@ import { DbItem } from '@/types/database/DbItem';
 import { DbValue } from '@/types/database/DbValue';
 import { DatabaseConfig } from '@/types/config/DatabaseConfig';
 
-interface MongoItem {
-  _doc: {
-    _id: string;
-    __v: number;
-  } & DbItem;
-}
-
-const types = {
-  string: { type: String, default: '' },
-  number: { type: Number, default: '' },
-  boolean: { type: Boolean, default: '' },
-  object: Object
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const dummyModel = mongoose.model('dummy', new mongoose.Schema({ dummy: { type: String, default: '' } }));
-
-const schemata: Record<string, Record<string, unknown>> = {};
+type MongoItem = DbItem & { _id: unknown };
 
 /**
  * Database Adapter for MongoDB.
@@ -31,6 +14,9 @@ class MongoDatabaseAdapter implements DatabaseAdapter {
   private readonly url: string;
   private readonly user?: string;
   private readonly pass?: string;
+  private connection: null | mongoose.Connection = null;
+  private session: null | mongoose.mongo.ClientSession = null;
+  private collections: Record<string, mongoose.Collection<DbItem>> = {};
 
   constructor() {
     const config = getFullConfig();
@@ -45,66 +31,63 @@ class MongoDatabaseAdapter implements DatabaseAdapter {
     return [this.url, this.user ?? '', this.pass ?? ''];
   }
 
-  private getType(value: string | number | boolean | Record<string, unknown>) {
-    const type = typeof value;
-    if (type === 'string' || type === 'number' || type === 'boolean') {
-      return types[type];
-    }
-    return types['object'];
+  public getConnection(): mongoose.Connection | null {
+    return this.connection;
   }
 
-  public getModel(table: string): typeof dummyModel {
-    const model = mongoose.models[table];
-    if (!!model) {
-      return model;
-    }
-    const schema = schemata[table];
-    return mongoose.model(table, new mongoose.Schema(schema)) as typeof dummyModel;
+  public getSession(): mongoose.mongo.ClientSession | null {
+    return this.session;
+  }
+
+  public getCollections(): Record<string, mongoose.Collection<DbItem>> {
+    return this.collections;
   }
 
   private async findOneIfExists<T extends DbItem>(table: string, filterKey: string, filterValue: string): Promise<T | undefined> {
-    const Model = this.getModel(table);
-    const item = await Model.findOne<MongoItem>({ [filterKey]: filterValue });
+    const collection = this.collections[table];
+    const item = await collection?.findOne<MongoItem>({ [filterKey]: filterValue });
     if (!item) {
       return undefined;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { _id, __v, ...actualItem } = item._doc;
-    return actualItem as T;
+    delete item._id;
+    return item as unknown as T;
   }
 
   public async open(): Promise<void> {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(this.url, { user: this.user, pass: this.pass });
+    if (!this.session) {
+      this.connection = mongoose.createConnection(this.url, { directConnection: true });
+      this.session = await this.connection.startSession();
     }
   }
 
   public async close(): Promise<void> {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.connection.close();
+    if (!!this.session) {
+      await this.session?.endSession();
+      await this.connection?.close();
+      this.session = null;
+      this.connection = null;
     }
   }
 
-  public async init<T extends DbItem>(table: string, item: T): Promise<void> {
-    let schema: Record<string, unknown> | undefined = schemata[table];
-    if (!!schema) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async init<T extends DbItem>(table: string, _: T): Promise<void> {
+    if (!this.connection) {
+      throw new Error('Error. Not connected');
+    }
+    if (!!this.collections[table]) {
       return;
     }
-    schema = {};
-    Object.entries(item).forEach(([key, value]) => {
-      schema[key] = this.getType(value);
-    });
-    schemata[table] = schema;
+    this.collections[table] = this.connection.collection<DbItem>(table);
   }
 
   public async add<T extends DbItem>(table: string, item: T): Promise<void> {
-    const Model = this.getModel(table);
-    await new Model(item).save();
+    const collection = this.collections[table];
+    await collection?.insertOne({ ...item });
   }
 
   public async update(table: string, filterKey: string, filterValue: string, update: Record<string, DbValue>): Promise<void> {
-    const Model = this.getModel(table);
-    await Model.findOneAndUpdate({ [filterKey]: filterValue }, update);
+    const collection = this.collections[table];
+    await collection?.findOneAndUpdate({ [filterKey]: filterValue }, { $set: update });
   }
 
   public async findOne<T extends DbItem>(table: string, filterKey: string, filterValue: string): Promise<T | null> {
@@ -113,24 +96,30 @@ class MongoDatabaseAdapter implements DatabaseAdapter {
   }
 
   public async findAll<T extends DbItem>(table: string): Promise<T[]> {
-    const Model = this.getModel(table);
-    const items = await Model.find<MongoItem>();
-    return items.map((item) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { _id, __v, ...actualItem } = item._doc;
-      return actualItem as T;
-    });
+    const collection = this.collections[table];
+    const items: T[] = [];
+    const itemsCursor = collection?.find();
+    while (await itemsCursor?.hasNext()) {
+      const doc = await itemsCursor?.next();
+      const item = await collection.findOne<MongoItem>({ _id: doc?._id });
+      if (!item) {
+        continue;
+      }
+      delete item._id;
+      items.push(item as unknown as T);
+    }
+    return items;
   }
 
   public async exists(table: string, filterKey: string, filterValue: string): Promise<boolean> {
-    const Model = this.getModel(table);
-    return !!(await Model.exists({ [filterKey]: filterValue }));
+    const item = await this.findOneIfExists(table, filterKey, filterValue);
+    return !!item;
   }
 
   public async delete(table: string, filterKey: string, filterValue: string): Promise<void> {
-    const Model = this.getModel(table);
-    await Model.findOneAndDelete({ [filterKey]: filterValue });
+    const collection = this.collections[table];
+    await collection?.findOneAndDelete({ [filterKey]: filterValue });
   }
 }
 
-export { MongoDatabaseAdapter, schemata };
+export { MongoDatabaseAdapter, MongoItem };
