@@ -6,6 +6,9 @@ import { loadLogger, resetLogger } from '@/logging';
 import { loadDb } from '@/database';
 import { User } from '@/types/user/User';
 
+const usernameConstraint = 'required string, 3 to 64 chars long';
+const passwordConstraint = 'required string, at least 8 chars long';
+
 const RED_START = '\x1B[31m';
 const END = '\x1B[39m';
 
@@ -20,7 +23,7 @@ jest.mock('@/user/passwordHashing/versions', () => {
     current: {
       version: 'testVersion',
       async hashPassword(password: string): Promise<[string, string]> {
-        if (password === 'error') {
+        if (password === 'errorPassword') {
           throw mock_error;
         }
         return [`salt.${password}`, `hash.${password}`];
@@ -41,6 +44,7 @@ jest.mock('crypto', () => {
 
 jest.mock('@/database', () => {
   const actual = jest.requireActual('@/database');
+  // noinspection JSUnusedGlobalSymbols
   return {
     ...actual,
     async resetDb() {
@@ -93,6 +97,7 @@ describe('command: admin', (): void => {
       channels.push('err');
       return true;
     });
+    data.user_ = [];
   });
 
   afterEach(async (): Promise<void> => {
@@ -178,18 +183,27 @@ describe('command: admin', (): void => {
       expect(mocked_loggedMeta).toEqual([undefined, { username, password }]);
     });
 
+    test('cancels with error on invalid schema', async (): Promise<void> => {
+      const validationErrorDetails = {
+        source: 'arguments',
+        schema: { username: usernameConstraint, password: passwordConstraint },
+        value: { username: 'u', password: 'p' }
+      };
+
+      await createAdmin({ username: 'u', password: 'p' });
+
+      expect(data.user_?.length).toBe(0);
+      expect(printings).toEqual([`${RED_START}Error. Validation Error.\n${JSON.stringify(validationErrorDetails, undefined, '  ')}${END}\n`]);
+      expect(channels).toEqual(['err']);
+    });
+
     test('fails successfully', async (): Promise<void> => {
-      await createAdmin({ password: 'error' });
+      await createAdmin({ password: 'errorPassword' });
 
       expect(data.user_?.length).toBe(0);
       expect(printings).toEqual([
         'Creating user...\n',
-        JSON.stringify(mock_error.stack)
-          .replace(/"/g, '')
-          .replace(/\\n/g, '\n')
-          .split('\n')
-          .map((line) => `${RED_START}${line}${END}`)
-          .join('\n') + '\n',
+        `${RED_START}${JSON.stringify(mock_error.stack).replace(/"/g, '').replace(/\\n/g, '\n')}${END}\n`,
         '\x1B[31mFailed due to error\x1B[39m\n'
       ]);
       expect(channels).toEqual(['out', 'err', 'out']);

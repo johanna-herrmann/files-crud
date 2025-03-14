@@ -152,12 +152,7 @@ describe('command: integrity', (): void => {
 
     expect(printings).toEqual([
       'Starting check...\n',
-      JSON.stringify(error.stack)
-        .replace(/"/g, '')
-        .replace(/\\n/g, '\n')
-        .split('\n')
-        .map((line) => `${RED_START}${line}${END}`)
-        .join('\n') + '\n',
+      `${RED_START}${JSON.stringify(error.stack).replace(/"/g, '').replace(/\\n/g, '\n')}${END}\n`,
       `${RED_START}Failed due to error${END}\n`
     ]);
     expect(channels).toEqual(['out', 'err', 'out']);

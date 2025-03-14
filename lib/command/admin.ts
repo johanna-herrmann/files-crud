@@ -1,8 +1,12 @@
 import crypto from 'crypto';
+import joi from 'joi';
 import { addUser, getUsers } from '@/user';
 import { printer } from '@/printing/printer';
 import { getLogger } from '@/logging';
 import { resetDb } from '@/database';
+
+const usernameConstraint = 'required string, 3 to 64 chars long';
+const passwordConstraint = 'required string, at least 8 chars long';
 
 const printLine = function (line: string, meta?: Record<string, unknown>): void {
   const logger = getLogger();
@@ -34,8 +38,23 @@ const getRandomString = function (length: number): string {
 
 const createAdmin = async function ({ username, password }: { username?: string; password?: string }, command?: boolean): Promise<void> {
   try {
+    const credentialsSchema = joi.object({
+      username: joi.string().min(3).max(64).required(),
+      password: joi.string().min(8).required()
+    });
     username = username ?? getRandomString(6);
     password = password ?? getRandomString(15);
+
+    if (!!credentialsSchema.validate({ username, password }).error) {
+      const validationErrorDetails = {
+        source: 'arguments',
+        schema: { username: usernameConstraint, password: passwordConstraint },
+        value: { username, password }
+      };
+      printError(`Error. Validation Error.\n${JSON.stringify(validationErrorDetails, undefined, '  ')}`);
+      return;
+    }
+
     printLine(`Creating user...`);
     await addUser(username, password, true, {});
     printLine(`Successfully created user. username: ${username}; password: ${password}`, { username, password });

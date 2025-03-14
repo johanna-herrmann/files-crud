@@ -42,7 +42,7 @@ class Printer {
   }
 
   public printError(message: string): Printer {
-    process.stderr.write(`${red(message)}\n`);
+    process.stderr.write(`${red(message.replace(/\n/g, '~')).replace(/~/g, '\n')}\n`);
     return this;
   }
 
