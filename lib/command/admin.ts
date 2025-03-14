@@ -4,7 +4,6 @@ import { addUser, getUsers } from '@/user';
 import { printer } from '@/printing/printer';
 import { getLogger } from '@/logging';
 import { resetDb } from '@/database';
-import { sendError } from '@/server/util';
 
 const usernameConstraint = 'required string, 3 to 64 chars long';
 const passwordConstraint = 'required string, at least 8 chars long';
