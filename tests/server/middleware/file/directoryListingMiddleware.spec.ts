@@ -94,7 +94,7 @@ describe('directoryListingMiddleware', () => {
       test('for user.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfReadPermissionIsGiven('user', 'valid-user-token', 'dir');
+        await passesIfReadPermissionIsGiven('user', 'valid-user-token', '');
       });
 
       test('for admin.', async (): Promise<void> => {

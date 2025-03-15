@@ -11,8 +11,8 @@ const copyOwnerConstraint = 'optional boolean';
 const fileCopyMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const body = req.body ?? {};
   const bodySchema = joi.object({
-    path: joi.string(),
-    targetPath: joi.string(),
+    path: joi.string().required(),
+    targetPath: joi.string().required(),
     copyOwner: joi.boolean()
   });
   const error = bodySchema.validate(body).error;
@@ -40,8 +40,8 @@ const fileCopyMiddleware = async function (req: Request, res: express.Response, 
 const fileMoveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const body = req.body ?? {};
   const bodySchema = joi.object({
-    path: joi.string(),
-    targetPath: joi.string()
+    path: joi.string().required(),
+    targetPath: joi.string().required()
   });
   const error = bodySchema.validate(body).error;
   if (error) {

@@ -146,7 +146,7 @@ const fileSaveMetaMiddleware = async function (req: Request, res: express.Respon
 const directoryListingMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
   const path = resolvePath(req);
   const pathSchema = joi.object({
-    path: joi.string()
+    path: joi.alternatives(joi.string(), '')
   });
   const error = pathSchema.validate({ path }, { convert: false }).error;
   if (error) {
