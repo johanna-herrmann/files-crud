@@ -1,6 +1,6 @@
-import Request from '@/types/server/Request';
 import express from 'express';
-import { sendError, sendOK, sendUnauthorized } from '@/server/util';
+import joi from 'joi';
+import { sendOK, sendUnauthorized, sendError, sendValidationError } from '@/server/util';
 import {
   addUser,
   changePassword,
@@ -19,10 +19,16 @@ import {
 } from '@/user';
 import { loadLogger } from '@/logging';
 import { getExpiresAt } from '@/user/jwt';
+import { loadStorage } from '@/storage';
+import { Request } from '@/types/server/Request';
+
+const usernameConstraint = 'required string, 3 to 64 chars long';
+const passwordConstraint = 'required string, at least 8 chars long';
 
 const registerHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
+  const body = req.body ?? {};
+
   const { username, password, meta } = body;
 
   const result = await register(username as string, password as string, (meta ?? {}) as Record<string, unknown>);
@@ -34,7 +40,7 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
   logger.info('Successfully registered user.', { username });
 
   if ((password as string).length < 10) {
-    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (password as string).length });
+    logger.warn('Password is a bit short. Consider increasing password minimal length to 10.', { length: (password as string).length });
   }
 
   sendOK(res, { username });
@@ -42,7 +48,8 @@ const registerHandler = async function (req: Request, res: express.Response): Pr
 
 const addUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
+  const body = req.body ?? {};
+
   const { username, password, meta, admin } = body;
 
   const added = await addUser(username as string, password as string, admin as boolean, (meta ?? {}) as Record<string, unknown>);
@@ -54,7 +61,7 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
   logger.info('Successfully added user.', { username, admin });
 
   if ((password as string).length < 10) {
-    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (password as string).length });
+    logger.warn('Password is a bit short. Consider increasing password minimal length to 10.', { length: (password as string).length });
   }
 
   sendOK(res, { username });
@@ -62,7 +69,8 @@ const addUserHandler = async function (req: Request, res: express.Response): Pro
 
 const changeUsernameHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
+  const body = req.body ?? {};
+
   const { id, newUsername } = body;
 
   const result = await changeUsername(id as string, newUsername as string);
@@ -77,7 +85,8 @@ const changeUsernameHandler = async function (req: Request, res: express.Respons
 
 const setAdminStateHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
+  const body = req.body ?? {};
+
   const { id, admin } = body;
 
   await setAdminState(id as string, admin as boolean);
@@ -88,8 +97,9 @@ const setAdminStateHandler = async function (req: Request, res: express.Response
 
 const saveMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
-  const id = (req.params as Record<string, unknown>).id;
+  const body = req.body ?? {};
+
+  const id = body.id ?? '';
   const { meta } = body;
 
   await saveMeta(id as string, (meta ?? {}) as Record<string, unknown>);
@@ -100,15 +110,15 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
 
 const changePasswordHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
-  const { id, newPassword } = body;
+
+  const { id, newPassword } = req.body ?? {};
 
   await changePassword(id as string, newPassword as string);
 
   logger.info('Successfully changed password.', { id });
 
   if ((newPassword as string).length < 10) {
-    logger.warn('Password is a bit short. Consider password rules implementation.', { length: (newPassword as string).length });
+    logger.warn('Password is a bit short. Consider increasing password minimal length to 10.', { length: (newPassword as string).length });
   }
 
   sendOK(res);
@@ -116,9 +126,11 @@ const changePasswordHandler = async function (req: Request, res: express.Respons
 
 const deleteUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const id = (req.params as Record<string, unknown>).id;
+
+  const id = req.body?.id ?? '';
 
   await deleteUser(id as string);
+  await loadStorage().deleteAllFilesFromUser(id as string);
 
   logger.info('Successfully removed user.', { id });
   sendOK(res);
@@ -126,7 +138,8 @@ const deleteUserHandler = async function (req: Request, res: express.Response): 
 
 const loadMetaHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const id = (req.params as Record<string, unknown>).id;
+
+  const id = req.body?.id ?? '';
 
   const meta = await loadMeta(id as string);
 
@@ -136,7 +149,8 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
 
 const getUserHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const id = (req.params as Record<string, unknown>).id ?? '-';
+
+  const id = req.body?.id ?? '';
 
   const user = await getUser(id as string);
 
@@ -159,7 +173,17 @@ const getUsersHandler = async function (_: Request, res: express.Response): Prom
 
 const loginHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
-  const body = req.body;
+  const body = req.body ?? {};
+
+  const bodySchema = joi.object({
+    username: joi.string().min(3).max(64).required(),
+    password: joi.string().min(8).required()
+  });
+  const error = bodySchema.validate(body, { convert: false, allowUnknown: true }).error;
+  if (error) {
+    return sendValidationError(res, 'body', { username: usernameConstraint, password: passwordConstraint }, body);
+  }
+
   const { username, password } = body;
 
   const tokenOrError = await login(username as string, password as string);

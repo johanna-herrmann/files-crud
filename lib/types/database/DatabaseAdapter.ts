@@ -1,5 +1,5 @@
-import DbItem from '@/types/database/DbItem';
-import DbValue from '@/types/database/DbValue';
+import { DbItem } from '@/types/database/DbItem';
+import { DbValue } from '@/types/database/DbValue';
 
 /**
  * DatabaseAdapter is used to abstract database operations away from the business logic.
@@ -17,7 +17,6 @@ interface DatabaseAdapter {
 
   /**
    * Creates a new table/collection.
-   * Some Adapters may use the first property's key of item as key field (example: dynamoDB).
    * @param table The name of the table.
    * @param item Dummy Item to derive the fields from.
    *             Example: Provide dummy user item, so fields of user can be derived.
@@ -75,4 +74,4 @@ interface DatabaseAdapter {
   delete(table: string, filterKey: string, filterValue: string): Promise<void>;
 }
 
-export default DatabaseAdapter;
+export { DatabaseAdapter };

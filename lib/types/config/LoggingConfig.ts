@@ -1,6 +1,6 @@
-import LoggingFormat from '@/types/config/LoggingFormat';
-import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequencyUnit';
-import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
+import { LoggingFormat } from '@/types/config/LoggingFormat';
+import { LogFileRotationFrequencyUnit } from '@/types/config/LogFileRotationFrequencyUnit';
+import { AccessLoggingFormat } from '@/types/config/AccessLoggingFormat';
 
 interface LoggingConfig {
   level?: 'debug' | 'info' | 'warn' | 'error';
@@ -8,6 +8,7 @@ interface LoggingConfig {
   errorLogFile?: string;
   ttyLoggingFormat?: LoggingFormat;
   fileLoggingFormat?: LoggingFormat;
+  errorFileLoggingFormat?: LoggingFormat;
   accessLoggingFormat?: AccessLoggingFormat;
   enableErrorFileLogging?: boolean;
   enableAccessLogging?: boolean;
@@ -18,4 +19,4 @@ interface LoggingConfig {
   ipLogging?: 'full' | 'anonymous' | 'none';
 }
 
-export default LoggingConfig;
+export { LoggingConfig };

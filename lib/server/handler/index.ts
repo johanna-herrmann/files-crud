@@ -21,7 +21,9 @@ import {
   copyHandler as copyFileHandler,
   moveHandler as moveFileHandler,
   deleteHandler as deleteFileHandler,
-  listHandler as listDirectoryItemsHandler
+  listHandler as listDirectoryItemsHandler,
+  fileExistsHandler,
+  directoryExistsHandler
 } from './file';
 
 import { stopHandler, reloadHandler } from './control';
@@ -47,6 +49,8 @@ export {
   moveFileHandler,
   deleteFileHandler,
   listDirectoryItemsHandler,
+  fileExistsHandler,
+  directoryExistsHandler,
   stopHandler,
   reloadHandler
 };

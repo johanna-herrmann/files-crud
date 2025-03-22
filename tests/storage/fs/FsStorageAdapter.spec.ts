@@ -2,16 +2,7 @@ import fs from 'fs/promises';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
-
-const exists = async function (path: string): Promise<boolean> {
-  try {
-    await fs.stat(path);
-
-    return true;
-  } catch {
-    return false;
-  }
-};
+import { exists } from '#/utils';
 
 const storage = new FsStorageAdapter('/base');
 

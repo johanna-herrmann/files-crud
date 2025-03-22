@@ -2,33 +2,28 @@ import { Database } from './Database';
 
 let db: Database | null;
 
-const getDb = function (): Database {
-  if (!!db) {
-    return db;
-  }
-
-  return (db = new Database());
+const initDb = async function (): Promise<Database> {
+  db = new Database();
+  await db.open();
+  await db.init();
+  return db;
 };
 
 const loadDb = async function (): Promise<Database> {
-  const database = getDb();
-  await database.open();
-  await database.init();
-  return database;
+  return db ?? (await initDb());
 };
 
-const closeDb = async function (): Promise<void> {
-  await db?.close();
+const resetDb = async function (): Promise<void> {
+  if (!!db) {
+    await db.close();
+    db = null;
+  }
 };
 
-const resetDb = function (): void {
-  db = null;
-};
-
-const reloadDb = function (): void {
+const reloadDb = async function (): Promise<void> {
   const oldDb = db;
-  db = new Database();
+  await initDb();
   oldDb?.close();
 };
 
-export { loadDb, closeDb, resetDb, reloadDb };
+export { loadDb, resetDb, reloadDb };

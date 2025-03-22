@@ -1,9 +1,9 @@
+import express from 'express';
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
 import { assertOK, buildResponse, buildSimpleRequest } from '#/server/expressTestUtils';
 import { staticMiddleware } from '@/server/middleware/static';
-import Request from '@/types/server/Request';
-import express from 'express';
+import { Request } from '@/types/server/Request';
 
 jest.mock('express', () => {
   const actual = jest.requireActual('express');

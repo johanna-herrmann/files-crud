@@ -1,8 +1,9 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
-import { loadDb, closeDb } from '@/database';
-import JwtKey from '@/types/user/JwtKey';
+import { loadDb } from '@/database';
 import { getFullConfig } from '@/config/config';
+import { getLogger } from '@/logging';
+import { JwtKey } from '@/types/user/JwtKey';
 
 const KEY_LENGTH = 32;
 const KEYS = 20;
@@ -13,21 +14,25 @@ const keys: JwtKey[] = [];
 
 let index = 0;
 
+const resetKeys = function () {
+  keys.splice(0, KEYS);
+};
+
 const initKeys = async function (): Promise<void> {
-  try {
-    const db = await loadDb();
-    keys.push(...(await db.getJwtKeys()));
-    if (keys.length === 0) {
-      const newKeys: string[] = [];
-      for (let i = 1; i <= KEYS; i++) {
-        newKeys.push(crypto.randomBytes(KEY_LENGTH).toString('base64'));
-      }
-      await db.addJwtKeys(...newKeys);
-      keys.push(...(await db.getJwtKeys()));
+  const db = await loadDb();
+  const logger = getLogger();
+  logger?.info(`Initialize jwt keys, generating upto ${KEYS} random keys, if not done already.`);
+  const givenKeys = await db.getJwtKeys();
+  keys.push(...givenKeys);
+  const newKeys: string[] = [];
+  if (keys.length < KEYS) {
+    for (let i = 1; i <= KEYS - keys.length; i++) {
+      newKeys.push(crypto.randomBytes(KEY_LENGTH).toString('base64'));
     }
-  } finally {
-    await closeDb();
+    await db.addJwtKeys(...newKeys);
+    keys.push(...(await db.getJwtKeys()));
   }
+  logger?.info(`Keys initialized, generating ${newKeys.length} new key(s).`);
 };
 
 const getRandomKey = function (): JwtKey {
@@ -86,6 +91,4 @@ const getKeys = function (): JwtKey[] {
   return keys;
 };
 
-initKeys().then();
-
-export { issueToken, verifyToken, extractSub, getExpiresAt, getIndex, getKeys, KEYS, algorithm };
+export { initKeys, issueToken, verifyToken, extractSub, getExpiresAt, getIndex, getKeys, resetKeys, KEYS, algorithm };

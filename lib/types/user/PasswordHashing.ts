@@ -4,4 +4,4 @@ interface PasswordHashing {
   checkPassword: (password: string, salt: string, hash: string) => Promise<boolean>;
 }
 
-export default PasswordHashing;
+export { PasswordHashing };

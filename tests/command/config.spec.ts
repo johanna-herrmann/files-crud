@@ -1,6 +1,6 @@
 import { loadConfig, setEnvPrefix } from '@/config/config';
-import Config from '@/types/config/Config';
 import { showConfig } from '@/command/config';
+import { Config } from '@/types/config/Config';
 
 describe('command: config', (): void => {
   const config: Config = {
@@ -151,7 +151,29 @@ describe('command: config', (): void => {
 
     showConfig('properties', true);
 
-    expect((printings[0] as string).split('\n').length).toBe(28);
+    expect((printings[0] as string).split('\n').length).toBe(29);
+    expect(channels).toEqual(['out']);
+  });
+
+  test('shows correct directory permissions with array notation, env.', async (): Promise<void> => {
+    loadConfig({ directoryPermissions: { dir1: 'f40', dir2: ['create-read-update-delete', 'read', 'read'] } });
+
+    showConfig('env', false);
+
+    expect(printings[0] as string).toBe(
+      'PREF_DIRECTORY_PERMISSIONS__DIRECTORIES=dir1,dir2\nPREF_DIRECTORY_PERMISSIONS__PERMISSIONS=f40,create-read-update-delete:read:read\n'
+    );
+    expect(channels).toEqual(['out']);
+  });
+
+  test('shows correct directory permissions with array notation, properties.', async (): Promise<void> => {
+    loadConfig({ directoryPermissions: { dir1: 'f40', dir2: ['create-read-update-delete', 'read', 'read'] } });
+
+    showConfig('properties', false);
+
+    expect(printings[0] as string).toBe(
+      'directoryPermissions.directories=dir1,dir2\ndirectoryPermissions.permissions=f40,create-read-update-delete:read:read\n'
+    );
     expect(channels).toEqual(['out']);
   });
 });

@@ -3,4 +3,4 @@ interface JwtKey {
   key: string;
 }
 
-export default JwtKey;
+export { JwtKey };

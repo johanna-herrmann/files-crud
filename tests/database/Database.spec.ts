@@ -2,12 +2,11 @@ import { Database } from '@/database/Database';
 import { data, MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
 import { expectKeys } from '#/database/expectKeys';
 import { loadConfig } from '@/config/config';
-import User from '@/types/user/User';
-import FailedLoginAttempts from '@/types/user/FailedLoginAttempts';
 import { testUser } from '#/testItems';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
-import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
+import { User } from '@/types/user/User';
+import { FailedLoginAttempts } from '@/types/user/FailedLoginAttempts';
 
 const mocked_id = 'test-id';
 let mocked_index = 0;
@@ -58,13 +57,6 @@ describe('Database', (): void => {
     const db = new Database();
 
     expect(db.getAdapter()).toBeInstanceOf(PostgresDatabaseAdapter);
-  });
-
-  test('Database->constructor uses DynamoDatabaseAdapter.', async (): Promise<void> => {
-    loadConfig({ database: { name: 'dynamodb' } });
-    const db = new Database();
-
-    expect(db.getAdapter()).toBeInstanceOf(DynamoDatabaseAdapter);
   });
 
   test('Database->open connects to db.', async (): Promise<void> => {
@@ -321,5 +313,19 @@ describe('Database', (): void => {
     await db.removeLoginAttempts(testUser.username);
 
     expect(data.failedLoginAttempts.length).toBe(0);
+  });
+
+  test('Database->removeLoginAttempts throws no error if entry does not exist.', async (): Promise<void> => {
+    const db = new Database();
+    let error: Error | null = null;
+
+    try {
+      await db.removeLoginAttempts(testUser.username);
+    } catch (err: unknown) {
+      error = err as Error;
+    }
+
+    expect(data.failedLoginAttempts.length).toBe(0);
+    expect(error).toBeNull();
   });
 });

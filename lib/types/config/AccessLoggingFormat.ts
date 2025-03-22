@@ -1,3 +1,3 @@
 type AccessLoggingFormat = 'classic' | 'json';
 
-export default AccessLoggingFormat;
+export { AccessLoggingFormat };

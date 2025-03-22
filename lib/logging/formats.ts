@@ -1,8 +1,8 @@
 import { format } from 'winston';
-import LoggingFormat from '@/types/config/LoggingFormat';
-import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
-import LogEntry from '@/types/logging/LogEntry';
-import AccessLogEntry from '@/types/logging/AccessLogEntry';
+import { LoggingFormat } from '@/types/config/LoggingFormat';
+import { AccessLoggingFormat } from '@/types/config/AccessLoggingFormat';
+import { LogEntry } from '@/types/logging/LogEntry';
+import { AccessLogEntry } from '@/types/logging/AccessLogEntry';
 
 const { colorize } = format;
 const bottomLine = () => '\u2500'.repeat(process.stdout.columns || 80);

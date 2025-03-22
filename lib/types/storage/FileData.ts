@@ -1,9 +1,10 @@
 interface FileData {
-  owner: string;
+  owner?: string;
   contentType: string;
   size: number;
   md5: string;
   meta?: Record<string, unknown>;
+  key?: string;
 }
 
-export default FileData;
+export { FileData };

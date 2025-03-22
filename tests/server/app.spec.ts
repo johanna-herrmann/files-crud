@@ -1,114 +1,90 @@
 import paths from 'path';
+import fs from 'fs/promises';
 import express from 'express';
+import joi, { ObjectSchema, PartialSchemaMap } from 'joi';
 import request from 'supertest';
+import mockFS from 'mock-fs';
 import { buildApp } from '@/server/app';
-import { loadConfig } from '@/config/config';
+import { getConfig, loadConfig, NEW_CONFIG_FILE_PATH } from '@/config/config';
+import { reloadStorage } from '@/storage';
 import { Logger } from '@/logging/Logger';
-import AccessLogEntry from '@/types/logging/AccessLogEntry';
-import Request from '@/types/server/Request';
-
-type Middleware = (_: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
-type ErrorMiddleware = (err: Error, _: Request, __: express.Response, next: express.NextFunction) => void | Promise<void>;
-type Handler = (req: Request, res: express.Response) => void | Promise<void>;
+import { data } from '@/database/memdb/MemoryDatabaseAdapter';
+import { testUser } from '#/testItems';
+import { initKeys } from '@/user/jwt';
+import { exists } from '#/utils';
+import { DirectoryItem } from 'mock-fs/lib/filesystem';
+import { setControlToken } from '@/server/middleware/control';
+import { AccessLogEntry } from '@/types/logging/AccessLogEntry';
+import { Request } from '@/types/server/Request';
+import { User } from '@/types/user/User';
 
 let mocked_lastLogEntry: Omit<AccessLogEntry, 'timestamp'> | null = null;
 
-const mocked_lastChain: string[] = [];
-let mocked_lastAction = '';
-let mocked_lastId = '';
-
 jest.mock('@/logging/index', () => {
   // noinspection JSUnusedGlobalSymbols
+  const logger = {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    debug(_: string, __?: Record<string, unknown>): Logger {
+      return this;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    info(_: string, __?: Record<string, unknown>): Logger {
+      return this;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    warn(_: string, __?: Record<string, unknown>): Logger {
+      return this;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    error(_: string, __?: Record<string, unknown>): Logger {
+      return this;
+    },
+    access(entry: Omit<AccessLogEntry, 'timestamp'>): Logger {
+      mocked_lastLogEntry = entry;
+      return this;
+    }
+  } as Logger;
   return {
     resetLogger() {},
     loadLogger(): Logger {
-      return {
-        access(entry: Omit<AccessLogEntry, 'timestamp'>): Logger {
-          mocked_lastLogEntry = entry;
-          return this;
-        }
-      } as Logger;
+      return logger;
+    },
+    getLogger(): Logger {
+      return logger;
+    },
+    reloadLogger() {}
+  };
+});
+
+jest.mock('@/user/auth', () => {
+  const actual = jest.requireActual('@/user/auth');
+  return {
+    ...actual,
+    async authorize(token: string): Promise<User | null> {
+      if (token === 'valid_admin_token') {
+        return { ...testUser, admin: true };
+      }
+      if (token === 'valid_user_token') {
+        return { ...testUser, admin: false };
+      }
+      return await actual.authorize(token);
     }
   };
 });
 
-jest.mock('@/server/middleware', () => {
-  const actual = jest.requireActual('@/server/middleware');
-  const mock: Record<string, Middleware | ErrorMiddleware> = {};
-  Object.keys(actual).forEach((key) => {
-    if (key === 'errorMiddleware') {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      return (mock[key] = (_: Error, __: Request, res: express.Response, ___: express.NextFunction) => {
-        mocked_lastChain.push(key);
-        res.status(500).send();
-      });
-    }
-    mock[key] = (req: Request, res: express.Response, next: express.NextFunction) => {
-      mocked_lastChain.push(key);
-
-      if (key === 'logAccessMiddleware') {
-        return actual[key](req, res, next);
-      }
-
-      if (key === 'notFoundMiddleware') {
-        return res.status(404).send();
-      }
-
-      if (key === 'userMiddleware') {
-        mocked_lastAction = (req.params as Record<string, string>).action;
-        mocked_lastId = (req.params as Record<string, string>).id;
-      }
-
-      next();
-    };
-  });
-  return mock;
-});
-
-jest.mock('@/server/handler', () => {
-  const actual = jest.requireActual('@/server/handler');
-  const mock: Record<string, Handler> = {};
-  Object.keys(actual).forEach((key) => {
-    if (key === 'registerHandler') {
-      return (mock[key] = async (req: Request, res: express.Response) => {
-        mocked_lastChain.push(key);
-        if (!!req.body?.error) {
-          throw req.body.error as Error;
-        }
-        res.json({ params: req.params });
-      });
-    }
-    mock[key] = (req: Request, res: express.Response) => {
-      mocked_lastChain.push(key);
-
-      if (key === 'loginHandler' && !!req.body?.error) {
-        throw req.body.error as Error;
-      }
-
-      res.json({ params: req.params });
-    };
-  });
-  return mock;
-});
-
 describe('app->buildApp', (): void => {
+  beforeEach(async (): Promise<void> => {
+    loadConfig();
+    data.user_ = [];
+  });
+
   afterEach(async (): Promise<void> => {
+    data.user_ = [];
     loadConfig();
     mocked_lastLogEntry = null;
-    mocked_lastAction = '';
-    mocked_lastId = '';
-    mocked_lastChain.splice(0, mocked_lastChain.length);
   });
 
   describe('common middlewares', () => {
-    test('Calls common middlewares in correct order.', async (): Promise<void> => {
-      const app = buildApp();
-
-      await request(app).get('/nope');
-
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
-    });
-
     test('Handles json correctly.', async (): Promise<void> => {
       const testBody = { someKey: 'someValue' };
       const app = buildApp(true);
@@ -170,256 +146,375 @@ describe('app->buildApp', (): void => {
 
   describe('Handles user routes correctly', (): void => {
     test('register', async (): Promise<void> => {
+      loadConfig({ register: 'all' });
       const app = buildApp();
 
-      await request(app).post('/api/register');
+      const res = await request(app).post('/api/register').send({ username: 'testUsername', password: '12345678' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'registerMiddleware', 'registerHandler']);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ username: 'testUsername' });
+      expect((data.user_?.at(0) as User)?.username).toBe('testUsername');
     });
 
     test('login', async (): Promise<void> => {
+      await initKeys();
+      data.user_[0] = { ...testUser, salt: 'bOLMqOWRywU76vfL7aZJrA==', hash: 'ZOsk/fKrGTK2NIOcESgSnpE/OYynVTtSovnP8EIJinQ=' };
       const app = buildApp();
 
-      await request(app).post('/api/login');
+      const res = await request(app).post('/api/login').send({ username: testUser.username, password: '12345678' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'loginHandler']);
+      expect(res.statusCode).toBe(200);
+      expect(res.body?.token).toMatch(/^ey.*$/);
+      expect(res.body?.expiresAt).toBeGreaterThanOrEqual(1);
     });
 
     test('addUser', async (): Promise<void> => {
       const app = buildApp();
 
-      await request(app).post('/api/user/add');
+      const res = await request(app)
+        .post('/api/user/add')
+        .auth('valid_admin_token', { type: 'bearer' })
+        .send({ username: 'username', password: 'password' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'addUserHandler']);
-      expect(mocked_lastAction).toBe('add');
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ username: 'username' });
+      expect((data.user_?.at(0) as User)?.username).toBe('username');
     });
 
     test('setAdmin', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: true };
       const app = buildApp();
 
-      await request(app).post('/api/user/set-admin');
+      const res = await request(app).post('/api/user/set-admin').auth('valid_admin_token', { type: 'bearer' }).send({ id: 'self', admin: false });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'setAdminStateHandler']);
-      expect(mocked_lastAction).toBe('set-admin');
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect((data.user_?.at(0) as User)?.admin).toBe(false);
     });
 
     test('changeUsername', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: true };
       const app = buildApp();
 
-      await request(app).post('/api/user/change-username');
+      const res = await request(app)
+        .post('/api/user/change-username')
+        .auth('valid_admin_token', { type: 'bearer' })
+        .send({ id: 'self', newUsername: 'newU' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changeUsernameHandler']);
-      expect(mocked_lastAction).toBe('change-username');
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ username: 'newU' });
+      expect((data.user_?.at(0) as User)?.username).toBe('newU');
     });
 
     test('changePassword', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: false, salt: 'bOLMqOWRywU76vfL7aZJrA==', hash: 'ZOsk/fKrGTK2NIOcESgSnpE/OYynVTtSovnP8EIJinQ=' };
       const app = buildApp();
 
-      await request(app).post('/api/user/change-password');
+      const res = await request(app)
+        .post('/api/user/change-password')
+        .auth('valid_user_token', { type: 'bearer' })
+        .send({ id: 'self', newPassword: 'newPassword', oldPassword: '12345678' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'changePasswordHandler']);
-      expect(mocked_lastAction).toBe('change-password');
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect((data.user_?.at(0) as User)?.hash).not.toBe('ZOsk/fKrGTK2NIOcESgSnpE/OYynVTtSovnP8EIJinQ=');
     });
 
     test('saveMeta', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: true };
       const app = buildApp();
 
-      const response = await request(app).post('/api/user/save-meta/id');
+      const res = await request(app)
+        .post(`/api/user/save-meta/${testUser.id}`)
+        .auth('valid_admin_token', { type: 'bearer' })
+        .send({ meta: { k: 'v' } });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'saveUserMetaHandler']);
-      expect(mocked_lastAction).toBe('save-meta');
-      expect(mocked_lastId).toBe('id');
-      expect(response.body.params).toEqual({ id: 'id' });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect((data.user_?.at(0) as User)?.meta).toEqual({ k: 'v' });
     });
 
-    test('delete', async (): Promise<void> => {
+    test('remove', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: false };
       const app = buildApp();
 
-      const response = await request(app).delete('/api/user/delete/id');
+      const res = await request(app).delete(`/api/user/remove/${testUser.id}`).auth('valid_user_token', { type: 'bearer' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'deleteUserHandler']);
-      expect(mocked_lastAction).toBe('delete');
-      expect(mocked_lastId).toBe('id');
-      expect(response.body.params).toEqual({ id: 'id' });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect(data.user_?.length ?? 0).toBe(0);
     });
 
-    test('loadMeta', async (): Promise<void> => {
+    test('load-meta', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: false, meta: { k: 'v' } };
       const app = buildApp();
 
-      const response = await request(app).get('/api/user/load-meta/id');
+      const res = await request(app).get(`/api/user/load-meta/${testUser.id}`).auth('valid_user_token', { type: 'bearer' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'loadUserMetaHandler']);
-      expect(mocked_lastAction).toBe('load-meta');
-      expect(mocked_lastId).toBe('id');
-      expect(response.body.params).toEqual({ id: 'id' });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ meta: { k: 'v' } });
     });
 
-    test('one', async (): Promise<void> => {
+    test('load', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: false, meta: { k: 'v' } };
       const app = buildApp();
 
-      const response = await request(app).get('/api/user/one/id');
+      const res = await request(app).get(`/api/user/load/${testUser.id}`).auth('valid_user_token', { type: 'bearer' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUserHandler']);
-      expect(mocked_lastAction).toBe('one');
-      expect(mocked_lastId).toBe('id');
-      expect(response.body.params).toEqual({ id: 'id' });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ user: { id: testUser.id, username: testUser.username, meta: { k: 'v' }, admin: false } });
     });
 
     test('list', async (): Promise<void> => {
+      data.user_[0] = { ...testUser, admin: false };
+      data.user_[1] = { ...testUser, admin: true, username: 'user2', id: 'id2' };
       const app = buildApp();
 
-      await request(app).get('/api/user/list');
+      const res = await request(app).get('/api/user/list').auth('valid_admin_token', { type: 'bearer' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'userMiddleware', 'getUsersHandler']);
-      expect(mocked_lastAction).toBe('list');
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({
+        users: [
+          { admin: false, id: testUser.id, username: testUser.username },
+          { admin: true, id: 'id2', username: 'user2' }
+        ]
+      });
     });
   });
 
   describe('handles file routes correctly', (): void => {
-    test('saveFile', async (): Promise<void> => {
+    const prepareStorage = function (data: DirectoryItem, files: DirectoryItem): void {
+      const nodeModulesPath = `${paths.dirname(paths.dirname(__dirname))}/node_modules/`;
+      mockFS({ [nodeModulesPath]: mockFS.load(nodeModulesPath, { recursive: true }), '/base': { data, files } });
+      loadConfig({ defaultPermissions: 'fff', storage: { name: 'fs', path: '/base' } });
+      reloadStorage();
+    };
+
+    beforeEach(async () => {
+      prepareStorage({}, {});
+    });
+
+    afterEach(async () => {
+      mockFS.restore();
+      loadConfig();
+    });
+
+    test('upload', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).post('/api/file/save/dir/file');
+      const res = await request(app).post('/api/file/upload/dir/file').attach('file', Buffer.from('abc', 'utf8'));
 
-      expect(mocked_lastChain).toEqual([
-        'headerMiddleware',
-        'corsMiddleware',
-        'logAccessMiddleware',
-        'fileSaveMiddleware',
-        'uploadFileMiddleware',
-        'saveFileHandler'
-      ]);
-      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ path: 'dir/file' });
+      expect(await exists('/base/data/dir/file')).toBe(true);
     });
 
     test('saveFileMeta', async (): Promise<void> => {
+      prepareStorage({ file: JSON.stringify({ key: 'ke/key' }) }, { ke: { key: '' } });
       const app = buildApp();
 
-      const response = await request(app).post('/api/file/save-meta/dir/file');
+      const res = await request(app)
+        .post('/api/file/save-meta/file')
+        .send({ meta: { k: 'v' } });
 
-      expect(mocked_lastChain).toEqual([
-        'headerMiddleware',
-        'corsMiddleware',
-        'logAccessMiddleware',
-        'fileSaveMetaMiddleware',
-        'saveFileMetaHandler'
-      ]);
-      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect(await exists('/base/data/file')).toBe(true);
+      expect(JSON.parse(await fs.readFile('/base/data/file', 'utf8')).meta).toEqual({ k: 'v' });
     });
 
     test('copyFile', async (): Promise<void> => {
+      prepareStorage({ file: JSON.stringify({ key: 'ke/key' }) }, { ke: { key: '' } });
       const app = buildApp();
 
-      await request(app).post('/api/file/copy');
+      const res = await request(app).post('/api/file/copy').send({ path: 'file', targetPath: 'copy' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileCopyMiddleware', 'copyFileHandler']);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ path: 'copy' });
+      expect(await exists('/base/data/copy')).toBe(true);
     });
 
     test('moveFile', async (): Promise<void> => {
+      prepareStorage({ file: JSON.stringify({ key: 'ke/key' }) }, { ke: { key: '' } });
       const app = buildApp();
 
-      await request(app).post('/api/file/move');
+      const res = await request(app).post('/api/file/move').send({ path: 'file', targetPath: 'move' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileMoveMiddleware', 'moveFileHandler']);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ path: 'move' });
+      expect(await exists('/base/data/move')).toBe(true);
     });
 
-    test('deleteFile', async (): Promise<void> => {
+    test('removeFile', async (): Promise<void> => {
+      prepareStorage({ file: JSON.stringify({ key: 'ke/key' }) }, { ke: { key: '' } });
       const app = buildApp();
 
-      const response = await request(app).delete('/api/file/delete/dir/file');
+      const res = await request(app).delete('/api/file/remove/file');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileDeleteMiddleware', 'deleteFileHandler']);
-      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect(await exists('/base/data/file')).toBe(false);
     });
 
     test('loadFileMeta', async (): Promise<void> => {
+      prepareStorage({ file: JSON.stringify({ key: 'ke/key', meta: { k: 'v' } }) }, { ke: { key: '' } });
       const app = buildApp();
 
-      const response = await request(app).get('/api/file/load-meta/dir/file');
+      const res = await request(app).get('/api/file/load-meta/file');
 
-      expect(mocked_lastChain).toEqual([
-        'headerMiddleware',
-        'corsMiddleware',
-        'logAccessMiddleware',
-        'fileLoadMetaMiddleware',
-        'loadFileMetaHandler'
-      ]);
-      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ meta: { k: 'v' } });
     });
 
     test('loadFileData', async (): Promise<void> => {
+      prepareStorage({ file: JSON.stringify({ key: 'ke/key', meta: { k: 'v' }, md5: 'testMD5' }) }, { ke: { key: '' } });
       const app = buildApp();
 
-      const response = await request(app).get('/api/file/load-data/dir/file');
+      const res = await request(app).get('/api/file/load-data/file');
 
-      expect(mocked_lastChain).toEqual([
-        'headerMiddleware',
-        'corsMiddleware',
-        'logAccessMiddleware',
-        'fileLoadDataMiddleware',
-        'loadFileDataHandler'
-      ]);
-      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ data: { meta: { k: 'v' }, md5: 'testMD5' } });
     });
 
-    test('loadFile', async (): Promise<void> => {
+    test('download', async (): Promise<void> => {
+      prepareStorage({ 'test.txt': JSON.stringify({ key: 'ke/key', contentType: 'text/plain', size: 12 }) }, { ke: { key: 'test content' } });
       const app = buildApp();
 
-      const response = await request(app).get('/api/file/one/dir/file');
+      const res = await request(app)
+        .get('/api/file/download/test.txt')
+        .buffer()
+        .parse((res, callback) => {
+          res.setEncoding('binary');
+          (res as unknown as Record<string, unknown>).data = '';
+          res.on('data', (chunk) => {
+            (res as unknown as Record<string, unknown>).data += chunk;
+          });
+          res.on('end', () => {
+            callback(null, Buffer.from((res as unknown as Record<string, unknown>).data as string, 'binary'));
+          });
+        });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'fileLoadMiddleware', 'loadFileHandler']);
-      expect(response.body.params).toEqual({ path: ['dir', 'file'] });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe('text/plain');
+      expect(res.headers['content-length']).toBe('12');
+      expect(res.headers['content-disposition']).toBe('attachment; filename=test.txt');
+      expect(res.body).toEqual(Buffer.from('test content', 'utf8'));
     });
 
     test('listDirectory', async (): Promise<void> => {
+      prepareStorage({ dir: { file: JSON.stringify({ key: 'ke/key' }), file2: JSON.stringify({ key: 'ke/key2' }) } }, { ke: { key: '', key2: '' } });
       const app = buildApp();
 
-      const response = await request(app).get('/api/file/list/dir/sub');
+      const res = await request(app).get('/api/file/list/dir');
 
-      expect(mocked_lastChain).toEqual([
-        'headerMiddleware',
-        'corsMiddleware',
-        'logAccessMiddleware',
-        'directoryListingMiddleware',
-        'listDirectoryItemsHandler'
-      ]);
-      expect(response.body.params).toEqual({ path: ['dir', 'sub'] });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ items: ['file', 'file2'] });
+    });
+
+    test('listDirectory, root', async (): Promise<void> => {
+      prepareStorage({ dir: {}, file: JSON.stringify({ key: 'ke/key' }), file2: JSON.stringify({ key: 'ke/key2' }) }, { ke: { key: '', key2: '' } });
+      const app = buildApp();
+
+      const res = await request(app).get('/api/file/list/');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ items: ['dir/', 'file', 'file2'] });
+    });
+
+    test('file-exists', async (): Promise<void> => {
+      prepareStorage({ file: JSON.stringify({ key: 'ke/key' }) }, { ke: { key: '', key2: '' } });
+      const app = buildApp();
+
+      const res = await request(app).get('/api/file/file-exists/file');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ path: 'file', exists: true });
+    });
+
+    test('directory-exists', async (): Promise<void> => {
+      prepareStorage({ dir: {} }, {});
+      const app = buildApp();
+
+      const res = await request(app).get('/api/file/directory-exists/dir');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ path: 'dir', exists: true });
     });
   });
 
   describe('handles control routes correctly', (): void => {
+    let exitSpy: jest.Spied<typeof process.exit>;
+    let fsReadSpy: jest.Spied<typeof fs.readFile>;
+    let fsUnlinkSpy: jest.Spied<typeof fs.readFile>;
+
+    afterEach(async (): Promise<void> => {
+      exitSpy?.mockRestore();
+      fsReadSpy?.mockRestore();
+      fsUnlinkSpy?.mockRestore();
+    });
+
     test('stop', async (): Promise<void> => {
+      let exitCode = -1;
+      // @ts-expect-error this is fine
+      exitSpy = jest.spyOn(process, 'exit').mockImplementation((code: number) => {
+        exitCode = code as number;
+      });
+      setControlToken('testControlToken');
       const app = buildApp();
 
-      await request(app).post('/control/stop');
+      const res = await request(app).post('/control/stop').auth('testControlToken', { type: 'bearer' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'stopHandler']);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect(exitCode).toBe(0);
     });
 
     test('reload', async (): Promise<void> => {
+      let deleted = '';
+      // @ts-expect-error this is fine
+      fsReadSpy = jest.spyOn(fs, 'readFile').mockImplementation(async (path: string, encoding: string): string => {
+        if (path === NEW_CONFIG_FILE_PATH && encoding.replace('-', '').toLowerCase() === 'utf8') {
+          return JSON.stringify({ register: 'all' });
+        }
+        return '';
+      });
+      // @ts-expect-error this is fine
+      fsUnlinkSpy = jest.spyOn(fs, 'unlink').mockImplementation(async (path: string) => {
+        if (path === NEW_CONFIG_FILE_PATH) {
+          deleted = NEW_CONFIG_FILE_PATH;
+        }
+      });
+      setControlToken('testControlToken');
       const app = buildApp();
 
-      await request(app).post('/control/reload');
+      const res = await request(app).post('/control/reload').auth('testControlToken', { type: 'bearer' });
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'controlMiddleware', 'reloadHandler']);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({});
+      expect(getConfig()).toEqual({ register: 'all' });
+      expect(deleted).toBe(NEW_CONFIG_FILE_PATH);
     });
   });
 
   describe('staticMiddleware', (): void => {
-    test('will be called, if request not handled already', async (): Promise<void> => {
+    test('sends this file via static middleware', async (): Promise<void> => {
+      loadConfig({ webRoot: __dirname });
       const app = buildApp();
 
-      await request(app).get('/image.png');
+      const res = await request(app).get(`/${paths.basename(__filename)}`);
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual(await fs.readFile(__filename));
     });
 
-    test('wont be called if request handled already', async (): Promise<void> => {
+    test('falls through until notFound middleware', async (): Promise<void> => {
+      loadConfig({ webRoot: __dirname });
       const app = buildApp();
 
-      await request(app).get('/test');
+      const res = await request(app).get('/nope');
 
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toEqual({ error: 'Cannot GET /nope' });
     });
   });
 
@@ -427,39 +522,55 @@ describe('app->buildApp', (): void => {
     test('with fallback 404', async (): Promise<void> => {
       const app = buildApp();
 
-      const response = await request(app).get('/nope');
+      const res = await request(app).get('/nope');
 
-      expect(response.statusCode).toBe(404);
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'staticMiddleware', 'notFoundMiddleware']);
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toEqual({ error: 'Cannot GET /nope' });
     });
   });
 
   describe('handles unexpected error correctly', (): void => {
+    let expressJsonSpy: jest.Spied<typeof express.json>;
+    let joiSpy: jest.Spied<typeof joi.object>;
+
+    afterEach(async (): Promise<void> => {
+      expressJsonSpy?.mockRestore();
+      joiSpy?.mockRestore();
+    });
+
     test('on synchronous handler', async (): Promise<void> => {
-      const error = new Error('test error');
+      jest.spyOn(express, 'json').mockImplementation(() => {
+        return function () {
+          throw new Error('test error');
+        };
+      });
       const app = buildApp();
 
-      const response = await request(app).post('/api/login').send({ error });
+      const res = await request(app).post('/api/login').send({});
 
-      expect(response.statusCode).toBe(500);
-      expect(mocked_lastChain).toEqual(['headerMiddleware', 'corsMiddleware', 'logAccessMiddleware', 'loginHandler', 'errorMiddleware']);
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({ error: 'Error. Unexpected Error.' });
     });
 
     test('on asynchronous handler', async (): Promise<void> => {
-      const error = new Error('test error');
+      jest.spyOn(joi, 'object').mockImplementation((schema?: PartialSchemaMap<unknown> | undefined): ObjectSchema<unknown> => {
+        if ('username' in (schema ?? {})) {
+          throw new Error('test error');
+        }
+        // noinspection JSUnusedGlobalSymbols
+        const objectSchema = {
+          validate(value: Record<string, unknown>) {
+            return { value };
+          }
+        };
+        return objectSchema as unknown as ObjectSchema<unknown>;
+      });
       const app = buildApp();
 
-      const response = await request(app).post('/api/register').send({ error });
+      const res = await request(app).post('/api/login').send({ username: 'username', password: 'password' });
 
-      expect(response.statusCode).toBe(500);
-      expect(mocked_lastChain).toEqual([
-        'headerMiddleware',
-        'corsMiddleware',
-        'logAccessMiddleware',
-        'registerMiddleware',
-        'registerHandler',
-        'errorMiddleware'
-      ]);
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({ error: 'Error. Unexpected Error.' });
     });
   });
 });

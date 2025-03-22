@@ -1,6 +1,6 @@
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { loadConfig } from '@/config/config';
-import PgDbConf from '@/types/database/PgDbConf';
+import { PgDbConf } from '@/types/database/PgDbConf';
 
 let mock_providedConf: PgDbConf | undefined;
 

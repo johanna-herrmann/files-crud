@@ -1,9 +1,9 @@
 import { login, invalidCredentials, attemptsExceeded, authorize, changePassword, checkPassword } from '@/user/auth';
-import { issueToken } from '@/user/jwt';
+import { initKeys, issueToken, resetKeys } from '@/user/jwt';
 import { current } from '@/user/passwordHashing/versions';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import Database from '@/types/database/Database';
-import User from '@/types/user/User';
+import { DatabaseType } from '@/types/database/DatabaseType';
+import { User } from '@/types/user/User';
 
 const username = 'testUser';
 const password = 'testPwd';
@@ -50,15 +50,15 @@ jest.mock('@/user/locking', () => {
   // noinspection JSUnusedGlobalSymbols - used outside
   return {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async countAttempt(_db: Database, _username: string) {
+    async countAttempt(_db: DatabaseType, _username: string) {
       mocked_called_count = true;
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async resetAttempts(_db: Database, _username: string) {
+    async resetAttempts(_db: DatabaseType, _username: string) {
       mocked_called_reset = true;
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async handleLocking(_db: Database, _username: string) {
+    async handleLocking(_db: DatabaseType, _username: string) {
       return mocked_locked;
     }
   };
@@ -77,9 +77,14 @@ jest.mock('crypto', () => {
 describe('auth', (): void => {
   beforeEach(async (): Promise<void> => {
     data.user_ = [];
+    await initKeys();
     mocked_called_count = false;
     mocked_called_reset = false;
     mocked_locked = false;
+  });
+
+  afterEach(async (): Promise<void> => {
+    resetKeys();
   });
 
   test('login returns token on valid credentials.', async (): Promise<void> => {

@@ -4,7 +4,7 @@ import { reloadConfig } from '@/config/config';
 import { reloadDb } from '@/database';
 import { reloadStorage } from '@/storage';
 import { sendOK } from '@/server/util';
-import Request from '@/types/server/Request';
+import { Request } from '@/types/server/Request';
 
 const stopHandler = function (_: Request, res: express.Response): void {
   loadLogger().info('Received stop request. Stopping...');
@@ -12,10 +12,10 @@ const stopHandler = function (_: Request, res: express.Response): void {
   process.exit(0);
 };
 
-const reloadHandler = function (_: Request, res: express.Response): void {
+const reloadHandler = async function (_: Request, res: express.Response): Promise<void> {
   loadLogger().info('Received reload request. Reloading...');
-  reloadConfig();
-  reloadDb();
+  await reloadConfig();
+  await reloadDb();
   reloadStorage();
   reloadLogger();
   loadLogger().info('Reloaded.');

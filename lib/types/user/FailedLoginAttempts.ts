@@ -4,4 +4,4 @@ interface FailedLoginAttempts {
   lastAttempt: number;
 }
 
-export default FailedLoginAttempts;
+export { FailedLoginAttempts };

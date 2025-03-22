@@ -1,129 +1,156 @@
 import paths from 'path';
-import fs from 'fs/promises';
-import { existsSync } from 'fs';
 import { getFullConfig } from '@/config/config';
+import { getLogger } from '@/logging';
 import { FsStorageAdapter } from '@/storage/fs/FsStorageAdapter';
 import { S3StorageAdapter } from '@/storage/s3/S3StorageAdapter';
-import StorageType from '@/types/storage/StorageType';
-import FileData from '@/types/storage/FileData';
+import { DataAndStructureStorage } from '@/storage/fs/DataAndStructureStorage';
+import { FileData } from '@/types/storage/FileData';
 
-const removeTilde = function (path: string): string {
-  return path.replace(/~/gu, '-');
-};
-
-class Storage implements StorageType {
+class Storage {
   private readonly storageType: 'fs' | 's3';
   private readonly directory: string;
-  private readonly dataStorage: FsStorageAdapter;
+  private readonly dataStorage: DataAndStructureStorage;
   private readonly contentStorage: FsStorageAdapter | S3StorageAdapter;
 
   public constructor() {
     const config = getFullConfig();
-    const directory = paths.resolve((config.storage?.path ?? config.path) as string);
+    const logger = getLogger();
+    logger?.info('Loading storage', { store: config.storage?.name as string });
+    const directory = paths.resolve(config.storage?.path as string);
     this.directory = paths.resolve(paths.sep, directory);
     this.storageType = config.storage?.name as 'fs' | 's3';
-    this.dataStorage = new FsStorageAdapter(this.directory);
-    this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(this.directory);
+    this.dataStorage = new DataAndStructureStorage(paths.join(this.directory, 'data'));
+    this.contentStorage = this.storageType === 's3' ? new S3StorageAdapter() : new FsStorageAdapter(paths.join(this.directory, 'files'));
+    logger?.info('Successfully loaded storage');
   }
 
-  private resolvePath(path: string, sub: string): string {
-    return paths.join(sub, path);
-  }
-
-  private resolveContentPath(path: string): string {
-    return removeTilde(this.resolvePath(path, 'files'));
-  }
-
-  private resolveDataPath(path: string): string {
-    const resolvedPath = removeTilde(this.resolvePath(path, 'data'));
-    return resolvedPath.replace(/\//g, '~').replace(/^data~/, 'data/');
-  }
-
-  public getConf(): ['fs' | 's3', string, FsStorageAdapter, FsStorageAdapter | S3StorageAdapter] {
+  public getConf(): ['fs' | 's3', string, DataAndStructureStorage, FsStorageAdapter | S3StorageAdapter] {
     return [this.storageType, this.directory, this.dataStorage, this.contentStorage];
   }
 
+  /**
+   * Saves a file and it's data.
+   * @param path The path of the file to save
+   * @param content The content of the file
+   * @param data The data of the file
+   */
   public async save(path: string, content: Buffer, data: FileData): Promise<void> {
-    await this.setData(path, data);
-    await this.dataStorage.write(this.resolveContentPath(path), '', 'utf8');
-    return await this.contentStorage.write(this.resolveContentPath(path), content);
+    const key = await this.dataStorage.save(path, data);
+    return await this.contentStorage.write(key, content);
   }
 
+  /**
+   * Loads a file and it's data.
+   * @param path The path of the file to load
+   * @returns Promise fulfilling with an array, first item is the content, seconds item is the data.
+   */
   public async load(path: string): Promise<[Buffer, FileData]> {
-    const data = await this.loadData(path);
-    const content = await this.contentStorage.read(this.resolveContentPath(path));
+    const data = await this.dataStorage.load(path);
+    const content = await this.contentStorage.read(data.key as string);
     return [(content as Buffer) ?? Buffer.from(''), data];
   }
 
+  /**
+   * Deletes a file and it's data.
+   * @param path The path of the file to delete
+   */
   public async delete(path: string): Promise<void> {
-    const resolvedContentPath = this.resolveContentPath(path);
-    await this.contentStorage.delete(resolvedContentPath);
-    await this.dataStorage.delete(this.resolveDataPath(path));
-    if (await this.exists(resolvedContentPath)) {
-      await this.dataStorage.delete(resolvedContentPath);
-    }
+    const { key } = await this.loadData(path);
+    await this.dataStorage.delete(path);
+    await this.contentStorage.delete(key as string);
   }
 
+  /**
+   * Deletes all files of a user.
+   * @param id The user id
+   */
+  public async deleteAllFilesFromUser(id: string): Promise<void> {
+    await this.deleteAllFilesFromUserInDirectory(id, '');
+  }
+
+  /**
+   * Copies a file and it's data.
+   * @param path The path of the file to copy
+   * @param copyPath The path of the copy target
+   * @param [owner] (Optional) The new owner. The target file gets the source file's owner if no new owner is given.
+   */
   public async copy(path: string, copyPath: string, owner?: string): Promise<void> {
-    await this.dataStorage.copy(this.resolveDataPath(path), this.resolveDataPath(copyPath));
-    await this.dataStorage.copy(this.resolveContentPath(path), this.resolveContentPath(copyPath));
-    await this.contentStorage.copy(this.resolveContentPath(path), this.resolveContentPath(copyPath));
+    const data = await this.loadData(path);
+    const targetKey = await this.dataStorage.copy(path, copyPath);
+    await this.contentStorage.copy(data.key as string, targetKey);
+
     if (!!owner) {
-      const data = await this.loadData(copyPath);
-      data.owner = owner;
-      await this.setData(copyPath, data);
+      await this.dataStorage.save(copyPath, { ...data, key: targetKey, owner });
     }
   }
 
-  public async move(path: string, movePath: string, owner?: string): Promise<void> {
-    await this.copy(path, movePath, owner);
-    await this.delete(path);
+  /**
+   * Moves a file and it's data.
+   * @param path The path of the file to move
+   * @param movePath The path of the move target
+   */
+  public async move(path: string, movePath: string): Promise<void> {
+    await this.dataStorage.move(path, movePath);
   }
 
+  /**
+   * Loads data of a file.
+   * @param path The path of the file to load data from
+   * @returns Promise fulfilling with the file data
+   */
   public async loadData(path: string): Promise<FileData> {
-    const data = await this.dataStorage.read(this.resolveDataPath(path), 'utf8');
-    return JSON.parse(data as string) as FileData;
+    return await this.dataStorage.load(path);
   }
 
-  public async setData(path: string, data: FileData): Promise<void> {
-    await this.dataStorage.write(this.resolveDataPath(path), JSON.stringify(data), 'utf8');
+  /**
+   * Saves data for a file.
+   * @param path The path of the file to save the data for
+   * @param data The data to save
+   */
+  public async saveData(path: string, data: FileData): Promise<void> {
+    await this.dataStorage.save(path, data);
   }
 
-  public async exists(path: string): Promise<boolean> {
-    return existsSync(paths.join(this.directory, this.resolveContentPath(path)));
+  /**
+   * Checks if a file exists.
+   * @param path The actual path
+   * @returns Fulfils with boolean upon success, true if it exists and is a file
+   */
+  public async fileExists(path: string): Promise<boolean> {
+    return await this.dataStorage.fileExists(path);
   }
 
-  public async isFile(path: string): Promise<boolean> {
-    if (!(await this.exists(path))) {
-      return false;
-    }
-    const stats = await fs.stat(paths.join(this.directory, this.resolveContentPath(path)));
-    return stats.isFile();
+  /**
+   * Checks if a directory exists.
+   * @param path The actual path
+   * @returns Fulfils with boolean upon success, true if it exists and is a directory
+   */
+  public async directoryExists(path: string): Promise<boolean> {
+    return await this.dataStorage.directoryExists(path);
   }
 
-  public async isDirectory(path: string): Promise<boolean> {
-    if (!(await this.exists(path))) {
-      return false;
-    }
-    const stats = await fs.stat(paths.join(this.directory, this.resolveContentPath(path)));
-    return stats.isDirectory();
-  }
-
+  /**
+   * Lists the contents of a directory
+   * @param path The actual path to the directory
+   * @returns Fulfils with an array of items upon success, sorted, directories first, directories suffixed by a slash
+   */
   public async list(path: string): Promise<string[]> {
-    const resolvedPath = paths.join(this.directory, this.resolveContentPath(path));
-    const items = await fs.readdir(resolvedPath);
-    const directories: string[] = [];
-    const files: string[] = [];
+    return await this.dataStorage.list(path);
+  }
+
+  private async deleteAllFilesFromUserInDirectory(id: string, directory: string): Promise<void> {
+    const items = await this.dataStorage.list(directory);
     for (const item of items) {
-      const stat = await fs.stat(`${resolvedPath}/${item}`);
-      if (stat.isDirectory()) {
-        directories.push(`${item}/`);
+      const fullPath = paths.join(directory, item);
+      if (item.endsWith('/')) {
+        await this.deleteAllFilesFromUserInDirectory(id, fullPath);
+        continue;
       }
-      if (stat.isFile()) {
-        files.push(item);
+      const data = await this.loadData(fullPath);
+      if (data.owner === id) {
+        await this.delete(fullPath);
       }
     }
-    return [...directories.sort(), ...files.sort()];
   }
 }
 

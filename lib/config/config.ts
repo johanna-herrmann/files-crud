@@ -1,8 +1,12 @@
 import fs from 'fs';
+import fsp from 'fs/promises';
 import yaml from 'yaml';
 import { readEnv } from 'read-env';
 import { loadFullConfig } from '@/config/fullConfig';
-import Config from '@/types/config/Config';
+import { buildConfigSchema } from '@/config/schema';
+import { Config } from '@/types/config/Config';
+
+const NEW_CONFIG_FILE_PATH = './.new_config.json';
 
 const config: Config = {};
 let fullConfig: Config = {};
@@ -31,11 +35,12 @@ const patchEnvForSeparatedDirectoryPermissions = function (env: Record<string, a
   if (!env.directoryPermissions?.directories || !env.directoryPermissions?.permissions) {
     return;
   }
-  const directories = env.directoryPermissions.directories.split(',').map((directory: string) => directory.trim());
-  const permissions = env.directoryPermissions.permissions.split(',').map((permission: string) => permission.trim());
+  const directories = env.directoryPermissions.directories.split(',').map((directory: string) => directory.trim()) as string[];
+  const permissions = env.directoryPermissions.permissions.split(',').map((permission: string) => permission.trim()) as string[];
   const length = Math.min(directories.length, permissions.length);
   for (let i = 0; i < length; i++) {
-    env.directoryPermissions[directories[i]] = permissions[i];
+    const notation = permissions[i];
+    env.directoryPermissions[directories[i]] = notation.includes(':') ? notation.split(':') : notation;
   }
   delete env.directoryPermissions.directories;
   delete (env.directoryPermissions as Record<string, unknown>).permissions;
@@ -43,8 +48,11 @@ const patchEnvForSeparatedDirectoryPermissions = function (env: Record<string, a
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const patchEnvForPermissions = function (env: Record<string, any>): void {
-  if (!!env.defaultPermissions) {
+  if (!!env.defaultPermissions && typeof env.defaultPermissions === 'number') {
     env.defaultPermissions = `${(env.defaultPermissions + '').padStart(3, '0')}`;
+  }
+  if (!!env.defaultPermissions && env.defaultPermissions.includes(',')) {
+    env.defaultPermissions = env.defaultPermissions.split(',');
   }
   if (!env.directoryPermissions) {
     return;
@@ -52,7 +60,13 @@ const patchEnvForPermissions = function (env: Record<string, any>): void {
   const directoryPermissions = env.directoryPermissions ?? {};
   env.directoryPermissions = {};
   Object.entries(directoryPermissions).forEach(([key, value]) => {
-    env.directoryPermissions[key] = `${(value + '').padStart(3, '0')}`;
+    if (typeof value === 'number') {
+      return (env.directoryPermissions[key] = `${(value + '').padStart(3, '0')}`);
+    }
+    if ((value as string).includes(',')) {
+      return (env.directoryPermissions[key] = (value as string).split(','));
+    }
+    env.directoryPermissions[key] = value;
   });
 };
 
@@ -85,6 +99,11 @@ const getNewConfig = function (config_?: Config): Record<string, unknown> {
   const config = getConfigFromFile();
   const envConfig = getConfigFromEnv();
   mergeConfigs(config, envConfig);
+  const directoryPermissions = config.directoryPermissions ?? {};
+  const validated = buildConfigSchema(Object.keys(directoryPermissions)).validate(config, { convert: false });
+  if (validated.error) {
+    throw new Error(`Invalid Config. ${validated.error}`);
+  }
   return config;
 };
 
@@ -113,8 +132,10 @@ const getEnvPrefix = function (): string {
 
 loadConfig();
 
-const reloadConfig = function () {
-  loadConfig();
+const reloadConfig = async function () {
+  const configString = (await fsp.readFile(NEW_CONFIG_FILE_PATH, 'utf-8')) || '{}';
+  loadConfig(JSON.parse(configString));
+  await fsp.unlink(NEW_CONFIG_FILE_PATH);
 };
 
-export { getConfig, getFullConfig, loadConfig, setEnvPrefix, getEnvPrefix, reloadConfig };
+export { getConfig, getFullConfig, loadConfig, setEnvPrefix, getEnvPrefix, reloadConfig, NEW_CONFIG_FILE_PATH };

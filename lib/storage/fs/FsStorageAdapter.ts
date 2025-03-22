@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import paths from 'path';
 import fse from 'fs-extra';
-import StorageAdapter from '@/types/storage/StorageAdapter';
+import { StorageAdapter } from '@/types/storage/StorageAdapter';
 
 /**
  * StorageAdapter for fs storage.

@@ -1,5 +1,5 @@
 interface StorageConfig {
-  name: 'fs' | 's3';
+  name?: 'fs' | 's3';
   path?: string;
   region?: string;
   accessKeyId?: string;
@@ -9,4 +9,4 @@ interface StorageConfig {
   forcePathStyle?: boolean;
 }
 
-export default StorageConfig;
+export { StorageConfig };

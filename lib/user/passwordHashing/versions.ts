@@ -1,4 +1,4 @@
-import PasswordHashing from '@/types/user/PasswordHashing';
+import { PasswordHashing } from '@/types/user/PasswordHashing';
 import { v1PasswordHashing } from './v1';
 
 const versions: Record<string, PasswordHashing> = {

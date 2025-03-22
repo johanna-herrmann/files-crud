@@ -1,5 +1,14 @@
+import mockFS from 'mock-fs';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
-import { assertError, assertOK, assertUnauthorized, buildRequestForUserAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import {
+  assertOK,
+  assertUnauthorized,
+  assertError,
+  assertValidationError,
+  buildRequestForUserAction,
+  buildResponse,
+  resetLastMessage
+} from '#/server/expressTestUtils';
 import {
   addUserHandler,
   changePasswordHandler,
@@ -14,14 +23,19 @@ import {
   setAdminStateHandler
 } from '@/server/handler/user';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
 import { attemptsExceeded, invalidCredentials } from '@/user';
 import { Logger } from '@/logging/Logger';
+import { loadConfig } from '@/config/config';
+import { exists } from '#/utils';
+import { User } from '@/types/user/User';
+
+const usernameConstraint = 'required string, 3 to 64 chars long';
+const passwordConstraint = 'required string, at least 8 chars long';
 
 const id = testUser.id;
 const username = 'testUser';
 const newUsername = 'newUsername';
-const password = '123';
+const password = '12345678';
 const admin = false;
 const meta = { k: 'v' };
 const newMeta = { abc: 123 };
@@ -54,16 +68,17 @@ jest.mock('@/user/auth', () => {
       if (username === 'locked') {
         return attemptsExceeded;
       }
-      if (username.length > 0 && password.length > 0) {
-        return `token.${username}.${password}`;
+      if (username.startsWith('invalid') || password.startsWith('invalid')) {
+        return invalidCredentials;
       }
-      return invalidCredentials;
+      return `token.${username}.${password}`;
     }
   };
 });
 
 jest.mock('@/user/jwt', () => {
   const actual = jest.requireActual('@/user/jwt');
+  // noinspection JSUnusedGlobalSymbols
   return {
     ...actual,
     getExpiresAt() {
@@ -73,34 +88,44 @@ jest.mock('@/user/jwt', () => {
 });
 
 jest.mock('@/logging/index', () => {
+  const logger: Logger = {
+    debug() {
+      return this;
+    },
+    info() {
+      return this;
+    },
+    warn(message: string, meta?: Record<string, unknown>) {
+      mock_loggedWarnMessage = message;
+      mock_loggedWarnMeta = meta;
+      return this;
+    },
+    error(message: string, meta?: Record<string, unknown>) {
+      mock_loggedErrorMessage = message;
+      mock_loggedErrorMeta = meta;
+      return this;
+    }
+  } as unknown as Logger;
   // noinspection JSUnusedGlobalSymbols
   return {
     resetLogger() {},
     loadLogger(): Logger {
-      return {
-        debug() {
-          return this;
-        },
-        info() {
-          return this;
-        },
-        warn(message: string, meta?: Record<string, unknown>) {
-          mock_loggedWarnMessage = message;
-          mock_loggedWarnMeta = meta;
-          return this;
-        },
-        error(message: string, meta?: Record<string, unknown>) {
-          mock_loggedErrorMessage = message;
-          mock_loggedErrorMeta = meta;
-          return this;
-        }
-      } as unknown as Logger;
+      return logger;
+    },
+    getLogger(): Logger {
+      return logger;
     }
   };
 });
 
 describe('user handlers', (): void => {
+  beforeEach(async () => {
+    mockFS({});
+    data.user_ = [];
+  });
+
   afterEach(async () => {
+    mockFS.restore();
     data.user_ = [];
     resetLastMessage();
     mock_loggedWarnMessage = '';
@@ -118,8 +143,8 @@ describe('user handlers', (): void => {
 
       assertOK(res, { username });
       expect((data.user_?.at(0) as User)?.username).toBe(username);
-      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
-      expect(mock_loggedWarnMeta).toEqual({ length: 3 });
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider increasing password minimal length to 10.');
+      expect(mock_loggedWarnMeta).toEqual({ length: 8 });
     });
 
     test('registers User if it does not exist already, not warning about short password.', async (): Promise<void> => {
@@ -158,8 +183,8 @@ describe('user handlers', (): void => {
       assertOK(res, { username });
       expect((data.user_?.at(0) as User)?.username).toBe(username);
       expect((data.user_?.at(0) as User)?.admin).toBe(true);
-      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
-      expect(mock_loggedWarnMeta).toEqual({ length: 3 });
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider increasing password minimal length to 10.');
+      expect(mock_loggedWarnMeta).toEqual({ length: 8 });
     });
 
     test('adds User if it does not exist already, admin, not warning about short password.', async (): Promise<void> => {
@@ -236,7 +261,7 @@ describe('user handlers', (): void => {
       expect((data.user_?.at(0) as User)?.hashVersion).toBe('testVersion');
       expect((data.user_?.at(0) as User)?.salt).toBe('salt.newPasswd');
       expect((data.user_?.at(0) as User)?.hash).toBe('hash.newPasswd');
-      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider password rules implementation.');
+      expect(mock_loggedWarnMessage).toBe('Password is a bit short. Consider increasing password minimal length to 10.');
       expect(mock_loggedWarnMeta).toEqual({ length: 9 });
     });
 
@@ -253,6 +278,16 @@ describe('user handlers', (): void => {
       expect((data.user_?.at(0) as User)?.hash).toBe('hash.newPassword');
       expect(mock_loggedWarnMessage).toBe('');
       expect(mock_loggedWarnMeta).toBeUndefined();
+    });
+
+    test('no error with old password', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
+      const req = buildRequestForUserAction('valid_admin_token', 'change-password', undefined, { id, newPassword: 'newPassword', oldPassword: 'ol' });
+      const res = buildResponse();
+
+      await changePasswordHandler(req, res);
+
+      assertOK(res);
     });
   });
 
@@ -272,7 +307,7 @@ describe('user handlers', (): void => {
   describe('saveMetaHandler', (): void => {
     test('saves meta', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'save-meta', id, { meta: newMeta });
+      const req = buildRequestForUserAction('valid_admin_token', 'save-meta', id, { id, meta: newMeta });
       const res = buildResponse();
 
       await saveMetaHandler(req, res);
@@ -285,7 +320,7 @@ describe('user handlers', (): void => {
   describe('loadMetaHandler', (): void => {
     test('loads meta', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'load-meta', id, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'load-meta', id, { id });
       const res = buildResponse();
 
       await loadMetaHandler(req, res);
@@ -297,7 +332,7 @@ describe('user handlers', (): void => {
   describe('getUserHandler', (): void => {
     test('gets user dto', async (): Promise<void> => {
       data.user_[0] = { ...testUser };
-      const req = buildRequestForUserAction('valid_admin_token', 'one', id, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'one', id, { id });
       const res = buildResponse();
 
       await getUserHandler(req, res);
@@ -326,9 +361,16 @@ describe('user handlers', (): void => {
 
   describe('deleteUserHandler', (): void => {
     test('deletes user', async (): Promise<void> => {
+      loadConfig({ storage: { path: '/base' } });
+      mockFS({
+        '/base': {
+          data: { toDelete: JSON.stringify({ owner: id, key: 'ke/key1' }), toNotDelete: JSON.stringify({ owner: 'other', ke: { key2: '' } }) },
+          files: { ke: { key1: '', key2: '' } }
+        }
+      });
       data.user_[0] = { ...testUser };
       data.user_[1] = { ...testUser, username: 'other' };
-      const req = buildRequestForUserAction('valid_admin_token', 'one', id, {});
+      const req = buildRequestForUserAction('valid_admin_token', 'one', id, { id });
       const res = buildResponse();
 
       await deleteUserHandler(req, res);
@@ -336,6 +378,10 @@ describe('user handlers', (): void => {
       assertOK(res);
       expect(data.user_.length).toBe(1);
       expect((data.user_?.at(0) as User)?.username).toEqual('other');
+      expect(await exists('/base/data/toDelete')).toBe(false);
+      expect(await exists('/base/files/ke/key1')).toBe(false);
+      expect(await exists('/base/data/toNotDelete')).toBe(true);
+      expect(await exists('/base/files/ke/key2')).toBe(true);
     });
   });
 
@@ -350,7 +396,7 @@ describe('user handlers', (): void => {
     });
 
     test('rejects if password is invalid', async (): Promise<void> => {
-      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: '', password: '' });
+      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: 'abc', password: 'invalid_' });
       const res = buildResponse();
 
       await loginHandler(req, res);
@@ -359,12 +405,24 @@ describe('user handlers', (): void => {
     });
 
     test('rejects if attempts exceeded', async (): Promise<void> => {
-      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: 'locked', password: '123' });
+      const req = buildRequestForUserAction('valid_admin_token', 'login', undefined, { username: 'locked', password: '12345678' });
       const res = buildResponse();
 
       await loginHandler(req, res);
 
       assertUnauthorized(undefined, res, 'Login attempts exceeded for username locked');
+    });
+
+    test('sends error on invalid body', async (): Promise<void> => {
+      data.user_[0] = { ...testUser };
+      const schema = { username: usernameConstraint, password: passwordConstraint };
+      const body = { username: 'username', password: 'pas' };
+      const req = buildRequestForUserAction('', '-', undefined, body);
+      const res = buildResponse();
+
+      await loginHandler(req, res);
+
+      assertValidationError(res, 'body', schema, body);
     });
   });
 });

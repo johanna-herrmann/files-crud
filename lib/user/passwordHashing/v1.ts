@@ -1,7 +1,8 @@
 import crypto from 'crypto';
-import PasswordHashing from '@/types/user/PasswordHashing';
+import { PasswordHashing } from '@/types/user/PasswordHashing';
 
-const N = 131_072;
+const EXPONENT = 17;
+const N = 2 ** EXPONENT;
 const R = 8;
 const P = 1;
 const HASH_LENGTH = 32;
@@ -11,7 +12,7 @@ const scryptOptions: crypto.ScryptOptions = {
   N,
   r: R,
   p: P,
-  maxmem: 168 * N * R
+  maxmem: 128 * N * R * P + 3072
 };
 
 const scryptPromisified = function (password: string, salt: Buffer): Promise<Buffer> {

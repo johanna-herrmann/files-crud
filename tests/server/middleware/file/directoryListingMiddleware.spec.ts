@@ -4,8 +4,8 @@ import { assertUnauthorized, assertPass, buildRequestForFileAction, buildRespons
 import { directoryListingMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
 import { Logger } from '@/logging/Logger';
+import { User } from '@/types/user/User';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;
@@ -24,24 +24,28 @@ jest.mock('@/user/auth', () => {
 });
 
 jest.mock('@/logging/index', () => {
+  const logger: Logger = {
+    debug() {
+      return this;
+    },
+    info() {
+      return this;
+    },
+    warn() {
+      return this;
+    },
+    error() {
+      return this;
+    }
+  } as unknown as Logger;
   // noinspection JSUnusedGlobalSymbols
   return {
     resetLogger() {},
     loadLogger(): Logger {
-      return {
-        debug() {
-          return this;
-        },
-        info() {
-          return this;
-        },
-        warn() {
-          return this;
-        },
-        error() {
-          return this;
-        }
-      } as unknown as Logger;
+      return logger;
+    },
+    getLogger(): Logger {
+      return logger;
     }
   };
 });
@@ -70,8 +74,8 @@ describe('directoryListingMiddleware', () => {
         loadConfig({ defaultPermissions: levels[level] });
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: '', meta: {}, contentType: '' }) }
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', meta: {}, contentType: '', key: 'ke/key' }) } }
           }
         });
         let next = false;
@@ -90,7 +94,7 @@ describe('directoryListingMiddleware', () => {
       test('for user.', async (): Promise<void> => {
         mocked_token = 'valid-user-token';
         mocked_user = testUser;
-        await passesIfReadPermissionIsGiven('user', 'valid-user-token', 'dir');
+        await passesIfReadPermissionIsGiven('user', 'valid-user-token', '');
       });
 
       test('for admin.', async (): Promise<void> => {
@@ -117,18 +121,18 @@ describe('directoryListingMiddleware', () => {
         };
         loadConfig({ defaultPermissions: levels[level] });
         let next = false;
-        const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'list', directory, {});
         const res = buildResponse();
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: { file: '' } },
-            data: { [`${directory}~file`]: JSON.stringify({ owner: '', meta: {}, contentType: '' }) }
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: '', meta: {}, contentType: '', key: 'ke/key' }) } }
           }
         });
 
         await directoryListingMiddleware(req, res, () => (next = true));
 
-        assertUnauthorized(next, res, `You are not allowed to read ${directory}/file`);
+        assertUnauthorized(next, res, `You are not allowed to read ${directory}`);
       };
 
       test('for public.', async (): Promise<void> => {

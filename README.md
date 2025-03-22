@@ -1,5 +1,7 @@
 # files-crud
 
+![logo](./logo.png)
+
 REST file storage with CRUD based permissions on directory-level. \
 Written in Typescript
 
@@ -11,7 +13,6 @@ Written in Typescript
 * Supported Databases (for user accounts)
   * mongoDB
   * postgresql
-  * DynamoDB
   * in-memory (for testing purposes)
 * Uses CRUD-based permissions, specified for different directories
 

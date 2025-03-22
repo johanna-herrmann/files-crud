@@ -1,15 +1,19 @@
-import Request from '@/types/server/Request';
+import paths from 'path';
 import express from 'express';
+import joi from 'joi';
 import { authorize } from '@/user';
-import { getToken, resolvePath, sendUnauthorized } from '@/server/util';
+import { getToken, resolvePath, sendUnauthorized, sendValidationError } from '@/server/util';
 import { loadStorage } from '@/storage';
 import { Storage } from '@/storage/Storage';
 import { getPermissions } from '@/server/middleware/file/permissions';
-import User from '@/types/user/User';
-import Right from '@/types/config/Right';
-import FileData from '@/types/storage/FileData';
+import { User } from '@/types/user/User';
+import { Right } from '@/types/config/Right';
+import { FileData } from '@/types/storage/FileData';
+import { Request } from '@/types/server/Request';
 
 const nullData: FileData = { owner: '', contentType: '', size: -1, md5: '0'.repeat(32) };
+const notEmptyPathConstraint = 'required string, not empty';
+const pathConstraint = 'optional string';
 
 const ensureRights = function (rightsSet: Right[], requiredRight: Right, path: string, res: express.Response): boolean {
   if (!rightsSet.includes(requiredRight)) {
@@ -32,11 +36,33 @@ const checkForSingleFile = async function (
   return ensureRights(permissions, requiredRight, path, res);
 };
 
-const loadMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+const checkForListing = async function (req: Request, res: express.Response, next: express.NextFunction, parent: boolean): Promise<void> {
   const storage = loadStorage();
   const user = await authorize(getToken(req));
   const path = resolvePath(req);
-  const exists = await storage.exists(path);
+  const directory = parent ? paths.dirname(paths.join(paths.sep, path)).substring(1) : path;
+  const exists = await storage.directoryExists(path);
+  const permissions = getPermissions(user, directory, nullData, exists, 'list');
+  const allowed = ensureRights(permissions, 'read', path, res);
+  if (allowed) {
+    next();
+  }
+};
+
+const loadMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const pathSchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = pathSchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
+  }
+
+  const storage = loadStorage();
+  const user = await authorize(getToken(req));
+  const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'read');
   if (allowed) {
     next();
@@ -44,22 +70,42 @@ const loadMiddleware = async function (req: Request, res: express.Response, next
 };
 
 const fileSaveMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-  const storage = loadStorage();
-  const user = (req.body.user ?? (await authorize(getToken(req)))) as User;
   const path = resolvePath(req);
-  const exists = await storage.exists(path);
+
+  const pathSchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = pathSchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
+  }
+
+  const storage = loadStorage();
+  const user = (req.body?.user ?? (await authorize(getToken(req)))) as User;
+  const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, exists ? 'update' : 'create');
   if (allowed) {
-    req.body.userId = user?.id ?? '-';
+    const body = req.body ?? {};
+    body.userId = user?.id ?? 'public';
+    req.body = body;
     next();
   }
 };
 
 const fileDeleteMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const pathSchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = pathSchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
+  }
+
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = resolvePath(req);
-  const exists = await storage.exists(path);
+  const exists = await storage.fileExists(path);
   const allowed = await checkForSingleFile(user, path, exists, storage, res, 'delete');
   if (allowed) {
     next();
@@ -67,10 +113,28 @@ const fileDeleteMiddleware = async function (req: Request, res: express.Response
 };
 
 const fileSaveMetaMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const paramSchema = joi.object({
+    path: joi.string().required()
+  });
+  const paramError = paramSchema.validate({ path }, { convert: false }).error;
+  if (paramError) {
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
+  }
+
+  const body = req.body ?? {};
+  const bodySchema = joi.object({
+    meta: joi.object()
+  });
+  const bodyError = bodySchema.validate(body, { convert: false }).error;
+  if (bodyError) {
+    return sendValidationError(res, 'body', { meta: 'optional object' }, body);
+  }
+
   const storage = loadStorage();
   const user = await authorize(getToken(req));
-  const path = resolvePath(req);
-  const exists = await storage.exists(path);
+  const exists = await storage.fileExists(path);
   const data = await storage.loadData(path);
   const meta = data?.meta;
   const allowed = await checkForSingleFile(user, path, exists, storage, res, meta ? 'update' : 'create');
@@ -80,15 +144,30 @@ const fileSaveMetaMiddleware = async function (req: Request, res: express.Respon
 };
 
 const directoryListingMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
-  const storage = loadStorage();
-  const user = await authorize(getToken(req));
   const path = resolvePath(req);
-  const exists = await storage.exists(path);
-  const permissions = getPermissions(user, path, nullData, exists, 'list');
-  const allowed = ensureRights(permissions, 'read', path, res);
-  if (allowed) {
-    next();
+  const pathSchema = joi.object({
+    path: joi.alternatives(joi.string(), '')
+  });
+  const error = pathSchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, 'path parameter', { path: pathConstraint }, { path });
   }
+
+  await checkForListing(req, res, next, false);
 };
 
-export { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware };
+const existsMiddleware = async function (req: Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  const path = resolvePath(req);
+
+  const pathSchema = joi.object({
+    path: joi.string().required()
+  });
+  const error = pathSchema.validate({ path }, { convert: false }).error;
+  if (error) {
+    return sendValidationError(res, 'path parameter', { path: notEmptyPathConstraint }, { path });
+  }
+
+  await checkForListing(req, res, next, true);
+};
+
+export { loadMiddleware, fileSaveMiddleware, fileDeleteMiddleware, fileSaveMetaMiddleware, directoryListingMiddleware, existsMiddleware };

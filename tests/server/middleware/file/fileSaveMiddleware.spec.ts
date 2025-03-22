@@ -1,11 +1,18 @@
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
-import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import {
+  assertUnauthorized,
+  assertPass,
+  buildRequestForFileAction,
+  buildResponse,
+  resetLastMessage,
+  assertValidationError
+} from '#/server/expressTestUtils';
 import { fileSaveMiddleware } from '@/server/middleware/file/file';
-import User from '@/types/user/User';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
 import { Logger } from '@/logging/Logger';
+import { User } from '@/types/user/User';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;
@@ -24,24 +31,28 @@ jest.mock('@/user/auth', () => {
 });
 
 jest.mock('@/logging/index', () => {
+  const logger: Logger = {
+    debug() {
+      return this;
+    },
+    info() {
+      return this;
+    },
+    warn() {
+      return this;
+    },
+    error() {
+      return this;
+    }
+  } as unknown as Logger;
   // noinspection JSUnusedGlobalSymbols
   return {
     resetLogger() {},
     loadLogger(): Logger {
-      return {
-        debug() {
-          return this;
-        },
-        info() {
-          return this;
-        },
-        warn() {
-          return this;
-        },
-        error() {
-          return this;
-        }
-      } as unknown as Logger;
+      return logger;
+    },
+    getLogger(): Logger {
+      return logger;
     }
   };
 });
@@ -67,23 +78,25 @@ describe('fileSaveMiddleware', () => {
           user: '020',
           public: '002'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '', key: 'ke/key' }) } }
+          }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'list', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
         const res = buildResponse();
 
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.userId).toBe(mocked_user?.id ?? '-');
+        expect(req.body?.userId).toBe(mocked_user?.id ?? 'public');
       };
 
       test('for public.', async (): Promise<void> => {
-        await passesIfUpdatePermissionIsGiven('public', 'token', 'owner', 'dir');
+        await passesIfUpdatePermissionIsGiven('public', 'public', 'owner', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {
@@ -112,25 +125,25 @@ describe('fileSaveMiddleware', () => {
           user: '080',
           public: '008'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: {} },
-            data: {}
+            files: {},
+            data: { [directory]: {} }
           }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, undefined);
         const res = buildResponse();
 
         await fileSaveMiddleware(req, res, () => (next = true));
 
         assertPass(next, res);
-        expect(req.body.userId).toBe(mocked_user?.id ?? '-');
+        expect(req.body?.userId).toBe(mocked_user?.id ?? 'public');
       };
 
       test('for public.', async (): Promise<void> => {
-        await passesIfCreatePermissionIsGiven('public', 'token', 'dir');
+        await passesIfCreatePermissionIsGiven('public', 'public', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {
@@ -161,13 +174,15 @@ describe('fileSaveMiddleware', () => {
           user: 'fdf',
           public: 'ffd'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         let next = false;
-        const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '', key: 'ke/key' }) } }
+          }
         });
 
         await fileSaveMiddleware(req, res, () => (next = true));
@@ -176,7 +191,7 @@ describe('fileSaveMiddleware', () => {
       };
 
       test('for public.', async (): Promise<void> => {
-        await rejectsIfUpdatePermissionIsNotGiven('public', 'token', 'owner', 'dir');
+        await rejectsIfUpdatePermissionIsNotGiven('public', 'public', 'owner', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {
@@ -195,18 +210,18 @@ describe('fileSaveMiddleware', () => {
     describe('if create permission is not given', (): void => {
       const rejectsIfCreatePermissionIsNotGiven = async function (level: string, token: string, directory: string) {
         let next = false;
-        const req = buildRequestForFileAction(token, 'save', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'upload', `${directory}/file`, {});
         const res = buildResponse();
         const levels: Record<string, string> = {
           owner: '7ff',
           user: 'f7f',
           public: 'ff7'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         mockFS({
           '/opt/files-crud': {
-            files: { [directory]: {} },
-            data: {}
+            files: {},
+            data: { [directory]: {} }
           }
         });
 
@@ -216,7 +231,7 @@ describe('fileSaveMiddleware', () => {
       };
 
       test('for public.', async (): Promise<void> => {
-        await rejectsIfCreatePermissionIsNotGiven('public', 'token', 'dir');
+        await rejectsIfCreatePermissionIsNotGiven('public', 'public', 'dir');
       });
 
       test('for user.', async (): Promise<void> => {
@@ -231,5 +246,18 @@ describe('fileSaveMiddleware', () => {
         await rejectsIfCreatePermissionIsNotGiven('owner', 'valid-user-token', `user_${testUser.id}`);
       });
     });
+  });
+
+  test('sends error on invalid path param.', async (): Promise<void> => {
+    const constraint = 'required string, not empty';
+    let next = false;
+    const req = buildRequestForFileAction('', 'list', '', {});
+    delete req.params.path;
+    const res = buildResponse();
+
+    await fileSaveMiddleware(req, res, () => (next = true));
+
+    expect(next).toBe(false);
+    assertValidationError(res, 'path parameter', { path: constraint }, { path: '' });
   });
 });

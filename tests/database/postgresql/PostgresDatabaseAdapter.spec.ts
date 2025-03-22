@@ -1,110 +1,104 @@
-import { Client } from 'pg';
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
 import { loadConfig } from '@/config/config';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
-
-const getHostAndPort = function (uri: string): [string, number] {
-  const regex = /^postgres(?:ql)?:\/\/(?:.+@)?(.+):(\d+)\/[^/]+$/u;
-  const host = uri.replace(regex, '$1');
-  const port = parseInt(uri.replace(regex, '$2'), 10);
-  return [host, port];
-};
-
-let postgresContainer: StartedPostgreSqlContainer | undefined;
-let db: PostgresDatabaseAdapter | undefined;
+import { User } from '@/types/user/User';
 
 describe('PostgresDatabaseAdapter', (): void => {
-  jest.setTimeout(60_000);
+  jest.setTimeout(60000);
+
+  let postgresContainer: null | StartedPostgreSqlContainer = null;
+  let db: null | PostgresDatabaseAdapter = null;
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer().withDatabase('files-crud').withUsername('u').withPassword('p').start();
-    const [host, port] = getHostAndPort(postgresContainer.getConnectionUri());
-    loadConfig({ database: { name: 'postgresql', host, port, user: 'u', pass: 'p' } });
+    postgresContainer = await new PostgreSqlContainer().withDatabase('files-crud').start();
+    const host = postgresContainer.getHost();
+    const port = postgresContainer.getPort();
+    const user = postgresContainer.getUsername();
+    const pass = postgresContainer.getPassword();
+    loadConfig({ database: { name: 'postgresql', host, port, user, pass } });
+  });
+
+  beforeEach(async () => {
+    db = new PostgresDatabaseAdapter();
+  });
+
+  afterEach(async () => {
+    await db?.close();
   });
 
   afterAll(async () => {
+    await db?.close();
     await postgresContainer?.stop();
   });
 
+  test('test', async (): Promise<void> => {
+    //
+  });
+
   describe('open and close', (): void => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const dummyClient = new Client();
-    let connectSpy: jest.Spied<typeof dummyClient.connect>;
-    let endSpy: jest.Spied<typeof dummyClient.end>;
-
-    beforeEach(async () => {
-      db = new PostgresDatabaseAdapter();
-    });
-
-    afterEach(async () => {
-      db?.close();
-      db = undefined;
-      connectSpy?.mockRestore();
-      endSpy?.mockRestore();
-    });
-
     test('open connects to db.', async (): Promise<void> => {
-      const client = db?.getClient();
-      let connected = false;
-      connectSpy = jest.spyOn(client as Client, 'connect').mockImplementation(() => (connected = true));
-
       await db?.open();
 
       expect(db?.isConnected()).toBe(true);
-      expect(connected).toBe(true);
     });
 
     test('close disconnects from db.', async (): Promise<void> => {
       await db?.open();
-      const client = db?.getClient();
-      let connected = true;
-      endSpy = jest.spyOn(client as Client, 'end').mockImplementation(() => (connected = false));
 
       await db?.close();
 
       expect(db?.isConnected()).toBe(false);
-      expect(connected).toBe(false);
     });
   });
 
-  describe('implementations with queries', (): void => {
+  describe('initialization', (): void => {
     beforeEach(async (): Promise<void> => {
-      db = new PostgresDatabaseAdapter();
       await db?.open();
-    });
-
-    afterEach(async (): Promise<void> => {
-      await db?.getClient().query('DROP TABLE IF EXISTS user_');
-      await db?.close();
-      db = undefined;
     });
 
     test('PostgresDatabaseAdapter->init initializes user table.', async (): Promise<void> => {
       await db?.init('user_', testUser);
 
-      const res = await db?.getClient().query('SELECT * FROM user_');
-      expect(res?.rowCount).toEqual(0);
+      try {
+        const res = await db?.getClient().query('SELECT * FROM user_');
+        expect(res?.rowCount).toEqual(0);
+      } catch (ex: unknown) {
+        expect(ex).toBeUndefined();
+      }
     });
 
     test('PostgresDatabaseAdapter->init initializes failedLoginAttempts table.', async (): Promise<void> => {
       await db?.init('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
 
-      const res = await db?.getClient().query('SELECT * FROM failedLoginAttempts');
-      expect(res?.rowCount).toEqual(0);
+      try {
+        const res = await db?.getClient().query('SELECT * FROM failedLoginAttempts');
+        expect(res?.rowCount).toEqual(0);
+      } catch (ex: unknown) {
+        expect(ex).toBeUndefined();
+      }
     });
 
     test('PostgresDatabaseAdapter->init initializes jwtKey table.', async (): Promise<void> => {
       await db?.init('jwtKey', { kid: '', key: '' });
 
-      const res = await db?.getClient().query('SELECT * FROM jwtKey');
-      expect(res?.rowCount).toEqual(0);
+      try {
+        const res = await db?.getClient().query('SELECT * FROM jwtKey');
+        expect(res?.rowCount).toEqual(0);
+      } catch (ex: unknown) {
+        expect(ex).toBeUndefined();
+      }
+    });
+  });
+
+  describe('queries', () => {
+    beforeEach(async (): Promise<void> => {
+      await db?.open();
+      await db?.getClient().query('DROP TABLE IF EXISTS user_').catch();
+      await db?.init('user_', testUser);
     });
 
     test('PostgresDatabaseAdapter->add adds item.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
-
       await db?.add('user_', testUser);
 
       const res = await db?.getClient().query<User>('SELECT * FROM user_');
@@ -113,11 +107,10 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->update updates item, without key change.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
       await db?.add('user_', testUser);
       const update = { hashVersion: 'newVersion', salt: 'newSalt', hash: 'newHash' };
 
-      await db?.update('user_', 'username', testUser.username, update);
+      await db?.update('user_', 'id', testUser.id, update);
 
       const res = await db?.getClient().query<User>('SELECT * FROM user_');
       expect(res?.rowCount).toBe(1);
@@ -125,7 +118,6 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->update updates item, with key change.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
       await db?.add('user_', testUser);
 
       await db?.update('user_', 'username', testUser.username, { username: 'newUsername' });
@@ -136,7 +128,6 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->findOne finds one.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
       await db?.add('user_', testUser);
 
       const user = await db?.findOne<User>('user_', 'username', testUser.username);
@@ -146,7 +137,6 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     test('PostgresDatabaseAdapter->findAll finds all.', async (): Promise<void> => {
       const otherUser = { ...testUser, username: 'other' };
-      await db?.init('user_', testUser);
       await db?.add('user_', testUser);
       await db?.add('user_', otherUser);
 
@@ -158,7 +148,6 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->exists returns true if item exists.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
       await db?.add('user_', testUser);
 
       const exists = await db?.exists('user_', 'username', testUser.username);
@@ -167,7 +156,6 @@ describe('PostgresDatabaseAdapter', (): void => {
     });
 
     test('PostgresDatabaseAdapter->exists returns true if item does not exist.', async (): Promise<void> => {
-      await db?.init('user_', testUser);
       await db?.add('user_', { ...testUser, username: 'other' });
 
       const exists = await db?.exists('user_', 'username', testUser.username);
@@ -177,7 +165,6 @@ describe('PostgresDatabaseAdapter', (): void => {
 
     test('PostgresDatabaseAdapter->delete deletes item.', async (): Promise<void> => {
       const otherUser = { ...testUser, username: 'other' };
-      await db?.init('user_', testUser);
       await db?.add('user_', testUser);
       await db?.add('user_', otherUser);
 

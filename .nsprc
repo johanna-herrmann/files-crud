@@ -21,10 +21,18 @@
   },
   "1099846": {
     "active": true,
-    "notes": "dev only and requires bad purpose"
+    "notes": "cookies not used"
   },
   "1100526": {
     "active": true,
     "notes": "dev only and requires bad purpose"
+  },
+  "1102341": {
+    "active": true,
+    "notes": "esbuild is never used as in a server context"
+  },
+  "1103026": {
+    "active": true,
+    "notes": "dev only and moderate"
   }
 }

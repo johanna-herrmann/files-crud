@@ -1,4 +1,4 @@
-import CorsConfig from '@/types/config/CorsConfig';
+import { CorsConfig } from '@/types/config/CorsConfig';
 
 interface ServerConfig {
   host?: string;
@@ -13,4 +13,4 @@ interface ServerConfig {
   fileSizeLimit?: string | number;
 }
 
-export default ServerConfig;
+export { ServerConfig };

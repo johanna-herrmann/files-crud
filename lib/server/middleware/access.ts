@@ -1,9 +1,9 @@
-import express from 'express';
 import { OutgoingMessage } from 'http';
+import express from 'express';
 import onFinished from 'on-finished';
 import { getFullConfig } from '@/config/config';
 import { loadLogger } from '@/logging';
-import Request from '@/types/server/Request';
+import { Request } from '@/types/server/Request';
 
 const anonymizeIp = function (ip: string): string {
   const ipv4Regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.)\d{1,3}$/u;

@@ -1,11 +1,18 @@
 import mockFS from 'mock-fs';
 import { loadConfig } from '@/config/config';
-import { assertUnauthorized, assertPass, buildRequestForFileAction, buildResponse, resetLastMessage } from '#/server/expressTestUtils';
+import {
+  assertUnauthorized,
+  assertPass,
+  buildRequestForFileAction,
+  buildResponse,
+  resetLastMessage,
+  assertValidationError
+} from '#/server/expressTestUtils';
 import { loadMiddleware } from '@/server/middleware/file/file';
 import { data } from '@/database/memdb/MemoryDatabaseAdapter';
 import { testUser } from '#/testItems';
-import User from '@/types/user/User';
 import { Logger } from '@/logging/Logger';
+import { User } from '@/types/user/User';
 
 let mocked_token: string | null;
 let mocked_user: User | null = null;
@@ -24,24 +31,28 @@ jest.mock('@/user/auth', () => {
 });
 
 jest.mock('@/logging/index', () => {
+  const logger: Logger = {
+    debug() {
+      return this;
+    },
+    info() {
+      return this;
+    },
+    warn() {
+      return this;
+    },
+    error() {
+      return this;
+    }
+  } as unknown as Logger;
   // noinspection JSUnusedGlobalSymbols
   return {
     resetLogger() {},
     loadLogger(): Logger {
-      return {
-        debug() {
-          return this;
-        },
-        info() {
-          return this;
-        },
-        warn() {
-          return this;
-        },
-        error() {
-          return this;
-        }
-      } as unknown as Logger;
+      return logger;
+    },
+    getLogger(): Logger {
+      return logger;
     }
   };
 });
@@ -67,13 +78,15 @@ describe('loadMiddleware', () => {
           user: '040',
           public: '004'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '', key: 'ke/key' }) } }
+          }
         });
         let next = false;
-        const req = buildRequestForFileAction(token, 'load', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'download', `${directory}/file`, {});
         const res = buildResponse();
 
         await loadMiddleware(req, res, () => (next = true));
@@ -113,13 +126,15 @@ describe('loadMiddleware', () => {
           user: 'fbf',
           public: 'ffb'
         };
-        loadConfig({ defaultPermissions: levels[level] });
+        loadConfig({ defaultPermissions: levels[level], storage: { name: 'fs', path: '/opt/files-crud' } });
         let next = false;
-        const req = buildRequestForFileAction(token, 'load', `${directory}/file`, {});
+        const req = buildRequestForFileAction(token, 'download', `${directory}/file`, {});
         const res = buildResponse();
         mockFS({
-          './files': { [directory]: { file: '' } },
-          './data': { [`${directory}~file`]: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '' }) }
+          '/opt/files-crud': {
+            files: { ke: { key: '' } },
+            data: { [directory]: { file: JSON.stringify({ owner: owner ?? '', meta: {}, contentType: '', key: 'ke/key' }) } }
+          }
         });
 
         await loadMiddleware(req, res, () => (next = true));
@@ -143,5 +158,18 @@ describe('loadMiddleware', () => {
         await rejectsIfReadPermissionIsNotGiven('owner', 'valid-user-token', testUser.id, 'dir');
       });
     });
+  });
+
+  test('sends error on invalid path param.', async (): Promise<void> => {
+    const constraint = 'required string, not empty';
+    let next = false;
+    const req = buildRequestForFileAction('', 'list', '', {});
+    req.params.path = ['/'];
+    const res = buildResponse();
+
+    await loadMiddleware(req, res, () => (next = true));
+
+    expect(next).toBe(false);
+    assertValidationError(res, 'path parameter', { path: constraint }, { path: '' });
   });
 });

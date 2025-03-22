@@ -5,10 +5,10 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 import { getFullConfig } from '@/config/config';
 import { accessLogFormats, logFormats } from '@/logging/formats';
 import { getSourcePath } from '@/logging/getSourcePath';
-import LogFileRotationFrequencyUnit from '@/types/config/LogFileRotationFrequencyUnit';
-import LoggingFormat from '@/types/config/LoggingFormat';
-import AccessLoggingFormat from '@/types/config/AccessLoggingFormat';
-import AccessLogEntry from '@/types/logging/AccessLogEntry';
+import { LogFileRotationFrequencyUnit } from '@/types/config/LogFileRotationFrequencyUnit';
+import { LoggingFormat } from '@/types/config/LoggingFormat';
+import { AccessLoggingFormat } from '@/types/config/AccessLoggingFormat';
+import { AccessLogEntry } from '@/types/logging/AccessLogEntry';
 
 const { combine, timestamp, printf } = format;
 
@@ -50,6 +50,7 @@ class Logger {
   private readonly level: 'debug' | 'info' | 'warn' | 'error';
   private readonly ttyLoggingFormat: LoggingFormat;
   private readonly fileLoggingFormat: LoggingFormat;
+  private readonly errorFileLoggingFormat: LoggingFormat;
   private readonly accessLoggingFormat: AccessLoggingFormat;
   private ttyLogger: WinstonLogger | null = null;
   private errorFileLogger: WinstonLogger | null = null;
@@ -89,7 +90,7 @@ class Logger {
           return logFormats[loggingFormat]({ level, message, timestamp, sourcePath, meta });
         })
       ),
-      transports: [new transports.Console({ forceConsole: forceConsole, stderrLevels: ['error'] })]
+      transports: [new transports.Console({ forceConsole, stderrLevels: ['error'] })]
     });
   }
 
@@ -101,7 +102,7 @@ class Logger {
         format: combine(
           timestamp({ format: dateFormatter }),
           printf(({ level, message, timestamp, sourcePath, meta }) => {
-            return logFormats[this.fileLoggingFormat]({ level, message, timestamp, sourcePath, meta });
+            return logFormats[this.errorFileLoggingFormat]({ level, message, timestamp, sourcePath, meta });
           })
         ),
         transports: [
@@ -150,6 +151,7 @@ class Logger {
     this.ttyLoggingFormat = config.logging?.ttyLoggingFormat as LoggingFormat;
     this.fileLoggingFormat = config.logging?.fileLoggingFormat as LoggingFormat;
     this.accessLoggingFormat = config.logging?.accessLoggingFormat as AccessLoggingFormat;
+    this.errorFileLoggingFormat = config.logging?.errorFileLoggingFormat as LoggingFormat;
     this.errorLogFile = config.logging?.errorLogFile as string;
     this.accessLogFile = config.logging?.accessLogFile as string;
     this.errorFileLoggingEnabled = config.logging?.enableErrorFileLogging as boolean;
@@ -234,7 +236,7 @@ class Logger {
   public access({ method, path, statusCode, contentLength, ...rest }: Omit<AccessLogEntry, 'timestamp'>): Logger {
     this.accessFileLogger?.info('', { method, path, statusCode, contentLength, ...rest });
     const isApiRequest = /^\/api\//.test(path as string);
-    if (!isApiRequest && (statusCode as number) < 399) {
+    if (!isApiRequest && (statusCode as number) < 400) {
       this.ttyLogger?.info(`Access: statusCode ${statusCode} on ${method} ${path}`, {
         sourcePath: getSourcePath(),
         meta: { method, path, statusCode, contentLength }

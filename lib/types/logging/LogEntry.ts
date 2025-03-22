@@ -6,4 +6,4 @@ interface LogEntry {
   meta?: unknown;
 }
 
-export default LogEntry;
+export { LogEntry };

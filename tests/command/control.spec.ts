@@ -1,6 +1,8 @@
 import fs from 'fs';
 import { Printer, printer } from '@/printing/printer';
-import { stop, getControlProperties, restart, reload } from '@/command/control';
+import { getControlProperties, reload, restart, stop } from '@/command/control';
+import { loadConfig, NEW_CONFIG_FILE_PATH } from '@/config/config';
+import { Config } from '@/types/config/Config';
 
 let mocked_startTime = -1;
 let mocked_fetchUrl = '';
@@ -34,10 +36,12 @@ jest.mock('@/command/fetchWrapper', () => {
 
 describe('control commands', (): void => {
   let fsReadSpy: jest.Spied<typeof fs.readFileSync>;
+  let fsWriteSpy: jest.Spied<typeof fs.writeFileSync>;
   let printLineSpy: jest.Spied<typeof printer.printLine>;
   let printErrorSpy: jest.Spied<typeof printer.printError>;
   let printedMessages: string[] = [];
   let printedChannels: string[] = [];
+  let lastFileWrite: { path?: string; data?: string | Buffer; encoding?: string } = {};
 
   beforeEach(async (): Promise<void> => {
     printLineSpy = jest.spyOn(printer, 'printLine').mockImplementation((line: string) => {
@@ -60,7 +64,9 @@ describe('control commands', (): void => {
     mocked_fetchOptions = undefined;
     printedMessages = [];
     printedChannels = [];
+    lastFileWrite = {};
     fsReadSpy?.mockRestore();
+    fsWriteSpy?.mockRestore();
     printLineSpy?.mockRestore();
     printErrorSpy?.mockRestore();
     jest.useRealTimers();
@@ -225,6 +231,8 @@ describe('control commands', (): void => {
 
   describe('reload', (): void => {
     test('reloads if valid token', async (): Promise<void> => {
+      const newConfig = { register: 'all', server: { port: 1234 } };
+      loadConfig(newConfig as Config);
       // @ts-expect-error // this is fine
       fsReadSpy = jest.spyOn(fs, 'readFileSync').mockImplementation((path: string): string | Buffer => {
         if (path === './.control.json') {
@@ -232,14 +240,19 @@ describe('control commands', (): void => {
         }
         return '{}';
       });
+      // @ts-expect-error // this is fine
+      fsWriteSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation((path: string, data: string | Buffer, encoding?: string): void => {
+        lastFileWrite = { path, data, encoding };
+      });
 
       await reload();
 
       expect(mocked_startTime).toBe(-1);
       expect(mocked_fetchUrl).toBe('http://127.0.0.1:9000/control/reload');
       expect(mocked_fetchOptions).toEqual({ method: 'POST', headers: { Authorization: 'token' } });
-      expect(printedMessages).toEqual(['Sending request to reload...', 'Reloaded.']);
-      expect(printedChannels).toEqual(['out', 'out']);
+      expect(printedMessages).toEqual(['Preparing to reload...', 'Sending request to reload...', 'Reloaded.']);
+      expect(printedChannels).toEqual(['out', 'out', 'out']);
+      expect(lastFileWrite).toEqual({ path: NEW_CONFIG_FILE_PATH, data: JSON.stringify(newConfig), encoding: 'utf8' });
     });
 
     test('fails if invalid token', async (): Promise<void> => {
@@ -250,14 +263,15 @@ describe('control commands', (): void => {
         }
         return '{}';
       });
+      fsWriteSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation((): void => {});
 
       await reload();
 
       expect(mocked_startTime).toBe(-1);
       expect(mocked_fetchUrl).toBe('http://127.0.0.1:9000/control/reload');
       expect(mocked_fetchOptions).toEqual({ method: 'POST', headers: { Authorization: 'invalid' } });
-      expect(printedMessages).toEqual(['Sending request to reload...', 'Request failed with error. StatusCode: 401']);
-      expect(printedChannels).toEqual(['out', 'err']);
+      expect(printedMessages).toEqual(['Preparing to reload...', 'Sending request to reload...', 'Request failed with error. StatusCode: 401']);
+      expect(printedChannels).toEqual(['out', 'out', 'err']);
     });
   });
 });

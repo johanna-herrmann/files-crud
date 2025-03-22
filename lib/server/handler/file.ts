@@ -3,32 +3,38 @@ import express from 'express';
 import { resolvePath, sanitizePath, sendError, sendOK } from '@/server/util';
 import { loadStorage } from '@/storage';
 import { loadLogger } from '@/logging';
-import Request from '@/types/server/Request';
-import UploadRequest from '@/types/server/UploadRequest';
+import { Request } from '@/types/server/Request';
+import { UploadRequest } from '@/types/server/UploadRequest';
+import { Files } from '@/types/server/Files';
 
 const saveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
   const path = resolvePath(req);
-  const { data, mimetype, md5 } = (req as UploadRequest).files.file;
+  const { meta, owner: givenOwner } = await storage.loadData(path);
+  const owner = givenOwner ?? (req.body?.userId as string);
+  const files = (req as UploadRequest).files as Files;
+  const key = Object.keys(files).at(0) ?? 'file';
+  const { data: content, mimetype, md5 } = files[key];
   const headerMimetype = req.header('X-Mimetype');
   const actualMimetype = headerMimetype ?? mimetype;
-  const size = data.length;
-  const owner = req.body.userId as string;
+  const size = content.length;
   const fileData = {
     contentType: actualMimetype,
     size,
     md5,
-    owner
+    owner,
+    meta
   };
 
-  await storage.save(path, data, fileData);
+  await storage.save(path, content, fileData);
 
   logger.info('Successfully saved file.', {
     path,
     size,
     mimetype: actualMimetype,
-    mimetypeFrom: headerMimetype ? 'header' : 'files attribute'
+    mimetypeFrom: headerMimetype ? 'header' : 'files attribute',
+    owner
   });
   sendOK(res, { path });
 };
@@ -38,7 +44,7 @@ const loadHandler = async function (req: Request, res: express.Response): Promis
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
@@ -59,13 +65,13 @@ const saveMetaHandler = async function (req: Request, res: express.Response): Pr
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
-  const meta = req.body.meta as Record<string, unknown> | undefined;
+  const meta = req.body?.meta as Record<string, unknown> | undefined;
   const data = await storage.loadData(path);
-  await storage.setData(path, { ...data, meta: meta ?? {} });
+  await storage.saveData(path, { ...data, meta: meta ?? {} });
   logger.info('Successfully saved file meta data.', { path, meta });
   sendOK(res);
 };
@@ -75,7 +81,7 @@ const loadMetaHandler = async function (req: Request, res: express.Response): Pr
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
@@ -89,28 +95,28 @@ const loadDataHandler = async function (req: Request, res: express.Response): Pr
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
   const { meta, ...rest } = await storage.loadData(path);
   const data = { ...rest, meta: meta ?? {} };
   logger.info('Successfully loaded file data.', { path, data });
-  sendOK(res, { data });
+  sendOK(res, { data: { ...data, key: undefined } });
 };
 
 const copyHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath, keepOwner, userId } = req.body;
+  const { path, targetPath, copyOwner, userId } = req.body ?? {};
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
-  if (!(await storage.exists(sanitizedPath))) {
+  if (!(await storage.fileExists(sanitizedPath))) {
     return sendError(res, `File ${sanitizedPath} does not exist`);
   }
 
-  if (keepOwner) {
+  if (copyOwner) {
     await storage.copy(sanitizedPath, sanitizedTargetPath);
   } else {
     await storage.copy(sanitizedPath, sanitizedTargetPath, userId as string);
@@ -123,19 +129,15 @@ const copyHandler = async function (req: Request, res: express.Response): Promis
 const moveHandler = async function (req: Request, res: express.Response): Promise<void> {
   const logger = loadLogger();
   const storage = loadStorage();
-  const { path, targetPath, keepOwner, userId } = req.body;
+  const { path, targetPath } = req.body ?? {};
   const sanitizedPath = sanitizePath(path as string);
   const sanitizedTargetPath = sanitizePath(targetPath as string);
 
-  if (!(await storage.exists(sanitizedPath))) {
+  if (!(await storage.fileExists(sanitizedPath))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
-  if (keepOwner) {
-    await storage.move(sanitizedPath, sanitizedTargetPath);
-  } else {
-    await storage.move(sanitizedPath, sanitizedTargetPath, userId as string);
-  }
+  await storage.move(sanitizedPath, sanitizedTargetPath);
 
   logger.info('Successfully moved file.', { path: sanitizedPath, targetPath: sanitizedTargetPath });
   sendOK(res, { path: sanitizedTargetPath });
@@ -146,7 +148,7 @@ const deleteHandler = async function (req: Request, res: express.Response): Prom
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.fileExists(path))) {
     return sendError(res, `File ${path} does not exist`);
   }
 
@@ -160,7 +162,7 @@ const listHandler = async function (req: Request, res: express.Response): Promis
   const storage = loadStorage();
   const path = resolvePath(req);
 
-  if (!(await storage.exists(path))) {
+  if (!(await storage.directoryExists(path))) {
     return sendError(res, `Directory ${path} does not exist`);
   }
 
@@ -170,4 +172,38 @@ const listHandler = async function (req: Request, res: express.Response): Promis
   sendOK(res, { items });
 };
 
-export { saveHandler, loadHandler, saveMetaHandler, loadMetaHandler, loadDataHandler, copyHandler, moveHandler, deleteHandler, listHandler };
+const fileExistsHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
+  const storage = loadStorage();
+  const path = resolvePath(req);
+
+  const exists = await storage.fileExists(path);
+
+  logger.info('Successfully checked if file exists.', { path, exists });
+  sendOK(res, { path, exists });
+};
+
+const directoryExistsHandler = async function (req: Request, res: express.Response): Promise<void> {
+  const logger = loadLogger();
+  const storage = loadStorage();
+  const path = resolvePath(req);
+
+  const exists = await storage.directoryExists(path);
+
+  logger.info('Successfully checked if directory exists.', { path, exists });
+  sendOK(res, { path, exists });
+};
+
+export {
+  saveHandler,
+  loadHandler,
+  saveMetaHandler,
+  loadMetaHandler,
+  loadDataHandler,
+  copyHandler,
+  moveHandler,
+  deleteHandler,
+  listHandler,
+  fileExistsHandler,
+  directoryExistsHandler
+};

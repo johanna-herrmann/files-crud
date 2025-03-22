@@ -4,8 +4,8 @@ import request from 'supertest';
 import express from 'express';
 import { loadConfig } from '@/config/config';
 import { uploadFileMiddleware, parseSizeLimit } from '@/server/middleware/upload';
-import Request from '@/types/server/Request';
-import UploadRequest from '@/types/server/UploadRequest';
+import { Request } from '@/types/server/Request';
+import { UploadRequest } from '@/types/server/UploadRequest';
 
 describe('uploadFileMiddleware', (): void => {
   test('Sets file attributes correctly.', async (): Promise<void> => {

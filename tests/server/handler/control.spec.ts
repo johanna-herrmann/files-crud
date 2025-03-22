@@ -95,7 +95,7 @@ describe('controlMiddleware', (): void => {
     const req = buildRequestForControlAction('127.0.0.0', undefined, 'mocked_token');
     const res = buildResponse();
 
-    reloadHandler(req, res);
+    await reloadHandler(req, res);
 
     expect(mocked_InfoMessages).toEqual(['Received reload request. Reloading...', 'Reloaded.']);
     expect(mocked_reloadedConfig).toBe(true);

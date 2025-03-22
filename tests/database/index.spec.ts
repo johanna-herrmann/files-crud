@@ -1,29 +1,33 @@
-import { loadDb, closeDb, resetDb } from '@/database';
+import { loadDb, resetDb } from '@/database';
 import { loadConfig } from '@/config/config';
-import { MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
+import { data, MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
 
 describe('database', (): void => {
   afterEach(async (): Promise<void> => {
-    await closeDb();
-    resetDb();
+    await (await loadDb()).close();
+    await resetDb();
   });
 
-  test('loadDb loads memory-db correctly', async (): Promise<void> => {
+  test('loadDB inits new memory-db correctly', async (): Promise<void> => {
     loadConfig();
 
     const db = await loadDb();
 
     expect(db.getAdapter()).toBeInstanceOf(MemoryDatabaseAdapter);
     expect((db.getAdapter() as MemoryDatabaseAdapter).isConnected()).toBe(true);
+    expect(data.user_).toEqual([]);
+    expect(data.jwtKey).toEqual([]);
+    expect(data.failedLoginAttempts).toEqual([]);
   });
 
-  test('closeDb closes db correctly', async (): Promise<void> => {
+  test('loadDb loads given memory-db correctly', async (): Promise<void> => {
     loadConfig();
     const db = await loadDb();
+    await db.close();
 
-    await closeDb();
+    const loadedDb = await loadDb();
 
-    expect(db.getAdapter()).toBeInstanceOf(MemoryDatabaseAdapter);
-    expect((db.getAdapter() as MemoryDatabaseAdapter).isConnected()).toBe(false);
+    expect((loadedDb.getAdapter() as MemoryDatabaseAdapter).isConnected()).toBe(false);
+    expect(loadedDb).toBe(db);
   });
 });

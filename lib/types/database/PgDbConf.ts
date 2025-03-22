@@ -6,4 +6,4 @@ interface PgDbConf {
   password?: string;
 }
 
-export default PgDbConf;
+export { PgDbConf };

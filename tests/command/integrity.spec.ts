@@ -1,6 +1,6 @@
 import mockFS from 'mock-fs';
-import FileData from '@/types/storage/FileData';
 import { checkIntegrity } from '@/command/integrity';
+import { FileData } from '@/types/storage/FileData';
 
 const RED_START = '\x1B[31m';
 const GREEN_START = '\x1B[32m';
@@ -19,14 +19,11 @@ jest.mock('@/storage', () => {
           }
           return await actualStorage.load(path);
         },
-        async exists(path: string): Promise<boolean> {
-          return await actualStorage.exists(path);
+        async fileExists(path: string): Promise<boolean> {
+          return await actualStorage.fileExists(path);
         },
-        async isFile(path: string): Promise<boolean> {
-          return await actualStorage.isFile(path);
-        },
-        async isDirectory(path: string): Promise<boolean> {
-          return await actualStorage.isDirectory(path);
+        async directoryExists(path: string): Promise<boolean> {
+          return await actualStorage.directoryExists(path);
         },
         async list(path: string): Promise<string[]> {
           return await actualStorage.list(path);
@@ -46,12 +43,14 @@ describe('command: integrity', (): void => {
   let channels: ('out' | 'err')[] = [];
 
   beforeEach(async (): Promise<void> => {
-    const dataFile: FileData = { md5: '098f6bcd4621d373cade4e832627b4f6', owner: '', contentType: '', size: 0, meta: {} };
-    const dataFile2: FileData = { md5: 'ad0234829205b9033196ba818f7a872b', owner: '', contentType: '', size: 0, meta: {} };
-    const dataFileSub: FileData = { md5: '0'.repeat(32), owner: '', contentType: '', size: 0, meta: {} };
+    const dataFile: FileData = { md5: '098f6bcd4621d373cade4e832627b4f6', owner: '', contentType: '', size: 0, meta: {}, key: 'ke/key1' };
+    const dataFile2: FileData = { md5: 'ad0234829205b9033196ba818f7a872b', owner: '', contentType: '', size: 0, meta: {}, key: 'ke/key2' };
+    const dataFileSub: FileData = { md5: '0'.repeat(32), owner: '', contentType: '', size: 0, meta: {}, key: 'ke/key3' };
     mockFS({
-      './files': { dir: { file: 'test', file2: 'test2', subDir: { subFile: 'subTest', error: '' } } },
-      './data': { 'dir~file': JSON.stringify(dataFile), 'dir~file2': JSON.stringify(dataFile2), 'dir~subDir~subFile': JSON.stringify(dataFileSub) }
+      './files': { ke: { key1: 'test', key2: 'test2', key3: 'subTest' } },
+      './data': {
+        dir: { file: JSON.stringify(dataFile), file2: JSON.stringify(dataFile2), subDir: { subFile: JSON.stringify(dataFileSub), error: '' } }
+      }
     });
     outSpy = jest.spyOn(stdout, 'write').mockImplementation((message: string | Uint8Array): boolean => {
       printings.push(message);
@@ -104,7 +103,7 @@ describe('command: integrity', (): void => {
       'Checking dir/subDir/subFile ',
       `  ${RED_START}Invalid${END}\n`,
       'Finished check\n',
-      `total: 2\nvalid: ${GREEN_START}0${END}\ninvalid: ${RED_START}1${END}\nerrors: ${RED_START}1${END}\n`
+      `total: 2\nvalid: 0\ninvalid: ${RED_START}1${END}\nerrors: ${RED_START}1${END}\n`
     ]);
     expect(channels).toEqual(['out', 'out', 'out', 'err', 'out', 'out', 'out', 'out']);
   });
@@ -117,7 +116,7 @@ describe('command: integrity', (): void => {
       'Checking dir/file ',
       `  ${GREEN_START}Valid${END}\n`,
       'Finished check\n',
-      `total: 1\nvalid: ${GREEN_START}1${END}\ninvalid: ${RED_START}0${END}\nerrors: ${RED_START}0${END}\n`
+      `total: 1\nvalid: ${GREEN_START}1${END}\ninvalid: 0\nerrors: 0\n`
     ]);
     expect(channels).toEqual(['out', 'out', 'out', 'out', 'out']);
   });
@@ -129,16 +128,16 @@ describe('command: integrity', (): void => {
     expect(channels).toEqual(['out', 'err']);
   });
 
-  test('gives error, if it does not exist, default path', async (): Promise<void> => {
+  test('gives empty result on empty storage', async (): Promise<void> => {
     mockFS({});
 
     await checkIntegrity('');
 
-    expect(printings).toEqual(['Starting check...\n', `${RED_START}Error: . does not exist.${END}\n`]);
-    expect(channels).toEqual(['out', 'err']);
+    expect(printings).toEqual(['Starting check...\n', 'Finished check\n', `total: 0\nvalid: 0\ninvalid: 0\nerrors: 0\n`]);
+    expect(channels).toEqual(['out', 'out', 'out']);
   });
 
-  test('fails correctly', async (): Promise<void> => {
+  test('fails correctly on errors', async (): Promise<void> => {
     const error = new Error('failed successfully');
     outSpy = jest.spyOn(stdout, 'write').mockImplementation((message: string | Uint8Array): boolean => {
       printings.push(message);
@@ -153,12 +152,7 @@ describe('command: integrity', (): void => {
 
     expect(printings).toEqual([
       'Starting check...\n',
-      JSON.stringify(error.stack)
-        .replace(/"/g, '')
-        .replace(/\\n/g, '\n')
-        .split('\n')
-        .map((line) => `${RED_START}${line}${END}`)
-        .join('\n') + '\n',
+      `${RED_START}${JSON.stringify(error.stack).replace(/"/g, '').replace(/\\n/g, '\n')}${END}\n`,
       `${RED_START}Failed due to error${END}\n`
     ]);
     expect(channels).toEqual(['out', 'err', 'out']);

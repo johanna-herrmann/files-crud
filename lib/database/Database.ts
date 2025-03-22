@@ -1,27 +1,29 @@
-import DatabaseType from '@/types/database/Database';
-import DatabaseAdapter from '@/types/database/DatabaseAdapter';
-import { getConfig } from '@/config/config';
+import { v4 } from 'uuid';
+import { getFullConfig } from '@/config/config';
 import { MongoDatabaseAdapter } from '@/database/mongodb/MongoDatabaseAdapter';
 import { PostgresDatabaseAdapter } from '@/database/postgresql/PostgresDatabaseAdapter';
-import { DynamoDatabaseAdapter } from '@/database/dynamodb/DynamoDatabaseAdapter';
 import { MemoryDatabaseAdapter } from '@/database/memdb/MemoryDatabaseAdapter';
-import User from '@/types/user/User';
-import UserListItem from '@/types/user/UserListItem';
-import { v4 } from 'uuid';
-import JwtKey from '@/types/user/JwtKey';
-import FailedLoginAttempts from '@/types/user/FailedLoginAttempts';
+import { Logger } from '@/logging/Logger';
+import { getLogger } from '@/logging';
+import { DatabaseType } from '@/types/database/DatabaseType';
+import { DatabaseAdapter } from '@/types/database/DatabaseAdapter';
+import { User } from '@/types/user/User';
+import { UserListItem } from '@/types/user/UserListItem';
+import { JwtKey } from '@/types/user/JwtKey';
+import { FailedLoginAttempts } from '@/types/user/FailedLoginAttempts';
 
 class Database implements DatabaseType {
   private readonly db: DatabaseAdapter;
+  private readonly logger: Logger | null;
 
   constructor() {
-    const config = getConfig();
+    const config = getFullConfig();
+    this.logger = getLogger();
+    this.logger?.info('Initializing DB.', { db: config.database?.name as string });
     if (config.database?.name === 'mongodb') {
       this.db = new MongoDatabaseAdapter();
     } else if (config.database?.name === 'postgresql') {
       this.db = new PostgresDatabaseAdapter();
-    } else if (config.database?.name === 'dynamodb') {
-      this.db = new DynamoDatabaseAdapter();
     } else {
       this.db = new MemoryDatabaseAdapter();
     }
@@ -43,6 +45,7 @@ class Database implements DatabaseType {
     await this.db.init<User>('user_', { id: '', username: '', admin: false, hashVersion: '', salt: '', hash: '', meta: {} });
     await this.db.init<FailedLoginAttempts>('failedLoginAttempts', { username: '', attempts: 0, lastAttempt: 0 });
     await this.db.init<JwtKey>('jwtKey', { kid: '', key: '' });
+    this.logger?.info('DB initialized.');
   }
 
   public async addUser(user: User): Promise<void> {
@@ -126,7 +129,10 @@ class Database implements DatabaseType {
   }
 
   public async removeLoginAttempts(username: string): Promise<void> {
-    return await this.db.delete('failedLoginAttempts', 'username', username);
+    const attemptsItem = await this.db.findOne<FailedLoginAttempts>('failedLoginAttempts', 'username', username);
+    if (!!attemptsItem) {
+      await this.db.delete('failedLoginAttempts', 'username', username);
+    }
   }
 }
 

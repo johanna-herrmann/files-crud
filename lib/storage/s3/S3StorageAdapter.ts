@@ -1,7 +1,7 @@
 import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
 import { getObjectBody, putObject, deleteObject, copyObject } from './s3StorageHelper';
 import { getFullConfig } from '@/config/config';
-import StorageAdapter from '@/types/storage/StorageAdapter';
+import { StorageAdapter } from '@/types/storage/StorageAdapter';
 
 /**
  * StorageAdapter for s3 storage.
@@ -14,9 +14,9 @@ class S3StorageAdapter implements StorageAdapter {
 
   constructor() {
     const config = getFullConfig();
-    const region = (config.storage?.region || config.region) as string;
-    const accessKeyId = (config.storage?.accessKeyId || config.accessKeyId) as string;
-    const secretAccessKey = (config.storage?.secretAccessKey || config.secretAccessKey) as string;
+    const region = config.storage?.region as string;
+    const accessKeyId = config.storage?.accessKeyId as string;
+    const secretAccessKey = config.storage?.secretAccessKey as string;
     const bucket = config.storage?.bucket as string;
     const endpoint = config.storage?.endpoint;
     const forcePathStyle = config.storage?.forcePathStyle as boolean;

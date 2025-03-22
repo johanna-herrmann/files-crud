@@ -1,6 +1,7 @@
-import { issueToken, verifyToken, getIndex, getKeys, KEYS, algorithm, extractSub, getExpiresAt } from '@/user/jwt';
+import { issueToken, verifyToken, getIndex, getKeys, KEYS, algorithm, extractSub, getExpiresAt, initKeys, resetKeys } from '@/user/jwt';
 import jwt from 'jsonwebtoken';
 import { loadConfig } from '@/config/config';
+import { resetDb } from '@/database';
 
 describe('jwt', (): void => {
   const sub = 'testUserId';
@@ -11,19 +12,25 @@ describe('jwt', (): void => {
   const fakeTimeExpired = exp * 1000;
 
   beforeEach(async (): Promise<void> => {
+    await initKeys();
     jest.useFakeTimers();
     jest.setSystemTime(fakeTime);
     loadConfig({ tokenExpiresInSeconds: validity });
   });
 
-  afterEach((): void => {
+  afterEach(async (): Promise<void> => {
     jest.useRealTimers();
+    await resetDb();
+    resetKeys();
   });
 
   test('initializes correctly.', async (): Promise<void> => {
-    const keys = getKeys();
+    await resetDb();
+    resetKeys();
 
-    expect(keys.length).toBe(KEYS);
+    await initKeys();
+
+    expect(getKeys().length).toBe(KEYS);
   });
 
   test('issueToken issues token correctly, with expiring.', async (): Promise<void> => {

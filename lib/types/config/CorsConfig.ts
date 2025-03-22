@@ -1,4 +1,4 @@
-interface CorsOptions {
+interface CorsConfig {
   origin?: string | string[];
   methods?: string | string[] | undefined;
   allowedHeaders?: string | string[] | undefined;
@@ -7,4 +7,4 @@ interface CorsOptions {
   maxAge?: number | undefined;
 }
 
-export default CorsOptions;
+export { CorsConfig };

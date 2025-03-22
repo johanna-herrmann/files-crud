@@ -1,9 +1,9 @@
-import User from '../user/User';
-import FailedLoginAttempts from '../user/FailedLoginAttempts';
-import UserListItem from '../user/UserListItem';
-import JwtKey from '../user/JwtKey';
+import { User } from '../user/User';
+import { FailedLoginAttempts } from '../user/FailedLoginAttempts';
+import { UserListItem } from '../user/UserListItem';
+import { JwtKey } from '../user/JwtKey';
 
-interface Database {
+interface DatabaseType {
   /**
    * Opens the database connection and does initialization steps if needed
    */
@@ -139,4 +139,4 @@ interface Database {
   removeLoginAttempts: (username: string) => Promise<void>;
 }
 
-export default Database;
+export { DatabaseType };

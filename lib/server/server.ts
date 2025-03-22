@@ -40,7 +40,7 @@ const logStartedServer = function (
 const startHttpServer = function (host: string, port: number, webRoot: string | undefined, start: number): void {
   const app = buildApp();
   const server = http.createServer(app);
-  server.listen({ host: host, port }, () => {
+  server.listen({ host, port }, () => {
     logStartedServer('http', host, port, webRoot, start, Date.now());
   });
 };

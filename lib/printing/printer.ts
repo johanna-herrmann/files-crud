@@ -42,15 +42,15 @@ class Printer {
   }
 
   public printError(message: string): Printer {
-    process.stderr.write(`${red(message)}\n`);
+    process.stderr.write(`${red(message.replace(/\n/g, '~')).replace(/~/g, '\n')}\n`);
     return this;
   }
 
   public printSummary(valid: number, invalid: number, errors: number): Printer {
     const totalLine = `total: ${valid + invalid + errors}`;
-    const validLine = `valid: ${green(valid + '')}`;
-    const invalidLine = `invalid: ${red(invalid + '')}`;
-    const errorsLine = `errors: ${red(errors + '')}`;
+    const validLine = `valid: ${valid ? green(valid + '') : 0}`;
+    const invalidLine = `invalid: ${invalid ? red(invalid + '') : 0}`;
+    const errorsLine = `errors: ${errors ? red(errors + '') : 0}`;
     process.stdout.write(`${totalLine}\n${validLine}\n${invalidLine}\n${errorsLine}\n`);
     return this;
   }
