@@ -11,5 +11,8 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: test
-        run: echo ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag commit
+        uses: tvdias/github-tagger@v0.0.1
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          tag: "test_tag"
