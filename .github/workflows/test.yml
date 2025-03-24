@@ -11,7 +11,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
         with:
-          token: ${{secrets.GITHUB_TOKEN}}
+          token: ${{secrets.GH_PUSH_TOKEN}}
 
       - name: Tag commit
         run: |
